@@ -6,6 +6,7 @@
 #include "product_bridge.hpp"
 #include "scan_job_executor.hpp"
 #include "scan_job_queue.hpp"
+#include "nearby_lan_interface_selector.hpp"
 
 #include <flynes/flynes_app.h>
 #include <flynes/flynes_session.h>
@@ -42,11 +43,12 @@ struct MvpDeleter {
 std::unique_ptr<fly_lan_mvp_session, MvpDeleter> g_mvp_session;
 flynes::harmony::SourceTiming g_mvp_timing;
 
-std::string nearby_local_ipv4()
+std::string nearby_local_ipv4(bool guest = false)
 {
     ifaddrs* first = nullptr;
     if (getifaddrs(&first) != 0) return {};
     std::string chosen;
+    std::vector<flynes::harmony::NearbyLanInterface> guest_candidates;
     for (ifaddrs* item = first; item != nullptr; item = item->ifa_next)
     {
         if (item->ifa_addr == nullptr || item->ifa_addr->sa_family != AF_INET ||
@@ -64,12 +66,15 @@ std::string nearby_local_ipv4()
         char text[INET_ADDRSTRLEN]{};
         if (inet_ntop(AF_INET, &address->sin_addr, text, sizeof(text)) != nullptr)
         {
-            chosen = text;
-            break;
+            if (guest) guest_candidates.push_back({name, text});
+            else {
+                chosen = text;
+                break;
+            }
         }
     }
     freeifaddrs(first);
-    return chosen;
+    return guest ? flynes::harmony::select_guest_ipv4(guest_candidates) : chosen;
 }
 
 [[maybe_unused]] void verify_nearby_v2_composition_contract()
@@ -2710,10 +2715,14 @@ napi_value create_int32(napi_env env, std::int32_t value, const char* step)
 napi_value NearbyMvpJoin(napi_env env, napi_callback_info info)
 {
     return nearby_call(env, "nearbyMvpJoin", [&]() {
-        napi_value argument = nullptr;
-        nearby_arguments(env, info, 1u, &argument, "nearbyMvpJoin");
-        const std::string qr = read_utf8_string(env, argument, "qrText");
-        const std::string local = nearby_local_ipv4();
+        napi_value arguments[2]{};
+        std::size_t count = 2u;
+        require_napi(napi_get_cb_info(env, info, &count, arguments, nullptr, nullptr),
+                     "read nearby MVP join arguments");
+        if (count < 1u) throw NapiTypeError("nearbyMvpJoin requires qrText");
+        const std::string qr = read_utf8_string(env, arguments[0], "qrText");
+        const bool wifi_only = count >= 2u && read_bool(env, arguments[1], "wifiOnly");
+        const std::string local = nearby_local_ipv4(wifi_only);
         if (local.empty()) return create_bool(env, false, "no LAN address");
         g_play.reset();
         g_mvp_session.reset(fly_lan_mvp_create());
@@ -2723,6 +2732,39 @@ napi_value NearbyMvpJoin(napi_env env, napi_callback_info info)
                                               qr.data(), qr.size()) == 1;
         if (!started) g_mvp_session.reset();
         return create_bool(env, started, "join LAN session");
+    });
+}
+
+napi_value NearbyMvpHost(napi_env env, napi_callback_info info)
+{
+    return nearby_call(env, "nearbyMvpHost", [&]() {
+        napi_value argument = nullptr;
+        nearby_arguments(env, info, 1u, &argument, "nearbyMvpHost");
+        const std::vector<std::uint8_t> token = read_buffer(env, argument, "token");
+        if (token.size() != 16u) throw NapiTypeError("token must contain 16 bytes");
+        const std::string local = nearby_local_ipv4();
+        if (local.empty()) return create_bool(env, false, "no LAN address");
+        g_play.reset();
+        g_mvp_session.reset(fly_lan_mvp_create());
+        if (!g_mvp_session) return create_bool(env, false, "create LAN session");
+        fly_lan_mvp_set_diagnostic_sink(g_mvp_session.get(), mvp_diagnostic, nullptr);
+        const bool started = fly_lan_mvp_host(
+            g_mvp_session.get(), local.c_str(), token.data()) == 1;
+        if (!started) g_mvp_session.reset();
+        return create_bool(env, started, "host LAN session");
+    });
+}
+
+napi_value NearbyMvpInvite(napi_env env, napi_callback_info)
+{
+    return nearby_call(env, "nearbyMvpInvite", [&]() {
+        if (!g_mvp_session) return create_string(env, "", "empty LAN invite");
+        const std::size_t size = fly_lan_mvp_copy_invite(g_mvp_session.get(), nullptr, 0);
+        if (size == 0u || size > 256u) return create_string(env, "", "pending LAN invite");
+        std::string value(size, '\0');
+        if (fly_lan_mvp_copy_invite(g_mvp_session.get(), value.data(), value.size()) != size)
+            return create_string(env, "", "unavailable LAN invite");
+        return create_string(env, value.c_str(), "LAN invite");
     });
 }
 
@@ -2782,6 +2824,20 @@ napi_value NearbyMvpSelectRom(napi_env env, napi_callback_info info)
         g_mvp_timing = flynes::harmony::detect_source_timing(rom.data(), rom.size());
         return create_bool(env, fly_lan_mvp_select_rom(
             g_mvp_session.get(), rom.data(), rom.size()) == 1, "select LAN ROM");
+    });
+}
+
+napi_value NearbyMvpSelectGame(napi_env env, napi_callback_info info)
+{
+    return nearby_call(env, "nearbyMvpSelectGame", [&]() {
+        napi_value arguments[2] = {nullptr, nullptr};
+        nearby_arguments(env, info, 2u, arguments, "nearbyMvpSelectGame");
+        if (!g_mvp_session) return create_bool(env, false, "no LAN session");
+        const std::vector<std::uint8_t> rom = read_buffer(env, arguments[0], "rom");
+        const std::string game_key = read_utf8_string(env, arguments[1], "gameKey");
+        g_mvp_timing = flynes::harmony::detect_source_timing(rom.data(), rom.size());
+        return create_bool(env, fly_lan_mvp_select_game(g_mvp_session.get(), rom.data(),
+            rom.size(), game_key.c_str()) == 1, "select LAN game");
     });
 }
 
@@ -3123,9 +3179,15 @@ napi_value Init(napi_env env, napi_value exports)
              napi_default, nullptr},
             {"nearbyMvpJoin", nullptr, NearbyMvpJoin, nullptr, nullptr, nullptr,
              napi_default, nullptr},
+            {"nearbyMvpHost", nullptr, NearbyMvpHost, nullptr, nullptr, nullptr,
+             napi_default, nullptr},
+            {"nearbyMvpInvite", nullptr, NearbyMvpInvite, nullptr, nullptr, nullptr,
+             napi_default, nullptr},
             {"nearbyMvpSnapshot", nullptr, NearbyMvpSnapshot, nullptr, nullptr, nullptr,
              napi_default, nullptr},
             {"nearbyMvpSelectRom", nullptr, NearbyMvpSelectRom, nullptr, nullptr, nullptr,
+             napi_default, nullptr},
+            {"nearbyMvpSelectGame", nullptr, NearbyMvpSelectGame, nullptr, nullptr, nullptr,
              napi_default, nullptr},
             {"nearbyMvpConfirm", nullptr, NearbyMvpConfirm, nullptr, nullptr, nullptr,
              napi_default, nullptr},

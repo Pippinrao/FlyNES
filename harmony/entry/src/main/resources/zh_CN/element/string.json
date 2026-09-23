@@ -1,6 +1,10 @@
 {
   "string": [
     {
+      "name": "permission_nearby_wifi",
+      "value": "允许 FlyNES 连接另一位玩家的 Wi-Fi 热点。"
+    },
+    {
       "name": "game_center_title",
       "value": "游戏中心"
     },

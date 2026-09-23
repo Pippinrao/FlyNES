@@ -1,6 +1,10 @@
 {
   "string": [
     {
+      "name": "permission_nearby_wifi",
+      "value": "Allow FlyNES to connect to the nearby player's Wi-Fi hotspot."
+    },
+    {
       "name": "module_desc",
       "value": "FlyNES HarmonyOS play module"
     },

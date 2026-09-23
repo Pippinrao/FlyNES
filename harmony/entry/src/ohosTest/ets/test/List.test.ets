@@ -11,6 +11,10 @@ import nearbyUxRestorationTest from './NearbyUxRestoration.test';
 import nearbyMvpScanFlowTest from './NearbyMvpScanFlow.test';
 import nearbyMvpCrossAppTest from './NearbyMvpCrossApp.test';
 import nearbyMvpProductPlayTest from './NearbyMvpProductPlay.test';
+import nearbyMvpHostTest from './NearbyMvpHost.test';
+import nearbyLanNetworkTest from './NearbyLanNetwork.test';
+import nearbyWifiConnectorTest from './NearbyWifiConnector.test';
+import nearbyScanJoinServiceTest from './NearbyScanJoinService.test';
 import builtinPlaySmokeTest from './BuiltinPlaySmoke.test';
 import builtinGameplayAcceptanceTest from './BuiltinGameplayAcceptance.test';
 
@@ -25,6 +29,10 @@ export default function testsuite() {
   }
   if (abilityDelegatorRegistry.getArguments().parameters['-s nearbyMvpOnly'] === 'true') {
     nearbyMvpScanFlowTest();
+    nearbyMvpHostTest();
+    nearbyLanNetworkTest();
+    nearbyWifiConnectorTest();
+    nearbyScanJoinServiceTest();
     return;
   }
   if (abilityDelegatorRegistry.getArguments().parameters['-s nearbyCrossOnly'] === 'true') {
@@ -46,6 +54,10 @@ export default function testsuite() {
   catalogProductServiceTest();
   nearbyServiceTest();
   nearbyMvpScanFlowTest();
+  nearbyMvpHostTest();
+  nearbyLanNetworkTest();
+  nearbyWifiConnectorTest();
+  nearbyScanJoinServiceTest();
   nearbyUxRestorationTest();
   builtinPlaySmokeTest();
   builtinGameplayAcceptanceTest();

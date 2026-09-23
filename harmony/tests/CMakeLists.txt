@@ -322,6 +322,12 @@ else()
 endif()
 add_test(NAME flynes_harmony_nearby_adapter COMMAND flynes_harmony_nearby_adapter_test)
 
+add_executable(flynes_harmony_nearby_lan_interface_selector_test
+    nearby_lan_interface_selector_test.cpp)
+target_compile_features(flynes_harmony_nearby_lan_interface_selector_test PRIVATE cxx_std_17)
+add_test(NAME flynes_harmony_nearby_lan_interface_selector
+    COMMAND flynes_harmony_nearby_lan_interface_selector_test)
+
 add_executable(flynes_harmony_nearby_content_port_v2_test
     nearby_content_port_v2_test.cpp ../nearby/content_port_v2.cpp)
 target_include_directories(flynes_harmony_nearby_content_port_v2_test PRIVATE

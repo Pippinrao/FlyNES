@@ -24,6 +24,10 @@
     <true/>
     <key>MinimumOSVersion</key>
     <string>$(IPHONEOS_DEPLOYMENT_TARGET)</string>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>FlyNES uses your local network to connect two nearby players.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>FlyNES scans a nearby host's invitation QR code.</string>
     <key>UIDeviceFamily</key>
     <array>
         <integer>1</integer>

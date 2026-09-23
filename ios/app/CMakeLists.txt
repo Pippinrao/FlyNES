@@ -64,6 +64,15 @@ set(FLYNES_PRODUCT_SWIFT
     CatalogSourceManagementView.swift
     SettingsView.swift
     NearbyFriendsView.swift
+    NearbyNetworkInvite.swift
+    NearbyGuestNetwork.swift
+    NearbyHotspotLease.swift
+    NearbySessionLeasePolicy.swift
+    NearbyScannedJoinFlow.swift
+    NearbyScannedJoinAdapters.swift
+    NearbyWifiReadiness.swift
+    NearbyQRScanner.swift
+    NearbyScanLifecycle.swift
     NearbyTypography.swift
     NearbyPairingView.swift
     NearbyLobbyView.swift
@@ -74,6 +83,7 @@ set(FLYNES_PRODUCT_SWIFT
 )
 set(FLYNES_PRODUCT_OBJCXX
     bridge/FlyNesAppBridge.mm
+    bridge/FlyNesNearbyBridge.mm
     bridge/FlyNesRuntimeBridge.mm
     platform/FlyNesBookmarkStore.mm
     platform/CatalogScanCoordinator.mm
@@ -121,6 +131,7 @@ add_executable(FlyNES MACOSX_BUNDLE
     ${FLYNES_PRODUCT_OBJCXX}
     ${FLYNES_PRODUCT_METAL}
     bridge/FlyNes-Bridging-Header.h
+    bridge/FlyNesNearbyBridge.h
     metal/FALLBACK.md
     en.lproj/Localizable.strings
     zh-Hans.lproj/Localizable.strings
@@ -207,6 +218,8 @@ target_link_libraries(FlyNES PRIVATE
     "-framework CoreGraphics"
     "-framework ImageIO"
     "-framework AVFoundation"
+    "-framework NetworkExtension"
+    "-framework Security"
 )
 target_link_options(FlyNES PRIVATE
     "-Wl,-dead_strip"
@@ -228,7 +241,7 @@ set_target_properties(FlyNES PROPERTIES
     XCODE_ATTRIBUTE_SWIFT_OBJC_BRIDGING_HEADER
         "${CMAKE_CURRENT_SOURCE_DIR}/bridge/FlyNes-Bridging-Header.h"
     XCODE_ATTRIBUTE_SWIFT_OBJC_INTERFACE_HEADER_NAME "FlyNES-Swift.h"
-    XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS ""
+    XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${CMAKE_CURRENT_SOURCE_DIR}/FlyNES.entitlements"
     XCODE_ATTRIBUTE_DEAD_CODE_STRIPPING YES
     XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "${CMAKE_OSX_DEPLOYMENT_TARGET}"
     XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.flynes.app"
@@ -282,6 +295,7 @@ if(FLYNES_IOS_IS_SIMULATOR AND FLYNES_IOS_BUILD_XCTESTS)
     xctest_add_bundle(FlyNESRuntimeTests FlyNES
         ../tests/PlaybackRuntimeBridgeTests.mm
         ../tests/NearbySessionV2BridgeTests.mm
+        ../tests/NearbyMvpBridgeTests.mm
         ../tests/GamepadOverlayTests.mm
         ../tests/PlaybackAudioPlayerTests.mm
         ../tests/CatalogTitleCoverTests.mm
