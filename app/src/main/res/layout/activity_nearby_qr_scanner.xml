@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nearby_scanner_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/fly_background">
+
+    <SurfaceView
+        android:id="@+id/nearby_scanner_preview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp">
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/nearby_scanner_toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@color/fly_background"
+            app:navigationIcon="@drawable/ic_back"
+            app:navigationIconTint="@color/fly_on_surface"
+            app:title="@string/nearby_action_scanQr"
+            app:titleTextAppearance="@style/TextAppearance.FlyNes.Nearby.PageTitle"
+            app:titleTextColor="@color/fly_on_surface" />
+        <Space android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="1" />
+        <TextView
+            android:id="@+id/nearby_scanner_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp"
+            android:gravity="center"
+            android:background="@drawable/bg_nearby_card"
+            android:text="@string/nearby_scanner_prompt"
+            android:textAppearance="@style/TextAppearance.FlyNes.Nearby.Body"
+            android:textColor="@color/fly_on_surface"
+            android:accessibilityLiveRegion="polite" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/nearby_scanner_retry"
+            style="@style/Widget.FlyNes.Nearby.Primary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:text="@string/nearby_scanner_retry"
+            android:visibility="gone" />
+    </LinearLayout>
+</FrameLayout>

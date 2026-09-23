@@ -17,31 +17,22 @@ import com.flynes.emu.R;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/** Fixed landscape lobby: three summary cards, paged details, guarded confirmation. */
+/** Fixed landscape lobby: session summary beside game and guarded confirmation. */
 @RunWith(AndroidJUnit4.class)
 public final class NearbyLobbyTest {
-    @Test public void firstScreenIsGameHostSeatAndDetailsArePaged() {
+    @Test public void coreFieldsFitInTwoPaneLobby() {
         try (ActivityScenario<NearbyLobbyActivity> scenario =
                      ActivityScenario.launch(NearbyLobbyActivity.class)) {
             scenario.onActivity(activity -> {
                 LinearLayout rows = activity.findViewById(R.id.nearby_lobby_rows);
-                assertEquals(NearbyLobbyActivity.fieldCount(), rows.getChildCount());
-                assertEquals(LinearLayout.HORIZONTAL, rows.getOrientation());
+                LinearLayout game = activity.findViewById(R.id.nearby_lobby_game_rows);
+                assertEquals(NearbyLobbyActivity.fieldCount(), rows.getChildCount() + game.getChildCount());
+                assertEquals(LinearLayout.VERTICAL, rows.getOrientation());
             });
             for (int id : new int[]{R.id.nearby_lobby_row_rom_identity,
                     R.id.nearby_lobby_row_network_owner, R.id.nearby_lobby_row_seat}) {
                 onView(withId(id)).check(matches(isDisplayed()));
             }
-            onView(withId(R.id.nearby_lobby_details)).perform(click());
-            onView(withText(string(R.string.nearby_lobby_friend_name) + "  1/11"))
-                    .check(matches(isDisplayed()));
-            onView(withText(R.string.nearby_details_next)).perform(click());
-            onView(withText(string(R.string.nearby_lobby_identity_fingerprint) + "  2/11"))
-                    .check(matches(isDisplayed()));
-            onView(withText(R.string.nearby_details_previous)).perform(click());
-            onView(withText(string(R.string.nearby_lobby_friend_name) + "  1/11"))
-                    .check(matches(isDisplayed()));
-            onView(withText(R.string.nearby_action_cancel)).perform(click());
             onView(withId(R.id.nearby_lobby_confirm)).check(matches(isDisplayed()));
         }
     }

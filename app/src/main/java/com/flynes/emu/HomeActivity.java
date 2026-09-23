@@ -332,8 +332,15 @@ public final class HomeActivity extends android.app.Activity {
         findViewById(R.id.close_sources).setOnClickListener(view -> showSources(false));
         findViewById(R.id.open_settings).setOnClickListener(
                 view -> startActivity(new Intent(this, SettingsActivity.class)));
-        findViewById(R.id.open_nearby).setOnClickListener(
-                view -> startActivity(new Intent(this, NearbyFriendsActivity.class)));
+        findViewById(R.id.open_nearby).setOnClickListener(view -> {
+            FlyNesApplication app = (FlyNesApplication) getApplication();
+            NearbyMvpSession session = app.nearbyMvpOwner().session();
+            int state = session == null ? NearbyMvpSession.ENDED : session.snapshot()[0];
+            Class<?> target = state == NearbyMvpSession.INVITING
+                    ? NearbyPairingActivity.class : app.nearbyMvpOwner().active()
+                    ? NearbyLobbyActivity.class : NearbyFriendsActivity.class;
+            startActivity(new Intent(this, target));
+        });
         // U02: the top-right entry projects the real connection status. Facts
         // come from the session layer only - this build truthfully reports a
         // clean disconnected state (no pairing flow), never a persisted

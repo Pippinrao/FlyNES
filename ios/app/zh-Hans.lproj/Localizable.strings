@@ -263,6 +263,14 @@
 "nearby.action.create" = "创建联机";
 "nearby.action.enterCode" = "输入配对码";
 "nearby.action.scanQr" = "扫码加入";
+"nearby.role.host.hint" = "向朋友展示房间二维码";
+"nearby.role.guest.hint" = "打开相机扫描房间二维码";
+"nearby.invite.notReady" = "建房可用后将在这里显示房间二维码";
+"nearby.invite.backendUnavailable" = "当前设备暂未接通创建房间功能";
+"nearby.scan.joinUnavailable" = "已识别二维码，当前设备暂未接通加入功能";
+"nearby.scan.cameraUnavailable" = "相机不可用，请检查权限后重试";
+"nearby.scan.retry" = "重新扫码";
+"nearby.network.autoHint" = "优先使用同一局域网；没有局域网时可连接热点";
 "nearby.action.findDevices" = "寻找设备";
 "nearby.action.openFriends" = "好友";
 "nearby.action.backToGameCenter" = "返回游戏大厅";

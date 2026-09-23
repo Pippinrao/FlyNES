@@ -80,6 +80,18 @@ export default function nearbyMvpScanFlowTest(): void {
       expect(port.cancelCalls).assertEqual(1);
     });
 
+    it('ordinary_page_exit_discards_late_scan_without_disconnecting', 0, async () => {
+      const port = new FakeMvpPort();
+      const flow = new NearbyMvpScanFlow(port);
+      const pending = pendingScan();
+      const result = flow.scan(async (): Promise<string> => pending.promise);
+      flow.dismissPage();
+      pending.resolve('flynes-lan-v1:late');
+      expect(await result).assertFalse();
+      expect(port.joinCalls).assertEqual(0);
+      expect(port.cancelCalls).assertEqual(0);
+    });
+
     it('double_tap_starts_only_one_scanner', 0, async () => {
       const port = new FakeMvpPort();
       const flow = new NearbyMvpScanFlow(port);

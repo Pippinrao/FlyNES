@@ -264,6 +264,14 @@
 "nearby.action.create" = "Create Invite";
 "nearby.action.enterCode" = "Enter Pairing Code";
 "nearby.action.scanQr" = "Scan QR Code";
+"nearby.role.host.hint" = "Show the room QR code to a friend";
+"nearby.role.guest.hint" = "Open the camera and scan a room QR code";
+"nearby.invite.notReady" = "A room QR code will appear when hosting is available";
+"nearby.invite.backendUnavailable" = "Creating a room is not available on this device yet.";
+"nearby.scan.joinUnavailable" = "QR scanned. Joining is not available on this device yet.";
+"nearby.scan.cameraUnavailable" = "Camera unavailable. Check permission and try again.";
+"nearby.scan.retry" = "Scan again";
+"nearby.network.autoHint" = "Use the same local Wi-Fi network. If none is available, connect through a hotspot.";
 "nearby.action.findDevices" = "Find Devices";
 "nearby.action.openFriends" = "Friends";
 "nearby.action.backToGameCenter" = "Back to Library";

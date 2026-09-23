@@ -234,9 +234,25 @@ public class MainActivity extends AppCompatActivity {
         appSettings = settings.load();
         if (getIntent().getBooleanExtra("nearby_mvp", false)) {
             NearbyMvpSession lan = ((FlyNesApplication) getApplication()).nearbyMvpOwner().session();
-            if (lan == null || lan.snapshot()[0] != NearbyMvpSession.RUNNING) { finish(); return; }
+            if (lan == null || lan.snapshot()[0] != NearbyMvpSession.RUNNING) {
+                int state = lan == null ? NearbyMvpSession.ENDED : lan.snapshot()[0];
+                if (state == NearbyMvpSession.ENDED) {
+                    ((FlyNesApplication) getApplication()).nearbyMvpOwner().close();
+                    ((FlyNesApplication) getApplication()).nearbyUiHotspot().close();
+                }
+                startActivity(new Intent(this, state == NearbyMvpSession.ENDED
+                        ? NearbyFriendsActivity.class : NearbyLobbyActivity.class));
+                finish();
+                return;
+            }
             nearbyPlay = new NearbyMvpPlayController(this, lan, () -> {
-                startActivity(new Intent(this, NearbyLobbyActivity.class));
+                int state = lan.snapshot()[0];
+                if (state == NearbyMvpSession.ENDED) {
+                    ((FlyNesApplication) getApplication()).nearbyMvpOwner().close();
+                    ((FlyNesApplication) getApplication()).nearbyUiHotspot().close();
+                }
+                startActivity(new Intent(this, state == NearbyMvpSession.ENDED
+                        ? NearbyFriendsActivity.class : NearbyLobbyActivity.class));
                 finish();
             });
             gamepad = new GamepadView(this);
@@ -671,10 +687,11 @@ public class MainActivity extends AppCompatActivity {
         coverExecutor.shutdownNow();
         if (nearbyPlay != null) {
             nearbyPlay.close();
-            gamepad.reset();
+            if (gamepad != null) gamepad.reset();
             session.closeExecutor();
             return;
         }
+        if (gamepad == null) return;
         stopRendering();
         if (view != null) view.release();
         gamepad.reset();

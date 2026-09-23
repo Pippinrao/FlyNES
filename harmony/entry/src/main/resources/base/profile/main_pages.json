@@ -9,7 +9,6 @@
     "pages/Index",
     "pages/NearbyFriends",
     "pages/NearbyPairing",
-    "pages/NearbyLobby",
-    "pages/NearbyFriendsManage"
+    "pages/NearbyLobby"
   ]
 }

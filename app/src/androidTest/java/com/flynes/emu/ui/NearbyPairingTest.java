@@ -47,6 +47,15 @@ import java.util.Locale;
  */
 @RunWith(AndroidJUnit4.class)
 public final class NearbyPairingTest {
+    @org.junit.Before public void resetHostBeforeTest() {
+        ((com.flynes.emu.FlyNesApplication) ApplicationProvider.getApplicationContext())
+                .nearbyMvpOwner().close();
+    }
+
+    @org.junit.After public void closeHostAfterTest() {
+        ((com.flynes.emu.FlyNesApplication) ApplicationProvider.getApplicationContext())
+                .nearbyMvpOwner().close();
+    }
 
     @Test
     public void crossAppHostWaitsForHarmonyGuest() throws Exception {
@@ -338,18 +347,6 @@ public final class NearbyPairingTest {
             SystemClock.sleep(100L);
         }
         throw new AssertionError("Host did not publish a decodable QR image");
-    }
-
-    @Test
-    public void joinPageMatchesApprovedCodeMockup() {
-        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), NearbyPairingActivity.class);
-        intent.putExtra("nearby_mode", NearbyPairingActivity.MODE_JOIN_CODE);
-        try (ActivityScenario<NearbyPairingActivity> ignored = ActivityScenario.launch(intent)) {
-            onView(withId(R.id.nearby_join_block)).check(matches(isDisplayed()));
-            onView(withId(R.id.nearby_join_code_input)).check(matches(isDisplayed()));
-            onView(withId(R.id.nearby_join_submit)).check(matches(isDisplayed()));
-            onView(withId(R.id.nearby_stage_permission_row)).check(doesNotExist());
-        }
     }
 
     @Test

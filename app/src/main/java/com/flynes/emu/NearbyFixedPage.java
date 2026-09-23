@@ -18,7 +18,7 @@ public final class NearbyFixedPage extends LinearLayout {
         }
         boolean largeText = getResources().getConfiguration().fontScale > 1.3f;
         int[] decorative = {R.id.nearby_invite_headline, R.id.nearby_invite_subtitle,
-                R.id.nearby_entry_subtitle};
+                R.id.nearby_entry_subtitle, R.id.nearby_scan_subtitle};
         for (int id : decorative) {
             View copy = findViewById(id);
             if (copy != null) copy.setVisibility(largeText ? View.GONE : View.VISIBLE);

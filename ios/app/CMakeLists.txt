@@ -67,7 +67,6 @@ set(FLYNES_PRODUCT_SWIFT
     NearbyTypography.swift
     NearbyPairingView.swift
     NearbyLobbyView.swift
-    NearbyFriendsManageView.swift
     ControlLayoutEditorView.swift
     RunGameView.swift
     platform/ControlLayoutDraft.swift
@@ -236,6 +235,7 @@ set_target_properties(FlyNES PROPERTIES
     XCODE_ATTRIBUTE_SUPPORTED_DEVICE_FAMILIES "1"
     XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1"
     XCODE_ATTRIBUTE_INFOPLIST_KEY_CFBundleDisplayName "FlyNES"
+    XCODE_ATTRIBUTE_INFOPLIST_KEY_NSCameraUsageDescription "Scan a nearby room QR code"
     XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME AppIcon
 )
 

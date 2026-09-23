@@ -17,7 +17,7 @@ public final class NearbyQrFrame extends FrameLayout {
     public NearbyQrFrame(Context context, AttributeSet attrs) { super(context, attrs); }
     @Override protected void onMeasure(int widthSpec, int heightSpec) {
         int side = Math.min(MeasureSpec.getSize(widthSpec), MeasureSpec.getSize(heightSpec));
-        side = Math.min(side, Math.round(170 * getResources().getDisplayMetrics().density));
+        side = Math.min(side, Math.round(320 * getResources().getDisplayMetrics().density));
         super.onMeasure(MeasureSpec.makeMeasureSpec(side, MeasureSpec.EXACTLY),
                 MeasureSpec.makeMeasureSpec(side, MeasureSpec.EXACTLY));
     }

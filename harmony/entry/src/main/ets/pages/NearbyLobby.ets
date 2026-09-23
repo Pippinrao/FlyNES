@@ -25,6 +25,10 @@ struct NearbyLobby {
 
   aboutToAppear(): void {
     const snapshot = nativeSession.nearbyMvpSnapshot();
+    if (snapshot.state === 4) {
+      void router.replaceUrl({ url: 'pages/NearbyFriends' });
+      return;
+    }
     this.mvpActive = snapshot.state === 3 || snapshot.state === 5 || snapshot.state === 6 || snapshot.state === 7;
     if (!this.mvpActive) return;
     this.updateMvp(snapshot);
@@ -73,6 +77,12 @@ struct NearbyLobby {
 
   private pollMvp(): void {
     const snapshot = nativeSession.nearbyMvpSnapshot();
+    if (snapshot.state === 4) {
+      if (this.timerId !== -1) clearInterval(this.timerId);
+      this.timerId = -1;
+      void router.replaceUrl({ url: 'pages/NearbyFriends' });
+      return;
+    }
     this.updateMvp(snapshot);
     if (snapshot.state === 3 || snapshot.state === 7) {
       this.selectedGame = '';
@@ -97,8 +107,12 @@ struct NearbyLobby {
   }
 
   private leave(): void {
+    void router.replaceUrl({ url: 'pages/GameCenter' });
+  }
+
+  private disconnect(): void {
     if (this.mvpActive) nativeSession.nearbyMvpCancel();
-    router.back();
+    void router.replaceUrl({ url: 'pages/NearbyFriends' });
   }
 
   private confirm(): void {
@@ -118,56 +132,44 @@ struct NearbyLobby {
           .fontFamily('HarmonyOS Sans').fontSize('26vp').fontColor('#F4EFE6').backgroundColor(Color.Transparent)
           .accessibilityText($r('app.string.nearby_back')).onClick(() => { this.leave(); })
         Text($r('app.string.nearby_lobby_title')).fontFamily('HarmonyOS Sans').fontSize(NEARBY_TYPE.pageTitle.size)
-          .fontWeight(FontWeight.Medium).fontColor('#F4EFE6')
+          .fontWeight(FontWeight.Medium).fontColor('#F4EFE6').layoutWeight(1)
+        if (this.mvpActive) {
+          Button($r('app.string.nearby_action_disconnect'), { type: ButtonType.Normal })
+            .id('nearby_lobby_disconnect').height(48).padding({ left: 12, right: 12 })
+            .fontFamily('HarmonyOS Sans').fontSize(NEARBY_TYPE.action.size)
+            .fontColor('#F4EFE6').backgroundColor('#1B1D22')
+            .onClick(() => { this.disconnect(); })
+        }
       }.width('100%').constraintSize({ minHeight: 48 })
       Row({ space: 16 }) {
-        if (this.detailsOpen) {
-          ForEach(nearbyLobbyDetailRows().slice(this.detailIndex, this.detailIndex + 1),
-            (row: NearbyLobbyRow) => { this.fieldRow(row) }, (row: NearbyLobbyRow) => row.label)
-        } else {
-          ForEach(nearbyLobbyFirstScreenRows(),
-            (row: NearbyLobbyRow) => { this.fieldRow(row) }, (row: NearbyLobbyRow) => row.label)
-        }
+        Column({ space: 12 }) {
+          this.fieldRow(nearbyLobbyFirstScreenRows()[1])
+          this.fieldRow(nearbyLobbyFirstScreenRows()[2])
+          if (this.mvpActive) {
+            Text(`P2 · ${this.mvpState === 6 ? 'RUNNING' :
+              this.localReady === 1 ? (this.peerReady === 1 ? 'READY' : 'WAITING FOR P1') : 'CONFIGURED'}`)
+              .id('nearby_lobby_mvp_status').fontFamily('HarmonyOS Sans')
+              .fontSize(NEARBY_TYPE.muted.size).fontColor(this.mvpReason === 0 ? '#BEB8AE' : '#FF6B5E')
+              .width('100%')
+          }
+        }.width('42%').height('100%')
+        Column({ space: 12 }) {
+          this.fieldRow(nearbyLobbyFirstScreenRows()[0])
+          this.action($r('app.string.nearby_lobby_confirm'), 'nearby_lobby_confirm', true,
+            () => { this.confirm(); })
+        }.layoutWeight(1).height('100%').padding(12).backgroundColor('#1B1D22').borderRadius(12)
       }.width('100%').layoutWeight(1).padding(16)
-      if (this.mvpActive) {
-        Text(`P2 · ${this.mvpState === 6 ? 'RUNNING' :
-          this.localReady === 1 ? (this.peerReady === 1 ? 'READY' : 'WAITING FOR P1') : 'CONFIGURED'}`)
-          .id('nearby_lobby_mvp_status').fontFamily('HarmonyOS Sans')
-          .fontSize(NEARBY_TYPE.muted.size).fontColor(this.mvpReason === 0 ? '#BEB8AE' : '#FF6B5E')
-          .width('100%').padding({ left: 16, right: 16 })
-      }
-      Row({ space: 12 }) {
-        if (this.detailsOpen) {
-          this.action($r('app.string.nearby_action_cancel'), 'nearby_lobby_details', false,
-            () => { this.detailsOpen = false; this.detailIndex = 0; })
-        } else {
-          this.action($r('app.string.nearby_diagnostics_title'), 'nearby_lobby_details', false,
-            () => { this.detailsOpen = true; this.detailIndex = 0; })
-        }
-        if (this.detailsOpen) {
-          this.action($r('app.string.nearby_details_previous'), 'nearby_details_previous', false,
-            () => { this.detailIndex = Math.max(0, this.detailIndex - 1); })
-          this.action($r('app.string.nearby_details_next'), 'nearby_details_next', false,
-            () => { this.detailIndex = Math.min(nearbyLobbyDetailRows().length - 1, this.detailIndex + 1); })
-        } else {
-          Blank()
-        }
-        this.action($r('app.string.nearby_lobby_confirm'), 'nearby_lobby_confirm', true,
-          () => { this.confirm(); })
-      }.width('100%').padding({ left: 16, right: 16, top: 8, bottom: 8 })
-        .border({ width: { top: 1 }, color: '#393B40' })
     }.id('nearby_page').width('100%').height('100%').backgroundColor('#121316')
   }
 
   private rowValue(row: NearbyLobbyRow): ResourceStr {
-    if (this.detailsOpen) return nearbyString(row.blocked);
     if (!this.mvpActive) return $r('app.string.nearby_not_supported');
     if (row.label === 'nearby_lobby_rom_identity') {
       if (this.gameError) return $r('app.string.nearby_local_game_missing');
       return this.gameTitle || $r('app.string.nearby_wait_host_game');
     }
-    if (row.label === 'nearby_lobby_network_owner') return 'Android · P1';
-    return 'HarmonyOS · P2';
+    if (row.label === 'nearby_lobby_network_owner') return 'P1';
+    return 'P2';
   }
 
   @Builder
@@ -177,19 +179,15 @@ struct NearbyLobby {
         .fontWeight(FontWeight.Medium).fontColor('#F4EFE6').width('100%')
       Text(this.rowValue(row))
         .fontFamily('HarmonyOS Sans').fontSize(NEARBY_TYPE.muted.size).fontColor('#BEB8AE').width('100%')
-      if (this.detailsOpen) {
-        Text(`${this.detailIndex + 1} / ${nearbyLobbyDetailRows().length}`)
-          .fontFamily('HarmonyOS Sans').fontSize(NEARBY_TYPE.muted.size).fontColor('#BEB8AE')
-      }
-    }.id(row.label).layoutWeight(1).height('100%').padding(16)
+    }.id(row.label).layoutWeight(1).padding(16)
       .justifyContent(FlexAlign.Center).alignItems(HorizontalAlign.Start)
       .backgroundColor('#1B1D22').borderRadius(12)
   }
 
   @Builder
   action(label: Resource, id: string, primary: boolean, action: () => void) {
-    Button(label, { type: ButtonType.Normal }).id(id).layoutWeight(1)
-      .constraintSize({ minHeight: 48 }).padding(8).borderRadius(12)
+    Button(label, { type: ButtonType.Normal }).id(id).width('100%').height(48)
+      .padding(8).borderRadius(12)
       .labelStyle({ maxLines: 2 }).fontFamily('HarmonyOS Sans').fontSize(NEARBY_TYPE.action.size).fontColor(primary ? '#121316' : '#F4EFE6')
       .backgroundColor(primary ? '#FF6B5E' : '#1B1D22')
       .border({ width: 1, color: primary ? '#FF6B5E' : '#393B40' })

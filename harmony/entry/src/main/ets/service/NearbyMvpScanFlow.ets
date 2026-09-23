@@ -34,6 +34,12 @@ export class NearbyMvpScanFlow {
     this.visible = false;
   }
 
+  /** Leave the UI without closing a connection already owned by the native session. */
+  dismissPage(): void {
+    this.disposed = true;
+    this.visible = false;
+  }
+
   leave(): void {
     if (this.disposed) return;
     this.disposed = true;

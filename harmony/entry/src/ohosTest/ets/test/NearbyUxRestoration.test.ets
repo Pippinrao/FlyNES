@@ -46,66 +46,37 @@ async function capture(driver: Driver, label: string): Promise<void> {
 
 export default function nearbyUxRestorationTest() {
   describe('NearbyUxRestoration', () => {
+    it('approved_entry_has_two_roles_without_legacy_actions', 0, async () => {
+      const driver: Driver = await openPage('nearby_friends', '1');
+      await assertFits(driver, 'nearby_action_create');
+      await assertFits(driver, 'nearby_action_scanQr');
+      const oldCode = await driver.waitForComponent(ON.id('nearby_action_enterCode'), 500);
+      expect(oldCode === null || oldCode === undefined).assertTrue();
+    });
     for (const scale of ['1', '1.3', '2']) {
       it(`single_screen_landscape_${scale}`, 0, async () => {
         const driver: Driver = await openPage('nearby_friends', scale);
-        for (const id of ['nearby_action_create', 'nearby_action_enterCode',
-          'nearby_action_scanQr', 'nearby_secondary_action']) {
+        for (const id of ['nearby_action_create', 'nearby_action_scanQr']) {
           await assertFits(driver, id);
         }
         await capture(driver, `entry-${scale}`);
-        // Unsupported entry stays on the same page; it does not start the legacy code workflow.
-        await (await control(driver, 'nearby_action_enterCode')).click();
-        await assertFits(driver, 'nearby_action_scanQr');
-        await (await control(driver, 'nearby_action_create')).click();
-        await assertFits(driver, 'nearby_action_scanQr');
-        await (await control(driver, 'nearby_action_scanQr')).click();
-        await assertFits(driver, 'nearby_action_cancel');
-        await assertFits(driver, 'nearby_mvp_scan_action');
-        await assertFits(driver, 'nearby_pairing_status', false);
-        await capture(driver, `scan-${scale}`);
-        // Do not launch the camera or change backend state in this layout test.
-        await (await control(driver, 'nearby_action_cancel')).click();
-        await (await control(driver, 'nearby_tab_friends')).click();
-        expect(await driver.waitForIdle(100, 1500)).assertTrue();
-        await driver.delayMs(150);
-        expect(await (await control(driver, 'nearby_secondary_action')).getText())
-          .assertEqual(localized('nearby_friends_manage'));
-        await (await control(driver, 'nearby_secondary_action')).click();
-        for (const id of ['nearby_friends_rename', 'nearby_friends_delete',
-          'nearby_friends_block', 'nearby_friends_identity_reset']) {
-          await assertFits(driver, id);
-        }
-        await capture(driver, `manage-${scale}`);
-        await (await control(driver, 'nearby_friends_rename')).click();
-        await assertFits(driver, 'nearby_friends_identity_reset');
+        const oldCode = await driver.waitForComponent(ON.id('nearby_action_enterCode'), 200);
+        const oldFriends = await driver.waitForComponent(ON.id('nearby_tab_friends'), 200);
+        expect(oldCode === null || oldCode === undefined).assertTrue();
+        expect(oldFriends === null || oldFriends === undefined).assertTrue();
       });
     }
 
     for (const scale of ['1', '1.3', '2']) {
-    it(`lobby_has_fixed_summary_and_paged_details_${scale}`, 0, async () => {
+    it(`lobby_has_core_fields_and_inline_action_${scale}`, 0, async () => {
       const driver: Driver = await openPage('nearby_lobby', scale);
       for (const id of ['nearby_lobby_rom_identity', 'nearby_lobby_network_owner', 'nearby_lobby_seat']) {
         await assertFits(driver, id, false);
       }
       await assertFits(driver, 'nearby_lobby_confirm');
-      await assertFits(driver, 'nearby_lobby_details');
       await capture(driver, `lobby-${scale}`);
-      await (await control(driver, 'nearby_lobby_details')).click();
-      expect(await driver.waitForIdle(100, 1500)).assertTrue();
-      await driver.delayMs(150);
-      expect(await (await control(driver, 'nearby_lobby_details')).getText())
-        .assertEqual(localized('nearby_action_cancel'));
-      await assertFits(driver, 'nearby_lobby_friend_name', false);
-      await (await control(driver, 'nearby_details_next')).click();
-      await assertFits(driver, 'nearby_lobby_identity_fingerprint', false);
-      await assertFits(driver, 'nearby_lobby_details');
-      await assertFits(driver, 'nearby_details_previous');
-      await assertFits(driver, 'nearby_details_next');
-      await assertFits(driver, 'nearby_lobby_confirm');
-      await capture(driver, `details-${scale}`);
-      await (await control(driver, 'nearby_details_previous')).click();
-      await assertFits(driver, 'nearby_lobby_friend_name', false);
+      const details = await driver.waitForComponent(ON.id('nearby_lobby_details'), 200);
+      expect(details === null || details === undefined).assertTrue();
     });
     }
   });

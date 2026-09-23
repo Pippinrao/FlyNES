@@ -1020,6 +1020,9 @@
       "name": "nearby_action_scanQr",
       "value": "Scan QR Code"
     },
+    { "name": "nearby_role_host_hint", "value": "Show the room QR code to a friend" },
+    { "name": "nearby_role_guest_hint", "value": "Open the camera and scan a room QR code" },
+    { "name": "nearby_network_auto_hint", "value": "Use the same local network; if none is available, connect through a hotspot." },
     {
       "name": "nearby_action_findDevices",
       "value": "Find Devices"

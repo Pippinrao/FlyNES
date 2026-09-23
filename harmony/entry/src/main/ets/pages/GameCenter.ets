@@ -285,7 +285,13 @@ struct GameCenter {
       .backgroundColor('#00000000')
       .borderRadius(12)
       .onClick(() => {
-        void router.pushUrl({ url: 'pages/NearbyFriends' });
+          const session = nativeProduct.nearbyMvpSnapshot();
+          if (session.state === 2) {
+            void router.pushUrl({ url: 'pages/NearbyPairing', params: { mode: 'scan', resume: 'true' } });
+          } else {
+            void router.pushUrl({ url: session.state === 3 || session.state === 5 ||
+              session.state === 6 || session.state === 7 ? 'pages/NearbyLobby' : 'pages/NearbyFriends' });
+          }
       })
     }
     .flexShrink(0)

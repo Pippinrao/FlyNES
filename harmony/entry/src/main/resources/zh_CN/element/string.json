@@ -988,6 +988,9 @@
       "name": "nearby_action_scanQr",
       "value": "扫码加入"
     },
+    { "name": "nearby_role_host_hint", "value": "向朋友展示房间二维码" },
+    { "name": "nearby_role_guest_hint", "value": "打开相机扫描房间二维码" },
+    { "name": "nearby_network_auto_hint", "value": "优先使用同一局域网；没有局域网时可连接热点" },
     {
       "name": "nearby_action_findDevices",
       "value": "寻找设备"

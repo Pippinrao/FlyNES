@@ -20,7 +20,7 @@ public class NearbyLandscapeTest {
     @Test public void allPagesFitShortLandscapeWithLargeText() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
             int[] layouts = {R.layout.activity_nearby_friends, R.layout.activity_nearby_pairing,
-                    R.layout.activity_nearby_lobby, R.layout.activity_nearby_friends_manage};
+                    R.layout.activity_nearby_lobby};
             for (String language : new String[]{"zh-CN", "en"}) {
                 for (float scale : new float[]{1f, 1.3f, 2f}) {
                     for (int width : new int[]{640, 736, 844}) {
@@ -35,19 +35,22 @@ public class NearbyLandscapeTest {
                             ViewGroup page = (ViewGroup)LayoutInflater.from(context).inflate(layout, null);
                             if (layout == R.layout.activity_nearby_lobby) {
                                 android.widget.LinearLayout rows = page.findViewById(R.id.nearby_lobby_rows);
+                                android.widget.LinearLayout gameRows = page.findViewById(R.id.nearby_lobby_game_rows);
                                 for (int label : new int[]{R.string.nearby_lobby_rom_identity,
                                         R.string.nearby_lobby_network_owner, R.string.nearby_lobby_seat}) {
+                                    android.widget.LinearLayout parent = label == R.string.nearby_lobby_rom_identity
+                                            ? gameRows : rows;
                                     android.widget.LinearLayout row = (android.widget.LinearLayout)
-                                            LayoutInflater.from(context).inflate(R.layout.view_nearby_lobby_row, rows, false);
+                                            LayoutInflater.from(context).inflate(R.layout.view_nearby_lobby_row, parent, false);
                                     android.widget.LinearLayout.LayoutParams params =
-                                            new android.widget.LinearLayout.LayoutParams(0, -1, 1f);
-                                    params.setMarginStart(rows.getChildCount() == 0 ? 0 :
-                                            Math.round(16 * context.getResources().getDisplayMetrics().density));
+                                            new android.widget.LinearLayout.LayoutParams(-1, -2);
+                                    params.topMargin = parent.getChildCount() == 0 ? 0 :
+                                            Math.round(12 * context.getResources().getDisplayMetrics().density);
                                     row.setLayoutParams(params);
                                     row.setGravity(android.view.Gravity.CENTER_VERTICAL);
                                     ((TextView)row.getChildAt(0)).setText(label);
                                     ((TextView)row.getChildAt(1)).setText(R.string.nearby_not_supported);
-                                    rows.addView(row);
+                                    parent.addView(row);
                                 }
                                 TextView status = page.findViewById(R.id.nearby_lobby_confirm_reason);
                                 status.setText(R.string.nearby_config_waitingConfirm);
@@ -86,7 +89,7 @@ public class NearbyLandscapeTest {
                             androidx.core.os.LocaleListCompat.forLanguageTags("zh-CN")));
         Class[] pages = {com.flynes.emu.NearbyFriendsActivity.class,
                 com.flynes.emu.NearbyPairingActivity.class,
-                com.flynes.emu.NearbyLobbyActivity.class, com.flynes.emu.NearbyFriendsManageActivity.class};
+                com.flynes.emu.NearbyLobbyActivity.class};
         try { for (Class page : pages) {
             android.content.Intent intent = new android.content.Intent(
                     InstrumentationRegistry.getInstrumentation().getTargetContext(), page);

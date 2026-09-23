@@ -34,14 +34,54 @@
     XCTAssertTrue([root waitForExistenceWithTimeout:10]);
 }
 
+- (void)testApprovedEntryHasOnlyTwoFittingRoles {
+    XCUIDevice.sharedDevice.orientation = UIDeviceOrientationLandscapeLeft;
+    XCUIApplication *app = [self launchApp];
+    [self openNearby:app];
+    XCUIElement *create = [self elementWithIdentifier:@"nearby_action_create" inApp:app];
+    XCUIElement *scan = [self elementWithIdentifier:@"nearby_action_scan_qr" inApp:app];
+    XCTAssertTrue(create.isHittable);
+    XCTAssertTrue(scan.isHittable);
+    XCTAssertFalse([self elementWithIdentifier:@"nearby_action_enter_code" inApp:app].exists);
+    XCTAssertFalse([self elementWithIdentifier:@"nearby_tab_friends" inApp:app].exists);
+    XCTAssertFalse([self elementWithIdentifier:@"nearby_find_devices" inApp:app].exists);
+    CGRect screen = app.windows.firstMatch.frame;
+    XCTAssertTrue(CGRectContainsRect(screen, create.frame));
+    XCTAssertTrue(CGRectContainsRect(screen, scan.frame));
+}
+
+- (void)testScanOpensCameraWithoutAnotherAction {
+    XCUIDevice.sharedDevice.orientation = UIDeviceOrientationLandscapeLeft;
+    XCUIApplication *app = [self launchApp];
+    [self openNearby:app];
+    [[self elementWithIdentifier:@"nearby_action_scan_qr" inApp:app] tap];
+    XCTAssertTrue([[self elementWithIdentifier:@"nearby_camera_preview" inApp:app]
+        waitForExistenceWithTimeout:10]);
+    XCTAssertFalse([self elementWithIdentifier:@"nearby_scan_switch_to_code" inApp:app].exists);
+}
+
+- (void)testLobbyFitsWithoutScrollOrDiagnosticPaging {
+    XCUIDevice.sharedDevice.orientation = UIDeviceOrientationLandscapeLeft;
+    XCUIApplication *app = [[XCUIApplication alloc] initWithBundleIdentifier:@"com.flynes.app"];
+    app.launchArguments = @[@"-flynes.test.nearby_lobby", @"-AppleLanguages", @"(en)"];
+    [app launch];
+    XCUIElement *game = [self elementWithIdentifier:@"nearby_lobby_row_rom_identity" inApp:app];
+    XCUIElement *confirm = [self elementWithIdentifier:@"nearby_lobby_confirm" inApp:app];
+    XCTAssertTrue([game waitForExistenceWithTimeout:10]);
+    XCTAssertTrue(confirm.exists);
+    XCTAssertEqual(app.scrollViews.count, 0);
+    XCTAssertFalse([self elementWithIdentifier:@"nearby_lobby_details" inApp:app].exists);
+    XCTAssertTrue(CGRectContainsRect(app.windows.firstMatch.frame, confirm.frame));
+}
+
 - (void)testTYPO_I_roles_and_scaling {
     // Run at two simctl ui content_size settings and compare TYPO_METRIC.
     // iOS 16 ignores -UIPreferredContentSizeCategoryName on app launch.
     self.continueAfterFailure = NO;
     XCUIApplication *app = [self launchApp];
     [self openNearby:app];
-    XCUIElement *n00Title = [self elementWithIdentifier:@"nearby_entry_headline" inApp:app];
-    XCUIElement *n00Muted = [self elementWithIdentifier:@"nearby_entry_subtitle" inApp:app];
+    XCUIElement *n00Title = app.staticTexts[@"nearby_action_create"];
+    XCUIElement *n00Muted = app.staticTexts[@"nearby_role_host_hint"];
     XCTAssertTrue([n00Title waitForExistenceWithTimeout:10]);
     XCTAssertTrue(n00Muted.exists);
     CGFloat n00TitleH = n00Title.frame.size.height;

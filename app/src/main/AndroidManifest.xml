@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
+        android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Nearby 扫码加入: declared here, requested only when the user opens the scan entry (design 2026-09-13 4.2). -->
     <uses-permission android:name="android.permission.CAMERA" />
@@ -61,6 +66,11 @@
             android:exported="false"
             android:screenOrientation="sensorLandscape"
             android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
+            android:name=".NearbyQrScannerActivity"
+            android:exported="false"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
         <!--
           配对 and 大厅 are declared because on Android the manifest is the navigation registry: an
           activity missing here cannot be started at all, not even from a page that exists to
@@ -79,11 +89,6 @@
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".NearbyLobbyActivity"
-            android:exported="false"
-            android:screenOrientation="sensorLandscape"
-            android:configChanges="orientation|screenSize|keyboardHidden" />
-        <activity
-            android:name=".NearbyFriendsManageActivity"
             android:exported="false"
             android:screenOrientation="sensorLandscape"
             android:configChanges="orientation|screenSize|keyboardHidden" />

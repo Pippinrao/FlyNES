@@ -16,7 +16,7 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 
 /**
- * Fixed landscape game / host / seat summary with paged technical details.
+ * Fixed landscape game / host / seat summary.
  * The existing session owner retains the pending-configuration confirmation guard.
  */
 public final class NearbyLobbyActivity extends AppCompatActivity {
@@ -46,40 +46,19 @@ public final class NearbyLobbyActivity extends AppCompatActivity {
                     R.string.nearby_blocked_mode_gate},
     };
 
-    /** Diagnostic fields stay in details, not on the mockup first screen. */
-    private static final int[][] DETAILS = {
-            {R.id.nearby_lobby_row_friend_name, R.string.nearby_lobby_friend_name,
-                    R.string.nearby_blocked_session_read},
-            {R.id.nearby_lobby_row_identity_fingerprint, R.string.nearby_lobby_identity_fingerprint,
-                    R.string.nearby_blocked_session_read},
-            {R.id.nearby_lobby_row_authority_capability, R.string.nearby_lobby_authority_capability,
-                    R.string.nearby_blocked_session_read},
-            {R.id.nearby_lobby_row_resource_risk, R.string.nearby_lobby_resource_risk,
-                    R.string.nearby_blocked_session_read},
-            {R.id.nearby_lobby_row_rom_local_state, R.string.nearby_lobby_rom_local_state,
-                    R.string.nearby_blocked_rom_transfer},
-            {R.id.nearby_lobby_row_rom_transfer_confirm, R.string.nearby_lobby_rom_transfer_confirm,
-                    R.string.nearby_blocked_rom_transfer},
-            {R.id.nearby_lobby_row_rom_transfer_progress, R.string.nearby_lobby_rom_transfer_progress,
-                    R.string.nearby_blocked_rom_transfer},
-            {R.id.nearby_lobby_row_profile_verified, R.string.nearby_lobby_profile_verified,
-                    R.string.nearby_blocked_profile_verify},
-            {R.id.nearby_lobby_row_mode_expected, R.string.nearby_lobby_mode_expected,
-                    R.string.nearby_blocked_mode_gate},
-            {R.id.nearby_lobby_row_local_audio, R.string.nearby_lobby_local_audio,
-                    R.string.nearby_blocked_local_mute},
-            {R.id.nearby_lobby_row_confirm_invalidated, R.string.nearby_lobby_confirm_invalidated,
-                    R.string.nearby_blocked_session_read},
-    };
-
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
         setContentView(R.layout.activity_nearby_lobby);
 
         MaterialToolbar toolbar = findViewById(R.id.nearby_lobby_toolbar);
-        toolbar.setNavigationOnClickListener(view -> {
+        toolbar.setNavigationOnClickListener(view -> leavePage());
+        toolbar.inflateMenu(R.menu.nearby_lobby_actions);
+        toolbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() != R.id.nearby_lobby_disconnect) return false;
             if (mvpOwner != null) mvpOwner.close();
-            finish();
+            ((FlyNesApplication) getApplication()).nearbyUiHotspot().close();
+            returnToEntry();
+            return true;
         });
 
         View root = findViewById(R.id.nearby_lobby_root);
@@ -93,10 +72,11 @@ public final class NearbyLobbyActivity extends AppCompatActivity {
         root.requestApplyInsets();
 
         LinearLayout rows = findViewById(R.id.nearby_lobby_rows);
+        LinearLayout gameRows = findViewById(R.id.nearby_lobby_game_rows);
         for (int[] field : FIRST_SCREEN) {
-            rows.addView(buildRow(field, rows));
+            LinearLayout parent = field[0] == R.id.nearby_lobby_row_rom_identity ? gameRows : rows;
+            parent.addView(buildRow(field, parent));
         }
-        findViewById(R.id.nearby_lobby_details).setOnClickListener(view -> showDetail(0));
 
         confirm = findViewById(R.id.nearby_lobby_confirm);
         confirmReason = findViewById(R.id.nearby_lobby_confirm_reason);
@@ -178,7 +158,7 @@ public final class NearbyLobbyActivity extends AppCompatActivity {
             ((TextView) gameRow.getChildAt(1)).setText(mvpOwner.gameTitle() + " · " + getString(R.string.nearby_choose_game));
             gameRow.setContentDescription(getString(R.string.nearby_choose_game));
             LinearLayout hostRow = findViewById(R.id.nearby_lobby_row_network_owner);
-            ((TextView) hostRow.getChildAt(1)).setText("Android · P1");
+            ((TextView) hostRow.getChildAt(1)).setText(R.string.nearby_role_host);
             LinearLayout seatRow = findViewById(R.id.nearby_lobby_row_seat);
             ((TextView) seatRow.getChildAt(1)).setText("P1 ↔ P2");
             confirm.setEnabled(snapshot[0] == NearbyMvpSession.CONFIGURING && snapshot[5] != 0 && snapshot[6] != 0 && snapshot[7] == 0);
@@ -186,6 +166,10 @@ public final class NearbyLobbyActivity extends AppCompatActivity {
                     ? R.string.nearby_config_confirmed : R.string.nearby_lobby_confirm);
             if (snapshot[0] == NearbyMvpSession.ENDED) {
                 confirmReason.setText(R.string.nearby_mvp_connection_failed);
+                mvpOwner.close();
+                ((FlyNesApplication) getApplication()).nearbyUiHotspot().close();
+                returnToEntry();
+                return;
             } else if (snapshot[7] != 0 && snapshot[8] == 0) {
                 confirmReason.setText(R.string.nearby_config_waitingConfirm);
             } else if (snapshot[5] != 0 && snapshot[6] != 0) {
@@ -232,25 +216,26 @@ public final class NearbyLobbyActivity extends AppCompatActivity {
         confirm.setContentDescription(confirm.getText() + ", " + confirmReason.getText());
     }
 
-    private void showDetail(int index) {
-        int[] field = DETAILS[index];
-        com.google.android.material.dialog.MaterialAlertDialogBuilder dialog =
-                new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-                .setTitle(getString(field[1]) + "  " + (index + 1) + "/" + DETAILS.length)
-                .setMessage(field[2])
-                .setNeutralButton(R.string.nearby_action_cancel, null);
-        if (index > 0) dialog.setNegativeButton(R.string.nearby_details_previous,
-                (which, action) -> showDetail(index - 1));
-        if (index + 1 < DETAILS.length) dialog.setPositiveButton(R.string.nearby_details_next,
-                (which, action) -> showDetail(index + 1));
-        dialog.show();
+    private void returnToEntry() {
+        if (isFinishing()) return;
+        startActivity(new Intent(this, NearbyFriendsActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP));
+        finish();
     }
+
+    private void leavePage() {
+        startActivity(new Intent(this, HomeActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP));
+        finish();
+    }
+
+    @Override public void onBackPressed() { leavePage(); }
 
     public int boundLinkState() {
         return boundLinkState;
     }
 
-    /** First-screen field count: game / host / seat. Details are behind a separate control. */
+    /** Core fields: game / host / seat. */
     public static int fieldCount() {
         return FIRST_SCREEN.length;
     }
@@ -260,9 +245,9 @@ public final class NearbyLobbyActivity extends AppCompatActivity {
                 .inflate(R.layout.view_nearby_lobby_row, parent, false);
         row.setId(field[0]);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
-        params.setMarginStart(parent.getChildCount() == 0 ? 0 : Math.round(
-                16 * getResources().getDisplayMetrics().density));
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.topMargin = parent.getChildCount() == 0 ? 0 : Math.round(
+                12 * getResources().getDisplayMetrics().density);
         row.setLayoutParams(params);
         row.setGravity(android.view.Gravity.CENTER_VERTICAL);
 

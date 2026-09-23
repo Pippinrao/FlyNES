@@ -14,6 +14,7 @@ public final class FlyNesApplication extends Application {
     private NearbyAvailability<NearbySessionOwner> nearbyAvailability;
     private NearbySession nearbySession;
     private NearbyMvpOwner nearbyMvpOwner;
+    private final NearbyUiHotspot nearbyUiHotspot = new NearbyUiHotspot();
 
     @Override public void onCreate() {
         super.onCreate();
@@ -51,6 +52,7 @@ public final class FlyNesApplication extends Application {
     }
 
     public NearbyMvpOwner nearbyMvpOwner() { return nearbyMvpOwner; }
+    NearbyUiHotspot nearbyUiHotspot() { return nearbyUiHotspot; }
 
     public NearbyAvailability.Status nearbyStatus() {
         if (nearbyAvailability == null) {
