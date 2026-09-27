@@ -20,7 +20,7 @@ public class NearbyLandscapeTest {
     @Test public void allPagesFitShortLandscapeWithLargeText() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
             int[] layouts = {R.layout.activity_nearby_friends, R.layout.activity_nearby_pairing,
-                    R.layout.activity_nearby_lobby};
+                    R.layout.activity_nearby_lobby, R.layout.activity_nearby_qr_scanner};
             for (String language : new String[]{"zh-CN", "en"}) {
                 for (float scale : new float[]{1f, 1.3f, 2f}) {
                     for (int width : new int[]{640, 736, 844}) {
@@ -45,22 +45,35 @@ public class NearbyLandscapeTest {
                                     android.widget.LinearLayout.LayoutParams params =
                                             new android.widget.LinearLayout.LayoutParams(-1, -2);
                                     params.topMargin = parent.getChildCount() == 0 ? 0 :
-                                            Math.round(12 * context.getResources().getDisplayMetrics().density);
+                                            Math.round(8 * context.getResources().getDisplayMetrics().density);
                                     row.setLayoutParams(params);
                                     row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+                                    row.setPadding(0, 0, 0, 0);
+                                    ((android.widget.LinearLayout.LayoutParams) row.getChildAt(1).getLayoutParams()).topMargin =
+                                            Math.round(4 * context.getResources().getDisplayMetrics().density);
                                     ((TextView)row.getChildAt(0)).setText(label);
-                                    ((TextView)row.getChildAt(1)).setText(R.string.nearby_not_supported);
+                                    if (label == R.string.nearby_lobby_rom_identity) row.getChildAt(0).setVisibility(View.GONE);
+                                    else ((TextView)row.getChildAt(0)).setText(label == R.string.nearby_lobby_network_owner ? "P1" : "P2");
+                                    ((TextView)row.getChildAt(1)).setText(label == R.string.nearby_lobby_rom_identity
+                                            ? R.string.nearby_choose_game : R.string.nearby_player_peer);
                                     parent.addView(row);
                                 }
                                 TextView status = page.findViewById(R.id.nearby_lobby_confirm_reason);
-                                status.setText(R.string.nearby_config_waitingConfirm);
+                                status.setText(R.string.nearby_game_paused);
                                 status.setVisibility(View.VISIBLE);
+                                page.findViewById(R.id.nearby_lobby_resume).setVisibility(View.VISIBLE);
+                                page.findViewById(R.id.nearby_lobby_choose_game).setVisibility(View.VISIBLE);
                             }
                             if (layout == R.layout.activity_nearby_pairing) {
                                 page.findViewById(R.id.nearby_create_block).setVisibility(View.VISIBLE);
                                 page.findViewById(R.id.nearby_invite_qr_wrap).setVisibility(View.VISIBLE);
                                 ((TextView)page.findViewById(R.id.nearby_invite_code_value))
                                         .setText(R.string.nearby_mvp_connection_failed);
+                            }
+                            if (layout == R.layout.activity_nearby_qr_scanner) {
+                                page.findViewById(R.id.nearby_scanner_retry).setVisibility(View.VISIBLE);
+                                ((TextView) page.findViewById(R.id.nearby_scanner_status))
+                                        .setText(R.string.nearby_scanner_camera_unavailable);
                             }
                             measure(page, width, 312);
                             try {
@@ -75,6 +88,24 @@ public class NearbyLandscapeTest {
                 }
             }
         });
+    }
+
+    @Test public void scannerKeepsCameraLeftAndHeaderOutsidePreview() {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+            ViewGroup page = inflate(R.layout.activity_nearby_qr_scanner);
+            measure(page, 736, 312);
+            Rect camera = bounds(page, page.findViewById(R.id.nearby_scanner_preview));
+            Rect status = bounds(page, page.findViewById(R.id.nearby_scanner_status));
+            Rect header = bounds(page, page.findViewById(R.id.nearby_scanner_toolbar));
+            assertTrue("camera must be left of status, not behind it", camera.right <= status.left);
+            assertTrue("header must be outside camera preview", header.bottom <= camera.top);
+        });
+    }
+
+    private static Rect bounds(ViewGroup root, View view) {
+        Rect result = new Rect(0, 0, view.getWidth(), view.getHeight());
+        root.offsetDescendantRectToMyCoords(view, result);
+        return result;
     }
 
     @Test public void captureActualPages() throws Exception {

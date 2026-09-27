@@ -35,6 +35,7 @@ final class NearbyMvpPlayController implements AutoCloseable {
     private volatile boolean audioRunning;
     private boolean navigationQueued;
     private long published = -1;
+    private boolean wasPaused;
     private volatile long writtenSamples;
 
     NearbyMvpPlayController(MainActivity activity, NearbyMvpSession session, Runnable returnToLobby) {
@@ -63,7 +64,14 @@ final class NearbyMvpPlayController implements AutoCloseable {
         buttons = value;
     }
     void pause(boolean value) { session.setPaused(value); }
-    void returnLobby() { buttons = 0; session.returnLobby(); }
+    void resumeGame() { session.resumeGame(); }
+    void returnLobby() {
+        buttons = 0;
+        if (session.setPaused(true) && !navigationQueued) {
+            navigationQueued = true;
+            activity.runOnUiThread(returnToLobby);
+        }
+    }
 
     void start(boolean audioEnabled) {
         if (loop != null) return;
@@ -102,6 +110,10 @@ final class NearbyMvpPlayController implements AutoCloseable {
             }
             return;
         }
+        boolean paused = state.length > 11 && state[11] != 0;
+        if (wasPaused && !paused) activity.runOnUiThread(activity::onNearbyResumed);
+        wasPaused = paused;
+        if (paused) { audioQueue.clear(); return; }
         session.submitInput(buttons);
         long frame = session.completedFrames();
         if (frame > 0) frameView.onFrameAvailable(frame);

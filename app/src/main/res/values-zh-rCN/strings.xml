@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="nearby_change_game">更换游戏</string>
+    <string name="nearby_player_local">本机</string>
+    <string name="nearby_player_peer">另一位玩家</string>
+    <string name="nearby_game_paused">游戏已暂停</string>
     <string name="nearby_choose_game">选择游戏</string>
     <string name="nearby_wait_host_game">等待房主选择游戏</string>
     <string name="nearby_game_preparing">正在准备已选游戏</string>
@@ -370,7 +374,9 @@
       <string name="nearby_scanner_prompt">将房间二维码放入取景框</string>
       <string name="nearby_scanner_retry">重新扫码</string>
       <string name="nearby_scanner_camera_unavailable">相机不可用，请检查权限后重试</string>
-      <string name="nearby_scanner_join_unavailable">已识别二维码，当前设备暂未接通加入功能</string>
+      <string name="nearby_scanner_join_unavailable">加入失败。请确认两台设备在同一本地网络，再重新扫码。</string>
+      <string name="nearby_scanner_recognized">二维码已识别</string>
+      <string name="nearby_scanner_invalid">这不是房间邀请，请扫描房主的二维码。</string>
       <string name="nearby_network_auto_hint">优先使用同一局域网；没有局域网时可连接热点</string>
       <string name="nearby_network_lan_selected">已自动选择局域网</string>
       <string name="nearby_network_hotspot_selected">已自动选择热点网络</string>

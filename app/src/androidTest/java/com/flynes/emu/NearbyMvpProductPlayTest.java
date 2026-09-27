@@ -75,6 +75,7 @@ public final class NearbyMvpProductPlayTest {
         assertEquals(NearbyMvpSession.RUNNING, session.snapshot()[0]);
         byte[] connectedId = session.sessionId();
         app.nearbyMvpOwner().gameTitle(query.isEmpty() ? "Local game" : query);
+        app.nearbyMvpOwner().gameKey(gameKey);
         try (ActivityScenario<MainActivity> page = ActivityScenario.launch(
                 new Intent(app, MainActivity.class).putExtra("nearby_mvp", true))) {
             SystemClock.sleep(6000);
@@ -122,9 +123,20 @@ public final class NearbyMvpProductPlayTest {
             assertTrue("Resume must advance the same game", session.completedFrames() > paused + 10);
             onView(withId(R.id.pause_button)).perform(click());
             onView(withId(R.id.pause_game_center)).perform(click());
-            waitState(session, NearbyMvpSession.LOBBY);
+            waitState(session, NearbyMvpSession.RUNNING);
             SystemClock.sleep(700);
-            onView(withId(R.id.nearby_lobby_row_rom_identity)).perform(click());
+            long roomFrame = session.completedFrames();
+            SystemClock.sleep(600);
+            assertEquals("Room must retain paused progress", roomFrame, session.completedFrames());
+            assertEquals(gameKey, app.nearbyMvpOwner().gameKey());
+            onView(withId(R.id.nearby_lobby_resume)).perform(click());
+            SystemClock.sleep(1200);
+            assertTrue("Room continue must resume original progress", session.completedFrames() > roomFrame + 10);
+            assertArrayEquals(connectedId, session.sessionId());
+            onView(withId(R.id.pause_button)).perform(click());
+            onView(withId(R.id.pause_game_center)).perform(click());
+            SystemClock.sleep(700);
+            onView(withId(R.id.nearby_lobby_choose_game)).perform(click());
             SystemClock.sleep(1000);
             clearCatalogSearch();
             onView(withId(R.id.category_builtin)).perform(click());
@@ -158,9 +170,9 @@ public final class NearbyMvpProductPlayTest {
             if (!query.isEmpty()) {
                 onView(withId(R.id.pause_button)).perform(click());
                 onView(withId(R.id.pause_game_center)).perform(click());
-                waitState(session, NearbyMvpSession.LOBBY);
+                waitState(session, NearbyMvpSession.RUNNING);
                 SystemClock.sleep(700);
-                onView(withId(R.id.nearby_lobby_row_rom_identity)).perform(click());
+                onView(withId(R.id.nearby_lobby_choose_game)).perform(click());
                 SystemClock.sleep(1000);
                 clearCatalogSearch();
                 onView(withId(R.id.category_all)).perform(click());

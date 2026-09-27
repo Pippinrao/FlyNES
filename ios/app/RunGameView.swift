@@ -57,7 +57,7 @@ struct NearbyRunGameContainer: View {
                     gameTitle: FlyNesNearbyBridge.sharedInstance.gameTitle,
                     onPauseCommand: { command in
             if command == "game_center" {
-                _ = FlyNesNearbyBridge.sharedInstance.returnLobby()
+                _ = FlyNesNearbyBridge.sharedInstance.setPaused(true)
                 dismiss()
             }
         })

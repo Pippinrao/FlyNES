@@ -21,6 +21,16 @@ public final class NearbyMvpExternalGuestTest {
         String invite = InstrumentationRegistry.getArguments().getString("crossAppInvite", "");
         Assume.assumeTrue("Run only with an external simulator host", !invite.isEmpty());
         assertTrue("External invitation is required", invite.startsWith("flynes-lan-v1:"));
+        // Physical devices can defer ActivityScenario's launch from a background
+        // instrumentation process. Establish the foreground before the peer starts.
+        try (android.os.ParcelFileDescriptor descriptor = InstrumentationRegistry
+                .getInstrumentation().getUiAutomation().executeShellCommand(
+                        "am start -W -n com.flynes.emu/.HomeActivity");
+             java.io.FileInputStream output = new java.io.FileInputStream(descriptor.getFileDescriptor())) {
+            String foreground = new String(output.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            assertTrue("Game center must enter the foreground: " + foreground,
+                    foreground.contains("Status: ok"));
+        }
         NearbyMvpOwner owner = app.nearbyMvpOwner();
         owner.close();
         try {
@@ -28,8 +38,12 @@ public final class NearbyMvpExternalGuestTest {
             NearbyMvpSession session = owner.session();
             long deadline = SystemClock.elapsedRealtime() + 20_000;
             while (session.snapshot()[0] != NearbyMvpSession.LOBBY &&
+                    session.snapshot()[0] != NearbyMvpSession.CONFIGURING &&
+                    session.snapshot()[0] != NearbyMvpSession.ENDED &&
                     SystemClock.elapsedRealtime() < deadline) SystemClock.sleep(10);
-            assertEquals(NearbyMvpSession.LOBBY, session.snapshot()[0]);
+            int[] joined = session.snapshot();
+            assertTrue("Guest must connect before host configuration: state=" + joined[0] + " reason=" + joined[1],
+                    joined[0] == NearbyMvpSession.LOBBY || joined[0] == NearbyMvpSession.CONFIGURING);
             deadline = SystemClock.elapsedRealtime() + 15_000;
             while (session.peerGameKey().isEmpty() && SystemClock.elapsedRealtime() < deadline)
                 SystemClock.sleep(10);
@@ -50,20 +64,25 @@ public final class NearbyMvpExternalGuestTest {
             assertEquals("P2 input reaches a completed core frame", 0x01, session.snapshot()[10]);
             try (ActivityScenario<MainActivity> page = ActivityScenario.launch(
                     new Intent(app, MainActivity.class).putExtra("nearby_mvp", true))) {
+                long roomHoldMs = Long.parseLong(InstrumentationRegistry.getArguments()
+                        .getString("roomHoldMs", "0"));
+                int requiredFrames = roomHoldMs > 0 ? 120 : 600;
                 deadline = SystemClock.elapsedRealtime() + 20_000;
-                while (session.completedFrames() < 600 &&
+                while (session.completedFrames() < requiredFrames &&
                         SystemClock.elapsedRealtime() < deadline) SystemClock.sleep(20);
-                assertTrue("External guest must play 600 real frames", session.completedFrames() >= 600);
+                assertTrue("External guest must play " + requiredFrames + " real frames",
+                        session.completedFrames() >= requiredFrames);
                 page.onActivity(activity -> {
                     GameSurfaceView surface = activity.findViewById(R.id.game_surface);
                     assertNotNull(surface);
                     assertTrue("Shared GPU presenter consumes guest frames",
-                            surface.presenterStats().uploadedFrames() > 100);
+                            surface.presenterStats().uploadedFrames() > (roomHoldMs > 0 ? 30 : 100));
                     assertTrue("AudioTrack consumes guest PCM",
                             activity.nearbyAudioWrittenSamplesForTest() > 0);
                 });
                 long holdMs = Long.parseLong(InstrumentationRegistry.getArguments()
                         .getString("playHoldMs", "0"));
+                if (roomHoldMs > 0) SystemClock.sleep(roomHoldMs);
                 if (holdMs > 0) {
                     byte[] firstSessionId = session.sessionId();
                     long holdDeadline = SystemClock.elapsedRealtime() + holdMs;

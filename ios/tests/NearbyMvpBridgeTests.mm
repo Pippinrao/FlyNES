@@ -163,7 +163,7 @@
         const uint64_t beforePause = [host.snapshot[@"completedFrames"] unsignedLongLongValue];
         XCTAssertFalse([host stepWithButtons:0]);
         XCTAssertEqual([host.snapshot[@"completedFrames"] unsignedLongLongValue], beforePause);
-        XCTAssertEqual(fly_lan_mvp_set_paused(guest, 0), 1);
+        XCTAssertTrue([host resumeGame], @"Host Continue releases the guest's room pause");
         deadline = [NSDate dateWithTimeIntervalSinceNow:2.0];
         while ([host.snapshot[@"paused"] boolValue] && deadline.timeIntervalSinceNow > 0)
             [NSThread sleepForTimeInterval:0.002];

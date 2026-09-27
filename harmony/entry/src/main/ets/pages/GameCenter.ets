@@ -8,6 +8,7 @@ import { applyMultiplayerFilter, CatalogProductService, multiplayerCapabilitiesF
 import { takeRomOpenError, builtinGamesSync, PlayService, RomLaunchLocator } from '../service/PlayService';
 import { BuiltinGames } from '../service/BuiltinGames';
 import { CoverStore } from '../service/CoverStore';
+import { nearbyRoomGame } from '../service/NearbyRoomGame';
 
 @Entry
 @Component
@@ -33,6 +34,8 @@ struct GameCenter {
   @State private multiplayerOnly: boolean = false;
   private multiplayerRegistry: MultiplayerCapabilityRegistry = new MultiplayerCapabilityRegistry(0);
   private nearbyChooseGame: boolean = false;
+  private nearbyResumeTimer: number = -1;
+  private selectingNearbyGame: boolean = false;
 
   aboutToAppear(): void {
     const params = router.getParams() as Record<string, Object> | undefined;
@@ -50,6 +53,16 @@ struct GameCenter {
   }
 
   onPageShow(): void {
+    if (this.nearbyChooseGame && this.nearbyResumeTimer === -1) {
+      this.nearbyResumeTimer = setInterval(() => {
+        if (this.selectingNearbyGame) return;
+        const snapshot = nativeProduct.nearbyMvpSnapshot();
+        if (snapshot.state === 6 && !snapshot.paused) {
+          this.stopNearbyResumeMonitor();
+          router.back();
+        }
+      }, 100);
+    }
     this.ensureApp();
     this.ensureCoverStore();
     this.reloadRows();
@@ -59,6 +72,13 @@ struct GameCenter {
     void this.loadCardCovers();
     const failed = takeRomOpenError();
     this.openFailed = failed.length > 0;
+  }
+
+  onPageHide(): void { this.stopNearbyResumeMonitor(); }
+  aboutToDisappear(): void { this.stopNearbyResumeMonitor(); }
+  private stopNearbyResumeMonitor(): void {
+    if (this.nearbyResumeTimer !== -1) clearInterval(this.nearbyResumeTimer);
+    this.nearbyResumeTimer = -1;
   }
 
   private ensureCoverStore(): void {
@@ -651,8 +671,10 @@ struct GameCenter {
   }
 
   private async selectNearbyHostGame(row: GameCenterRow): Promise<void> {
+    if (this.selectingNearbyGame) return;
     const host = this.getUIContext().getHostContext();
     if (host === undefined) { this.openFailed = true; return; }
+    this.selectingNearbyGame = true;
     const locator = new RomLaunchLocator();
     locator.canonicalId = row.canonicalId;
     locator.sourceUuidHex = row.sourceUuidHex;
@@ -661,15 +683,26 @@ struct GameCenter {
     locator.zipEntryName = row.originalFilename;
     try {
       const rom = await new PlayService().readRom(host as common.UIAbilityContext, locator);
-      const snapshot = nativeProduct.nearbyMvpSnapshot();
+      let snapshot = nativeProduct.nearbyMvpSnapshot();
+      if (snapshot.role === 1 && (snapshot.state === 6 || snapshot.state === 5)) {
+        if (!nativeProduct.nearbyMvpReturnLobby()) throw new Error('Could not change game');
+        const deadline = Date.now() + 3000;
+        while (nativeProduct.nearbyMvpSnapshot().state === 7 && Date.now() < deadline) {
+          await new Promise<void>((resolve) => { setTimeout(resolve, 20); });
+        }
+        snapshot = nativeProduct.nearbyMvpSnapshot();
+      }
       if (snapshot.role !== 1 || snapshot.state !== 3 ||
           !nativeProduct.nearbyMvpSelectGame(rom, row.canonicalId) ||
           !nativeProduct.nearbyMvpConfirm()) throw new Error('Session changed');
+      nearbyRoomGame.select(row.canonicalId, this.displayTitle(row));
       void router.replaceUrl({ url: 'pages/NearbyLobby', params: {
         nearbyGameTitle: this.displayTitle(row), nearbyGameKey: row.canonicalId
       } });
     } catch (_) {
       this.openFailed = true;
+    } finally {
+      this.selectingNearbyGame = false;
     }
   }
 

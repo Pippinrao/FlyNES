@@ -2,6 +2,8 @@
 
 #include "lan_mvp/invite.hpp"
 #include "lan_mvp/wire.hpp"
+#include "lan_mvp/pause.hpp"
+#include "../../runtime/serialized_state_capture.hpp"
 #include "wire/sha256.hpp"
 #include "flynes_quic_provider.h"
 
@@ -85,7 +87,7 @@ bool same_bytes(const std::uint8_t* a, const std::uint8_t* b, std::size_t size) 
 std::array<std::uint8_t, 32> make_config_hash(
         const std::array<std::uint8_t, 32>& rom_hash,
         const fly_runtime_source_timing_v1& timing) {
-    static constexpr char kCompatibility[] = "flynes-lan-mvp-prediction-v3";
+    static constexpr char kCompatibility[] = "flynes-lan-mvp-prediction-v4-resume-ack";
     std::vector<std::uint8_t> bytes(rom_hash.begin(), rom_hash.end());
     bytes.insert(bytes.end(), kCompatibility, kCompatibility + sizeof(kCompatibility) - 1);
     append_u32(&bytes, timing.source_region);
@@ -154,8 +156,7 @@ struct fly_lan_mvp_session {
     bool peer_configured = false;
     bool local_ready = false;
     bool peer_ready = false;
-    bool local_paused = false;
-    bool peer_paused = false;
+    flynes::session::lan_mvp::PauseState pause;
     std::map<std::uint64_t, std::uint32_t> local_inputs;
     std::map<std::uint64_t, std::uint32_t> remote_inputs;
     std::map<std::uint64_t, SimulatedFrame> history;
@@ -403,11 +404,16 @@ struct fly_lan_mvp_session {
     bool step_frame(std::uint64_t frame, std::uint32_t local, std::uint32_t remote,
                     std::uint64_t local_sequence, std::uint64_t local_capture_time_ns,
                     bool publish = true) {
+        flynes::runtime_detail::last_capture = {};
         const auto captured = fly_runtime_capture_rollback(runtime,
                 static_cast<std::uint32_t>(frame % kRollbackSlots));
         if (captured != FLY_RESULT_OK) {
+            const auto& detail = flynes::runtime_detail::last_capture;
             trace("runtime_error", "stage=rollback_capture frame=" + std::to_string(frame) +
-                " result=" + std::to_string(captured));
+                " result=" + std::to_string(captured) + " core_result=" + std::to_string(detail.core_result) +
+                " core_call_returned=" + std::to_string(detail.core_call_returned) +
+                " attempts=" + std::to_string(detail.attempts) + " capacity=" + std::to_string(detail.capacity) +
+                " written=" + std::to_string(detail.written) + " needed=" + std::to_string(detail.needed));
             end(FLY_LAN_MVP_REASON_CONFIG_MISMATCH);
             return false;
         }
@@ -591,7 +597,7 @@ struct fly_lan_mvp_session {
         pcm_produced = pcm_consumed = 0;
         pcm_queue.clear();
         has_published_frame = false;
-        local_paused = peer_paused = false;
+        pause = {};
         view.paused = 0;
         std::memset(view.peer_game_key, 0, sizeof(view.peer_game_key));
         view.applied_buttons[0] = view.applied_buttons[1] = 0;
@@ -645,12 +651,10 @@ struct fly_lan_mvp_session {
         if (view.state == FLY_LAN_MVP_RETURNING) return;
         if (message.kind == wire::Kind::Pause && message.payload.size() == 1) {
             if (view.state != FLY_LAN_MVP_RUNNING) return;
-            peer_paused = message.payload[0] != 0;
-            view.paused = local_paused || peer_paused;
+            const auto reply = pause.receive(message.payload[0], role == Role::Host);
+            view.paused = pause.paused();
             last_progress = std::chrono::steady_clock::now();
-            if (role == Role::Host)
-                (void)queue_message(wire::Kind::Pause,
-                    {static_cast<std::uint8_t>(view.paused != 0)});
+            if (reply) (void)queue_message(wire::Kind::Pause, {*reply});
             if (!view.paused) advance();
             return;
         }
@@ -1210,21 +1214,31 @@ extern "C" int fly_lan_mvp_set_paused(fly_lan_mvp_session* session, int paused) 
     if (!session) return 0;
     std::lock_guard<std::mutex> lock(session->mutex);
     if (session->view.state != FLY_LAN_MVP_RUNNING) return 0;
-    const bool was_local_paused = session->local_paused;
-    session->local_paused = paused != 0;
-    session->view.paused = session->local_paused || session->peer_paused;
-    const auto outgoing = session->role == Role::Host
-        ? session->view.paused : static_cast<std::uint32_t>(session->local_paused);
+    const auto previous = session->pause;
+    const auto outgoing = session->pause.set_local(paused != 0, session->role == Role::Host);
+    session->view.paused = session->pause.paused();
     if (!session->queue_message(wire::Kind::Pause,
             {static_cast<std::uint8_t>(outgoing != 0)})) {
-        session->local_paused = was_local_paused;
-        session->view.paused = session->local_paused || session->peer_paused;
+        session->pause = previous;
+        session->view.paused = session->pause.paused();
         return 0;
     }
     session->last_progress = std::chrono::steady_clock::now();
     if (!session->view.paused) session->wake.notify_one();
     return 1;
 }
+extern "C" int fly_lan_mvp_resume_game(fly_lan_mvp_session* session) {
+    if (!session) return 0;
+    std::lock_guard<std::mutex> lock(session->mutex);
+    if (session->view.state != FLY_LAN_MVP_RUNNING || session->pause.resume_pending) return 0;
+    if (!session->queue_message(wire::Kind::Pause, {2})) return 0;
+    (void)session->pause.resume();
+    session->view.paused = session->pause.paused();
+    session->last_progress = std::chrono::steady_clock::now();
+    session->wake.notify_one();
+    return 1;
+}
+
 extern "C" int fly_lan_mvp_return_lobby(fly_lan_mvp_session* session) {
     if (!session) return 0;
     std::lock_guard<std::mutex> lock(session->mutex);

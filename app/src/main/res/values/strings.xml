@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="nearby_change_game">Change game</string>
+    <string name="nearby_player_local">This device</string>
+    <string name="nearby_player_peer">Other player</string>
+    <string name="nearby_game_paused">Game paused</string>
     <string name="nearby_choose_game">Choose game</string>
     <string name="nearby_wait_host_game">Waiting for the host to choose a game</string>
     <string name="nearby_game_preparing">Preparing the selected game</string>
@@ -373,7 +377,9 @@
       <string name="nearby_scanner_prompt">Point the camera at the room QR code</string>
       <string name="nearby_scanner_retry">Scan again</string>
       <string name="nearby_scanner_camera_unavailable">Camera unavailable. Check permission and try again.</string>
-      <string name="nearby_scanner_join_unavailable">QR scanned. Joining is not available on this device yet.</string>
+      <string name="nearby_scanner_join_unavailable">Could not join. Check both devices are on the same local network, then scan again.</string>
+      <string name="nearby_scanner_recognized">QR code recognized</string>
+      <string name="nearby_scanner_invalid">This is not a room invitation. Scan the host QR code.</string>
       <string name="nearby_network_auto_hint">Use the same local network; if none is available, connect through a hotspot.</string>
       <string name="nearby_network_lan_selected">Local network selected automatically</string>
       <string name="nearby_network_hotspot_selected">Hotspot network selected automatically</string>

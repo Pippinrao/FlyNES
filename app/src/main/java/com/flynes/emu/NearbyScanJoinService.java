@@ -3,7 +3,7 @@ package com.flynes.emu;
 import android.content.Context;
 import android.os.Handler;
 
-/** Backend entry point for a future scan screen; does not own UI or navigation. */
+/** Starts the guest transport; the scanner waits for a connected snapshot before navigating. */
 public final class NearbyScanJoinService implements AutoCloseable {
     interface SessionPort {
         boolean join(String localIpv4, String invite);

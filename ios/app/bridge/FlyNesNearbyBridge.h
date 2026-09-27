@@ -29,6 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
                     title:(NSString *)title;
 - (BOOL)confirm;
 - (BOOL)setPaused:(BOOL)paused;
+- (BOOL)resumeGame;
 - (BOOL)returnLobby;
 - (BOOL)stepWithButtons:(uint32_t)buttons;
 - (nullable NSData *)copyLatestRgb565Frame;

@@ -2979,6 +2979,12 @@ napi_value NearbyMvpCancel(napi_env env, napi_callback_info)
     });
 }
 
+napi_value NearbyMvpResumeGame(napi_env env, napi_callback_info) {
+    return nearby_call(env, "nearbyMvpResumeGame", [&]() {
+        return create_bool(env, g_mvp_session && fly_lan_mvp_resume_game(g_mvp_session.get()), "resume LAN game");
+    });
+}
+
 napi_value NearbyMvpReturnLobby(napi_env env, napi_callback_info) {
     return nearby_call(env, "nearbyMvpReturnLobby", [&]() {
         g_play.reset();
@@ -3199,6 +3205,7 @@ napi_value Init(napi_env env, napi_value exports)
              napi_default, nullptr},
             {"nearbyMvpInvite", nullptr, NearbyMvpInvite, nullptr, nullptr, nullptr,
              napi_default, nullptr},
+            {"nearbyMvpResumeGame", nullptr, NearbyMvpResumeGame, nullptr, nullptr, nullptr, napi_default, nullptr},
             {"nearbyMvpSnapshot", nullptr, NearbyMvpSnapshot, nullptr, nullptr, nullptr,
              napi_default, nullptr},
             {"nearbyMvpSelectRom", nullptr, NearbyMvpSelectRom, nullptr, nullptr, nullptr,

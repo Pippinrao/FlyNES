@@ -169,6 +169,7 @@ NSString *local_ipv4(bool wifi_only = false)
 
 - (BOOL)confirm { return session_ != nullptr && fly_lan_mvp_confirm(session_) == 1; }
 - (BOOL)setPaused:(BOOL)paused { return session_ != nullptr && fly_lan_mvp_set_paused(session_, paused) == 1; }
+- (BOOL)resumeGame { return session_ != nullptr && fly_lan_mvp_resume_game(session_) == 1; }
 - (BOOL)returnLobby
 {
     if (session_ == nullptr || fly_lan_mvp_return_lobby(session_) != 1) return NO;
@@ -180,6 +181,18 @@ NSString *local_ipv4(bool wifi_only = false)
 - (BOOL)selectHostGameROM:(NSData *)rom canonicalID:(NSString *)canonicalID
                    title:(NSString *)title
 {
+    fly_lan_mvp_snapshot previous{};
+    if (session_ && fly_lan_mvp_snapshot_read(session_, &previous) &&
+        previous.role == FLY_LAN_MVP_ROLE_HOST_P1 &&
+        (previous.state == FLY_LAN_MVP_RUNNING || previous.state == FLY_LAN_MVP_CONFIGURING)) {
+        if (!fly_lan_mvp_return_lobby(session_)) return NO;
+        const auto deadline = NSDate.timeIntervalSinceReferenceDate + 3.0;
+        do {
+            if (!fly_lan_mvp_snapshot_read(session_, &previous)) return NO;
+            if (previous.state != FLY_LAN_MVP_RETURNING) break;
+            [NSThread sleepForTimeInterval:0.01];
+        } while (NSDate.timeIntervalSinceReferenceDate < deadline);
+    }
     if (session_ == nullptr || rom.length == 0 || canonicalID.length == 0 ||
         fly_lan_mvp_select_game(session_, static_cast<const uint8_t *>(rom.bytes),
                                 rom.length, canonicalID.UTF8String) != 1 ||

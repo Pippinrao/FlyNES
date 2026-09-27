@@ -267,6 +267,7 @@ struct CatalogLibraryView: View {
                         "-flynes.test.nearby_role_connected"))
                 case .nearbyGamePicker:
                     NearbyCatalogPicker(onSelect: { game, rom in
+                        guard pickerShown else { return false }
                         let selected = FlyNesNearbyBridge.sharedInstance.selectHostGameROM(
                             rom, canonicalID: game.id, title: game.titlePrimary)
                         if selected {
@@ -322,6 +323,16 @@ struct CatalogLibraryView: View {
                 }
             }
             .onReceive(sources.$generation) { _ in reloadSnapshot() }
+            .onReceive(Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()) { _ in
+                guard nearbySelection == nil && pickerShown else { return }
+                let snapshot = FlyNesNearbyBridge.sharedInstance.snapshot()
+                if (snapshot["state"] as? NSNumber)?.intValue == 6 &&
+                    !((snapshot["paused"] as? NSNumber)?.boolValue ?? true) {
+                    pickerShown = false
+                    path = NavigationPath()
+                    path.append(LibraryRoute.nearbyLobby)
+                }
+            }
             .onChange(of: category) { _ in sourcesOpen = false; reloadSnapshot() }
             .onChange(of: searchText) { _ in reloadSnapshot() }
             .onChange(of: multiplayerOnly) { _ in reloadSnapshot() }

@@ -1024,9 +1024,18 @@
       "name": "nearby_action_scanQr",
       "value": "Scan QR Code"
     },
-    { "name": "nearby_role_host_hint", "value": "Show the room QR code to a friend" },
-    { "name": "nearby_role_guest_hint", "value": "Open the camera and scan a room QR code" },
-    { "name": "nearby_network_auto_hint", "value": "Use the same local network; if none is available, connect through a hotspot." },
+    {
+      "name": "nearby_role_host_hint",
+      "value": "Show the room QR code to a friend"
+    },
+    {
+      "name": "nearby_role_guest_hint",
+      "value": "Open the camera and scan a room QR code"
+    },
+    {
+      "name": "nearby_network_auto_hint",
+      "value": "Use the same local network; if none is available, connect through a hotspot."
+    },
     {
       "name": "nearby_action_findDevices",
       "value": "Find Devices"
@@ -1514,6 +1523,20 @@
     {
       "name": "nearby_wait_host_game",
       "value": "Waiting for the host to choose a game"
-    }
+    },
+    {
+      "name": "nearby_resume_game",
+      "value": "Continue game"
+    },
+    {
+      "name": "nearby_change_game",
+      "value": "Change game"
+    },
+    {
+      "name": "nearby_game_paused",
+      "value": "Game paused"
+    },
+    {"name": "nearby_player_local", "value": "This device"},
+    {"name": "nearby_player_peer", "value": "Other player"}
   ]
 }

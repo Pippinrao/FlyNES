@@ -992,9 +992,18 @@
       "name": "nearby_action_scanQr",
       "value": "扫码加入"
     },
-    { "name": "nearby_role_host_hint", "value": "向朋友展示房间二维码" },
-    { "name": "nearby_role_guest_hint", "value": "打开相机扫描房间二维码" },
-    { "name": "nearby_network_auto_hint", "value": "优先使用同一局域网；没有局域网时可连接热点" },
+    {
+      "name": "nearby_role_host_hint",
+      "value": "向朋友展示房间二维码"
+    },
+    {
+      "name": "nearby_role_guest_hint",
+      "value": "打开相机扫描房间二维码"
+    },
+    {
+      "name": "nearby_network_auto_hint",
+      "value": "优先使用同一局域网；没有局域网时可连接热点"
+    },
     {
       "name": "nearby_action_findDevices",
       "value": "寻找设备"
@@ -1482,6 +1491,20 @@
     {
       "name": "nearby_wait_host_game",
       "value": "等待房主选择游戏"
-    }
+    },
+    {
+      "name": "nearby_resume_game",
+      "value": "继续游戏"
+    },
+    {
+      "name": "nearby_change_game",
+      "value": "更换游戏"
+    },
+    {
+      "name": "nearby_game_paused",
+      "value": "游戏已暂停"
+    },
+    {"name": "nearby_player_local", "value": "本机"},
+    {"name": "nearby_player_peer", "value": "另一位玩家"}
   ]
 }

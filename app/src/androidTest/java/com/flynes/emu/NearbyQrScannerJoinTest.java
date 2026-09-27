@@ -12,6 +12,20 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(AndroidJUnit4.class)
 public final class NearbyQrScannerJoinTest {
+    @Test public void invalidCodeStopsCameraAndOffersRetryOnSamePage() {
+        try (ActivityScenario<NearbyQrScannerActivity> scenario =
+                     ActivityScenario.launch(NearbyQrScannerActivity.class)) {
+            scenario.onActivity(activity -> {
+                activity.acceptScannedText("not a room invitation");
+                assertTrue("stop camera presentation after recognition",
+                        activity.findViewById(R.id.nearby_scanner_preview).getVisibility()
+                                != android.view.View.VISIBLE);
+                assertTrue(activity.findViewById(R.id.nearby_scanner_retry).isShown());
+                assertTrue(!activity.isFinishing());
+            });
+        }
+    }
+
     @Test public void scannedInviteStartsRealGuestSessionAndOpensLobby() {
         FlyNesApplication app = (FlyNesApplication) ApplicationProvider.getApplicationContext();
         app.nearbyMvpOwner().close();

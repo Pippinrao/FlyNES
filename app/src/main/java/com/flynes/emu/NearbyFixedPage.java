@@ -23,6 +23,14 @@ public final class NearbyFixedPage extends LinearLayout {
             View copy = findViewById(id);
             if (copy != null) copy.setVisibility(largeText ? View.GONE : View.VISIBLE);
         }
+        if (getId() == R.id.nearby_scanner_root) {
+            float usableHeight = (MeasureSpec.getSize(heightSpec) - getPaddingTop() - getPaddingBottom())
+                    / getResources().getDisplayMetrics().density;
+            for (int id : new int[]{R.id.nearby_scan_headline, R.id.nearby_scan_subtitle}) {
+                View copy = findViewById(id);
+                if (copy != null) copy.setVisibility(largeText || usableHeight < 340 ? GONE : VISIBLE);
+            }
+        }
         super.onMeasure(widthSpec, heightSpec);
     }
 }

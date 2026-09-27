@@ -5,6 +5,9 @@ import { NEARBY_TYPE } from '../ui/NearbyTypography';
 import { NearbyLobbyRow, nearbyLobbyDetailRows, nearbyLobbyFirstScreenRows, nearbyString } from '../service/NearbyService';
 import { BuiltinGames } from '../service/BuiltinGames';
 import { PlayService, RomLaunchLocator } from '../service/PlayService';
+import { image } from '@kit.ImageKit';
+import { CoverStore } from '../service/CoverStore';
+import { nearbyRoomGame } from '../service/NearbyRoomGame';
 
 @Entry
 @Component
@@ -19,6 +22,9 @@ struct NearbyLobby {
   @State private role: number = 0;
   @State private gameTitle: string = '';
   @State private gameError: boolean = false;
+  @State private gamePaused: boolean = false;
+  @State private cover: image.PixelMap | undefined = undefined;
+  private coverKey: string = '';
   private loadingGame: string = '';
   private loadingConfigToken: string = '';
   private attemptedConfigToken: string = '';
@@ -37,8 +43,9 @@ struct NearbyLobby {
     this.mvpActive = snapshot.state === 3 || snapshot.state === 5 || snapshot.state === 6 || snapshot.state === 7;
     if (!this.mvpActive) return;
     const params = router.getParams() as Record<string, string> | undefined;
-    this.gameTitle = params?.['nearbyGameTitle'] ?? '';
-    this.selectedGame = params?.['nearbyGameKey'] ?? '';
+    this.gameTitle = params?.['nearbyGameTitle'] ?? nearbyRoomGame.title;
+    this.selectedGame = params?.['nearbyGameKey'] ?? nearbyRoomGame.canonicalId;
+    if (this.selectedGame.length > 0) nearbyRoomGame.select(this.selectedGame, this.gameTitle);
     this.updateMvp(snapshot);
     this.timerId = setInterval(() => this.pollMvp(), 50);
   }
@@ -92,6 +99,7 @@ struct NearbyLobby {
           throw new Error('Local ROM does not match');
       }
       this.selectedGame = key;
+      nearbyRoomGame.select(key, this.gameTitle);
     } catch (_) {
       this.gameError = true;
       console.info('FlyNesNearby event=local_game_unavailable');
@@ -102,6 +110,7 @@ struct NearbyLobby {
   }
 
   private pollMvp(): void {
+    if (!this.mvpActive) return;
     const snapshot = nativeSession.nearbyMvpSnapshot();
     if (snapshot.state === 4) {
       if (this.timerId !== -1) clearInterval(this.timerId);
@@ -118,6 +127,7 @@ struct NearbyLobby {
       return;
     }
     if (snapshot.state === 3 || snapshot.state === 7) {
+      nearbyRoomGame.clear();
       this.selectedGame = '';
       this.gameTitle = '';
       this.gameError = false;
@@ -138,7 +148,12 @@ struct NearbyLobby {
       if (snapshot.peerConfigToken.length > 0 && snapshot.peerConfigToken !== this.attemptedConfigToken)
         void this.selectHostGame(snapshot.peerGameKey, snapshot.peerConfigToken);
     }
-    if (snapshot.state === 6 && !this.playOpened) {
+    if (snapshot.state === 6) {
+      this.gameTitle = nearbyRoomGame.title;
+      this.selectedGame = nearbyRoomGame.canonicalId;
+    }
+    void this.loadCover();
+    if (snapshot.state === 6 && !snapshot.paused && !this.playOpened) {
       this.playOpened = true;
       if (this.timerId !== -1) clearInterval(this.timerId);
       this.timerId = -1;
@@ -147,6 +162,7 @@ struct NearbyLobby {
   }
 
   private updateMvp(snapshot: NearbyMvpSnapshotDto): void {
+    this.gamePaused = snapshot.paused;
     this.mvpState = snapshot.state;
     this.mvpReason = snapshot.reason;
     this.localReady = snapshot.localReady;
@@ -164,14 +180,31 @@ struct NearbyLobby {
   }
 
   private chooseGame(): void {
-    if (this.role !== 1 || (this.mvpState !== 3 && this.mvpState !== 5)) return;
-    if (this.mvpState === 5) {
-      if (nativeSession.nearbyMvpReturnLobby()) this.pendingChooseGame = true;
-      return;
-    }
+    if (this.role !== 1 || (this.mvpState !== 3 && this.mvpState !== 5 && this.mvpState !== 6)) return;
     if (this.timerId !== -1) clearInterval(this.timerId);
     this.timerId = -1;
-    void router.replaceUrl({ url: 'pages/GameCenter', params: { nearbyChooseGame: true } });
+    void router.pushUrl({ url: 'pages/GameCenter', params: { nearbyChooseGame: true } });
+  }
+
+  onPageShow(): void {
+    if (this.mvpActive && this.timerId === -1) this.timerId = setInterval(() => this.pollMvp(), 50);
+  }
+
+  onPageHide(): void {
+    if (this.timerId !== -1) clearInterval(this.timerId);
+    this.timerId = -1;
+  }
+
+  private async loadCover(): Promise<void> {
+    const key = this.selectedGame;
+    if (key === this.coverKey) return;
+    this.coverKey = key;
+    this.cover = undefined;
+    const host = this.getUIContext().getHostContext() as common.UIAbilityContext;
+    if (key.length === 0 || host === undefined) return;
+    const loaded = await new CoverStore(host.filesDir).load(key);
+    if (this.coverKey === key) this.cover = loaded;
+    else loaded?.release();
   }
 
   build() {
@@ -192,45 +225,66 @@ struct NearbyLobby {
       }.width('100%').constraintSize({ minHeight: 48 })
       Row({ space: 16 }) {
         Column({ space: 12 }) {
-          Text($r('app.string.nearby_screen_connected'))
-            .fontFamily('HarmonyOS Sans').fontSize(NEARBY_TYPE.body.size)
-            .fontColor('#F4EFE6').width('100%')
           this.fieldRow(nearbyLobbyFirstScreenRows()[1])
           this.fieldRow(nearbyLobbyFirstScreenRows()[2])
-        }.width('42%').height('100%').padding(16)
+        }.width('25%').height('100%').padding(12)
           .backgroundColor('#1B1D22').borderRadius(12)
-        Column({ space: 12 }) {
-          this.fieldRow(nearbyLobbyFirstScreenRows()[0])
+        Row({ space: 16 }) {
+          Column({ space: 8 }) {
+            Stack() {
+              if (this.cover !== undefined) {
+                Image(this.cover).width('100%').height('100%').objectFit(ImageFit.Contain)
+                  .id('nearby_lobby_cover')
+              } else {
+                Text(this.gameTitle || $r('app.string.nearby_wait_host_game'))
+                  .fontSize(NEARBY_TYPE.muted.size).fontColor('#A8B0BD')
+                  .maxLines(2).textAlign(TextAlign.Center).padding(8)
+              }
+            }.width('100%').layoutWeight(1).backgroundColor('#12141A').borderRadius(8).clip(true)
+            Text(this.gameTitle || $r('app.string.nearby_wait_host_game'))
+              .id('nearby_lobby_rom_identity').fontSize(NEARBY_TYPE.body.size)
+              .fontWeight(FontWeight.Medium).fontColor('#F4EFE6').width('100%').maxLines(2)
+          }.layoutWeight(1).height('100%').padding(8).backgroundColor('#23262C')
+            .borderRadius(12).border({ width: 1, color: '#FF6B5E' })
+          Column({ space: 12 }) {
           Text(this.gameError ? $r('app.string.nearby_local_game_missing') :
+            this.mvpState === 6 && this.gamePaused ? $r('app.string.nearby_game_paused') :
             this.mvpState === 3 ? (this.role === 1 ? $r('app.string.nearby_action_goToGameCenter') :
               $r('app.string.nearby_wait_host_game')) :
             $r('app.string.nearby_screen_connecting'))
             .id('nearby_lobby_mvp_status').fontFamily('HarmonyOS Sans')
             .fontSize(NEARBY_TYPE.muted.size).fontColor(this.gameError ? '#FF6B5E' : '#BEB8AE')
             .width('100%')
-          if (this.role === 1) {
-            this.action($r('app.string.nearby_action_goToGameCenter'), 'nearby_lobby_choose_game', true,
+          if (this.mvpState === 6) {
+            this.action($r('app.string.nearby_resume_game'), 'nearby_lobby_resume', true,
+              () => { nativeSession.nearbyMvpResumeGame(); this.pollMvp(); })
+          }
+          if (this.mvpActive && this.role === 1 && (this.mvpState === 3 || this.mvpState === 5 || this.mvpState === 6)) {
+            this.action(this.gameTitle.length > 0 ? $r('app.string.nearby_change_game') :
+              $r('app.string.nearby_action_goToGameCenter'), 'nearby_lobby_choose_game', this.mvpState !== 6,
               () => { this.chooseGame(); })
           }
+          }.layoutWeight(1).height('100%').justifyContent(FlexAlign.Center)
         }.layoutWeight(1).height('100%').padding(12).backgroundColor('#1B1D22').borderRadius(12)
       }.width('100%').layoutWeight(1).padding(16)
     }.id('nearby_page').width('100%').height('100%').backgroundColor('#121316')
   }
 
   private rowValue(row: NearbyLobbyRow): ResourceStr {
-    if (!this.mvpActive) return $r('app.string.nearby_not_supported');
+    if (!this.mvpActive) return '—';
     if (row.label === 'nearby_lobby_rom_identity') {
       if (this.gameError) return $r('app.string.nearby_local_game_missing');
       return this.gameTitle || $r('app.string.nearby_wait_host_game');
     }
-    if (row.label === 'nearby_lobby_network_owner') return 'P1';
-    return this.role === 1 ? 'P1' : 'P2';
+    const isFirst = row.label === 'nearby_lobby_network_owner';
+    return (isFirst === (this.role === 1)) ? $r('app.string.nearby_player_local') :
+      $r('app.string.nearby_player_peer');
   }
 
   @Builder
   fieldRow(row: NearbyLobbyRow) {
     Column({ space: 8 }) {
-      Text(nearbyString(row.label)).fontFamily('HarmonyOS Sans').fontSize(NEARBY_TYPE.sectionTitle.size)
+      Text(row.label === 'nearby_lobby_network_owner' ? 'P1' : 'P2').fontFamily('HarmonyOS Sans').fontSize(NEARBY_TYPE.sectionTitle.size)
         .fontWeight(FontWeight.Medium).fontColor('#F4EFE6').width('100%')
       Text(this.rowValue(row))
         .fontFamily('HarmonyOS Sans')

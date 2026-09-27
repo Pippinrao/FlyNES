@@ -3,6 +3,9 @@ import { abilityDelegatorRegistry } from '@kit.TestKit';
 import { fileIo } from '@kit.CoreFileKit';
 import nativeSession, { NearbyMvpStepResult } from 'libentry.so';
 import { BuiltinGame, BuiltinGames } from '../../../main/ets/service/BuiltinGames';
+import { window } from '@kit.ArkUI';
+import { Driver, ON } from '@ohos.UiTest';
+import { nearbyRoomGame } from '../../../main/ets/service/NearbyRoomGame';
 
 function delay(ms: number): Promise<void> {
   return new Promise<void>((resolve: () => void): void => { setTimeout(resolve, ms); });
@@ -18,6 +21,9 @@ function writeEvidence(path: string, content: string | ArrayBuffer): void {
 export default function nearbyMvpExternalHostTest(): void {
   describe('NearbyMvpExternalHost', () => {
     it('real_napi_host_serves_external_product_guest', 0, async () => {
+      const delegator = abilityDelegatorRegistry.getAbilityDelegator();
+      await delegator.startAbility({ bundleName: 'com.flynes.emu', abilityName: 'EntryAbility' });
+      await delay(800);
       nativeSession.nearbyMvpCancel();
       const context = abilityDelegatorRegistry.getAbilityDelegator().getAppContext()
         .createModuleContext('entry');
@@ -68,19 +74,21 @@ export default function nearbyMvpExternalHostTest(): void {
           snapshot = nativeSession.nearbyMvpSnapshot();
         }
         expect(snapshot.state).assertEqual(6);
+        const checkRoom = abilityDelegatorRegistry.getArguments().parameters['-s checkRoomResume'] === 'true';
+        const requiredFrames = checkRoom ? 180 : 600;
         let step: NearbyMvpStepResult = nativeSession.nearbyMvpStep(0x01);
         let pcmSamples = 0;
         let frame: Uint8Array | undefined = undefined;
-        while (step.completedFrames < 600 && Date.now() < runDeadline) {
+        while (step.completedFrames < requiredFrames && Date.now() < runDeadline) {
           step = nativeSession.nearbyMvpStep(Math.floor(step.completedFrames / 30) % 2 === 0 ? 0x01 : 0);
           pcmSamples += step.pcmSampleCount;
-          if (frame === undefined && step.completedFrames >= 600) frame = new Uint8Array(step.rgb565);
+          if (frame === undefined && step.completedFrames >= requiredFrames) frame = new Uint8Array(step.rgb565);
           await delay(step.submitted ? 8 : 1);
         }
         const finalSnapshot = nativeSession.nearbyMvpSnapshot();
         writeEvidence(`${context.filesDir}/nearby-cross-host-debug.txt`,
           `${step.completedFrames},${finalSnapshot.state},${finalSnapshot.reason},${finalSnapshot.localReady},${finalSnapshot.peerReady}`);
-        expect(step.completedFrames >= 600).assertTrue();
+        expect(step.completedFrames >= requiredFrames).assertTrue();
         expect(frame !== undefined).assertTrue();
         expect((frame as Uint8Array).byteLength).assertEqual(256 * 240 * 2);
         expect(pcmSamples > 0).assertTrue();
@@ -88,6 +96,37 @@ export default function nearbyMvpExternalHostTest(): void {
           `${step.completedFrames},${step.frameIndex},${pcmSamples}`);
         writeEvidence(`${context.filesDir}/nearby-cross-host-frame.rgb565`,
           (frame as Uint8Array).buffer as ArrayBuffer);
+        if (checkRoom) {
+          const abilityContext = (await delegator.getCurrentTopAbility()).context;
+          const win = await window.getLastWindow(abilityContext);
+          const title = game.titleZhHans || game.titleEn;
+          nearbyRoomGame.select(game.canonicalId, title);
+          await win.getUIContext().getRouter().replaceUrl({ url: 'pages/RunGame',
+            params: { nearby: true, canonicalId: game.canonicalId, titleZhHans: title } });
+          const driver = Driver.create();
+          const pause = await driver.waitForComponent(ON.text('II'), 5000);
+          expect(pause !== null).assertTrue();
+          await pause.click();
+          const room = await driver.waitForComponent(ON.text(
+            context.resourceManager.getStringByNameSync('nearby_lobby_title')), 3000);
+          await room.click();
+          const resume = await driver.waitForComponent(ON.id('nearby_lobby_resume'), 5000);
+          expect(resume !== null).assertTrue();
+          expect(nativeSession.nearbyMvpSnapshot().state).assertEqual(6);
+          expect(nativeSession.nearbyMvpSnapshot().paused).assertTrue();
+          const heldFrame = nativeSession.nearbyMvpSnapshot().completedFrames;
+          await delay(600);
+          expect(nativeSession.nearbyMvpSnapshot().completedFrames).assertEqual(heldFrame);
+          expect(nearbyRoomGame.canonicalId).assertEqual(game.canonicalId);
+          const label = await driver.waitForComponent(ON.id('nearby_lobby_rom_identity'), 1000);
+          expect(await label.getText()).assertEqual(title);
+          expect(await driver.screenCap(`${context.filesDir}/flynes-room-paused.png`)).assertTrue();
+          await resume.click();
+          await delay(1200);
+          expect(nativeSession.nearbyMvpSnapshot().completedFrames > heldFrame).assertTrue();
+          expect(nativeSession.nearbyMvpSnapshot().state).assertEqual(6);
+          expect(await driver.waitForComponent(ON.text('II'), 3000) !== null).assertTrue();
+        }
         await delay(3_000);
       } finally {
         nativeSession.nearbyMvpCancel();

@@ -912,13 +912,21 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    void onNearbyResumed() {
+        if (nearbyPlay == null || isFinishing() || pauseLayer == null) return;
+        removePauseLayer();
+        inputRouter.cancelAll();
+        gamepad.setVisibility(View.VISIBLE);
+        pauseButton.setVisibility(View.VISIBLE);
+    }
+
     private void resumeFromPauseMenu() {
         if (isFinishing()) return;
         removePauseLayer();
         inputRouter.cancelAll();
         gamepad.setVisibility(View.VISIBLE);
         pauseButton.setVisibility(View.VISIBLE);
-        if (nearbyPlay != null) { nearbyPlay.pause(false); return; }
+        if (nearbyPlay != null) { nearbyPlay.resumeGame(); return; }
         if (session.state() == SessionState.PAUSED) session.resume();
         if (audio == null || !audio.isAlive()) {
             audio = createAudioThread();

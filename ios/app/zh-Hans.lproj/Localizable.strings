@@ -387,3 +387,10 @@
 "nearby.scan.afterScan" = "扫描后等待房主接受，随后验证身份。";
 "nearby.scan.footer" = "无效、过期或已使用的二维码不能加入";
 "nearby.diagnostics.title" = "连接详情";
+
+"nearby.resumeGame" = "继续游戏";
+"nearby.changeGame" = "更换游戏";
+"nearby.gamePaused" = "游戏已暂停";
+
+"nearby.playerLocal" = "本机";
+"nearby.playerPeer" = "另一位玩家";

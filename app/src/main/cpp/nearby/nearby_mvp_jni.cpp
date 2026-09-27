@@ -71,7 +71,7 @@ Java_com_flynes_emu_NearbyMvpSession_nativeSnapshot(JNIEnv* env, jclass, jlong h
     fly_lan_mvp_snapshot snapshot{};
     if (handle == 0 || !fly_lan_mvp_snapshot_read(session_from(handle), &snapshot))
         return nullptr;
-    const jint values[11] = {static_cast<jint>(snapshot.state),
+    const jint values[12] = {static_cast<jint>(snapshot.state),
                             static_cast<jint>(snapshot.reason),
                             static_cast<jint>(snapshot.transport_result),
                             static_cast<jint>(snapshot.transport_operation),
@@ -81,9 +81,10 @@ Java_com_flynes_emu_NearbyMvpSession_nativeSnapshot(JNIEnv* env, jclass, jlong h
                             static_cast<jint>(snapshot.local_ready),
                             static_cast<jint>(snapshot.peer_ready),
                             static_cast<jint>(snapshot.applied_buttons[0]),
-                            static_cast<jint>(snapshot.applied_buttons[1])};
-    jintArray result = env->NewIntArray(11);
-    if (result != nullptr) env->SetIntArrayRegion(result, 0, 11, values);
+                            static_cast<jint>(snapshot.applied_buttons[1]),
+                            static_cast<jint>(snapshot.paused)};
+    jintArray result = env->NewIntArray(12);
+    if (result != nullptr) env->SetIntArrayRegion(result, 0, 12, values);
     return result;
 }
 
@@ -162,6 +163,11 @@ Java_com_flynes_emu_NearbyMvpSession_nativeSelectGame(JNIEnv* env, jclass, jlong
 extern "C" JNIEXPORT jboolean JNICALL
 Java_com_flynes_emu_NearbyMvpSession_nativeSetPaused(JNIEnv*, jclass, jlong handle, jboolean paused) {
     return handle && fly_lan_mvp_set_paused(session_from(handle), paused) ? JNI_TRUE : JNI_FALSE;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_flynes_emu_NearbyMvpSession_nativeResumeGame(JNIEnv*, jclass, jlong handle) {
+    return handle && fly_lan_mvp_resume_game(session_from(handle)) ? JNI_TRUE : JNI_FALSE;
 }
 extern "C" JNIEXPORT jboolean JNICALL
 Java_com_flynes_emu_NearbyMvpSession_nativeReturnLobby(JNIEnv*, jclass, jlong handle) {

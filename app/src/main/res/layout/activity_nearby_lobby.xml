@@ -1,61 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/nearby_lobby_root"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/fly_background"
-    android:orientation="vertical">
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/nearby_lobby_toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="48dp"
-        android:background="@color/fly_background"
-        app:navigationIcon="@drawable/ic_back"
-        app:navigationIconTint="@color/fly_on_surface"
-        app:title="@string/nearby_lobby_title"
-        app:titleTextAppearance="@style/TextAppearance.FlyNes.Nearby.PageTitle"
-        app:titleTextColor="@color/fly_on_surface" />
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="horizontal"
-        android:baselineAligned="false"
-        android:padding="16dp">
-        <LinearLayout
-            android:id="@+id/nearby_lobby_rows"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight=".42"
-            android:orientation="vertical"
-            android:gravity="center_vertical" />
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight=".58"
-            android:layout_marginStart="16dp"
-            android:orientation="vertical"
-            android:gravity="center_vertical"
-            android:padding="12dp"
-            android:background="@drawable/bg_nearby_card">
-            <LinearLayout
-                android:id="@+id/nearby_lobby_game_rows"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
-            <TextView
-                android:id="@+id/nearby_lobby_confirm_reason"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:includeFontPadding="false"
-                android:text="@string/nearby_blocked_session_read"
-                android:accessibilityLiveRegion="polite"
-                android:textAppearance="@style/TextAppearance.FlyNes.Nearby.Muted"
-                android:textColor="@color/fly_on_surface_muted"
-                android:visibility="gone" />
+<com.flynes.emu.NearbyFixedPage xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/nearby_lobby_root" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/fly_background" android:orientation="vertical">
+    <com.google.android.material.appbar.MaterialToolbar android:id="@+id/nearby_lobby_toolbar" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:background="@color/fly_background" app:navigationIcon="@drawable/ic_back" app:navigationIconTint="@color/fly_on_surface" app:title="@string/nearby_lobby_title" app:titleTextAppearance="@style/TextAppearance.FlyNes.Nearby.PageTitle" app:titleTextColor="@color/fly_on_surface" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal" android:baselineAligned="false" android:padding="16dp">
+        <LinearLayout android:id="@+id/nearby_lobby_rows" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight=".25" android:padding="12dp" android:background="@drawable/bg_nearby_card" android:orientation="vertical" android:gravity="center_vertical" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight=".75" android:layout_marginStart="16dp" android:orientation="horizontal" android:baselineAligned="false" android:padding="12dp" android:background="@drawable/bg_nearby_card">
+            <LinearLayout android:id="@+id/nearby_lobby_game_card" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:padding="8dp" android:orientation="vertical" android:background="@drawable/bg_game_center_selected">
+                <FrameLayout android:id="@+id/nearby_lobby_art" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:background="@drawable/bg_cartridge">
+                    <ImageView android:id="@+id/nearby_lobby_cover" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="@null" android:visibility="gone" />
+                    <TextView android:id="@+id/nearby_lobby_cover_placeholder" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:padding="8dp" android:maxLines="2" android:ellipsize="end" android:text="@string/nearby_wait_host_game" android:textColor="@color/fly_on_surface_muted" android:textAppearance="@style/TextAppearance.FlyNes.Nearby.Muted" />
+                </FrameLayout>
+                <LinearLayout android:id="@+id/nearby_lobby_game_rows" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:orientation="vertical" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="16dp" android:orientation="vertical" android:gravity="center_vertical">
+                <TextView android:id="@+id/nearby_lobby_confirm_reason" android:layout_width="match_parent" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="@string/nearby_blocked_session_read" android:accessibilityLiveRegion="polite" android:textAppearance="@style/TextAppearance.FlyNes.Nearby.Body" android:textColor="@color/fly_on_surface_muted" android:visibility="gone" />
+                <com.google.android.material.button.MaterialButton android:paddingHorizontal="8dp" android:paddingVertical="4dp" android:id="@+id/nearby_lobby_resume" style="@style/Widget.FlyNes.Nearby.Primary" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="@string/continue_game" android:visibility="gone" />
+                <com.google.android.material.button.MaterialButton android:paddingHorizontal="8dp" android:paddingVertical="4dp" android:id="@+id/nearby_lobby_choose_game" style="@style/Widget.FlyNes.Nearby.Action" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="@string/nearby_choose_game" android:visibility="gone" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
-</LinearLayout>
+</com.flynes.emu.NearbyFixedPage>

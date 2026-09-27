@@ -5,6 +5,9 @@ public final class NearbyMvpOwner implements AutoCloseable {
     private NearbyMvpSession session;
     private AutoCloseable networkLease;
     private String gameTitle = "";
+    private String gameKey = "";
+    public synchronized String gameKey() { return gameKey; }
+    public synchronized void gameKey(String key) { gameKey = key; }
     public synchronized String gameTitle() { return gameTitle; }
     public synchronized void gameTitle(String title) { gameTitle = title; }
 
@@ -47,6 +50,7 @@ public final class NearbyMvpOwner implements AutoCloseable {
 
     public synchronized void resetSessionKeepingNetwork() {
         gameTitle = "";
+        gameKey = "";
         if (session != null) {
             session.close();
             session = null;

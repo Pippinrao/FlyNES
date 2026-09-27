@@ -196,6 +196,7 @@ public final class HomeActivity extends android.app.Activity {
 
     @Override protected void onResume() {
         super.onResume();
+        if (getIntent().getBooleanExtra("nearby_choose_game", false)) main.post(nearbyResumeMonitor);
         if (fullUiInstalled && runtime != null && !busy && runtime.nativeReady().isDone()) {
             refreshSnapshot();
         }
@@ -218,9 +219,25 @@ public final class HomeActivity extends android.app.Activity {
     }
 
     @Override protected void onStop() {
+        main.removeCallbacks(nearbyResumeMonitor);
         persistNavigation();
         super.onStop();
     }
+
+    private final Runnable nearbyResumeMonitor = new Runnable() {
+        @Override public void run() {
+            if (isFinishing()) return;
+            NearbyMvpSession session = ((FlyNesApplication) getApplication()).nearbyMvpOwner().session();
+            if (!busy && session != null) {
+                int[] state = session.snapshot();
+                if (state[0] == NearbyMvpSession.RUNNING && state.length > 11 && state[11] == 0) {
+                    finish(); // The retained room routes the resumed session back to play.
+                    return;
+                }
+            }
+            main.postDelayed(this, 100);
+        }
+    };
 
     @Override protected void onDestroy() {
         main.removeCallbacks(localeMonitor);
@@ -658,6 +675,10 @@ public final class HomeActivity extends android.app.Activity {
                     if (variant == null) throw new java.io.IOException("Game is no longer available");
                     var content = app.catalogRuntime().nearbyContentLoader().load(variant.variantId());
                     NearbyMvpSession lan = app.nearbyMvpOwner().session();
+                    if (lan != null && (lan.snapshot()[0] == NearbyMvpSession.RUNNING
+                            || lan.snapshot()[0] == NearbyMvpSession.CONFIGURING)) {
+                        if (!lan.returnLobby()) throw new java.io.IOException("Could not change game");
+                    }
                     long deadline = android.os.SystemClock.elapsedRealtime() + 3000;
                     while (lan != null && lan.snapshot()[0] == NearbyMvpSession.RETURNING &&
                             android.os.SystemClock.elapsedRealtime() < deadline) android.os.SystemClock.sleep(10);
@@ -667,6 +688,7 @@ public final class HomeActivity extends android.app.Activity {
                     if (lan == null || !lan.selectGame(content.bytes(), gameKey) || !lan.confirm())
                         throw new java.io.IOException("Game selection failed");
                     app.nearbyMvpOwner().gameTitle(displayTitle(entry));
+                    app.nearbyMvpOwner().gameKey(gameKey);
                     runOnUiThread(this::finish);
                 } catch (Exception failure) {
                     runOnUiThread(() -> { setBusy(false); showStatus(R.string.launch_failed); });

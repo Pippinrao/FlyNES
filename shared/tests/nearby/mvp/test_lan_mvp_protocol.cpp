@@ -1,10 +1,12 @@
 #include "lan_mvp/lockstep.hpp"
 #include "lan_mvp/wire.hpp"
+#include "lan_mvp/pause.hpp"
 
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <vector>
+#include <deque>
 
 namespace {
 int failures = 0;
@@ -15,6 +17,49 @@ void check(bool value, const char* message) {
 
 int main() {
     using namespace flynes::session::lan_mvp;
+
+    // Two FIFO directions: an earlier guest pause crosses a host Continue.
+    PauseState hostPause, guestPause;
+    std::deque<std::uint8_t> toHost, toGuest;
+    toHost.push_back(guestPause.set_local(true, false));
+    check(hostPause.resume(), "host can request continue");
+    toGuest.push_back(2);
+    auto drain = [&]() {
+        for (int step = 0; step < 20 && (!toHost.empty() || !toGuest.empty()); ++step) {
+            if (!toHost.empty()) {
+                const auto value = toHost.front(); toHost.pop_front();
+                if (auto reply = hostPause.receive(value, true)) toGuest.push_back(*reply);
+            }
+            if (!toGuest.empty()) {
+                const auto value = toGuest.front(); toGuest.pop_front();
+                if (auto reply = guestPause.receive(value, false)) toHost.push_back(*reply);
+            }
+        }
+        check(toHost.empty() && toGuest.empty(), "pause handshake settles without echo loop");
+    };
+    drain();
+    check(!hostPause.paused() && !guestPause.paused(), "in-flight earlier pause cannot undo Continue");
+    for (bool simultaneous : {false, true}) {
+        hostPause = {}; guestPause = {};
+        check(hostPause.resume(), "request starts a fresh barrier");
+        toGuest.push_back(2);
+        if (simultaneous) { check(guestPause.resume(), "peer also continues"); toHost.push_back(2); }
+        drain();
+        check(!hostPause.paused() && !guestPause.paused(), "one or both Continue requests settle unpaused");
+
+        check(hostPause.resume(), "next Continue starts"); toGuest.push_back(2);
+        check(!hostPause.resume(), "duplicate Continue is bounded while pending");
+        if (simultaneous) { check(guestPause.resume(), "simultaneous peer Continue"); toHost.push_back(2); }
+        toGuest.push_back(hostPause.set_local(true, true));
+        drain();
+        check(hostPause.paused() && guestPause.paused(), "new local pause after Continue survives its acknowledgement");
+    }
+    hostPause = {}; guestPause = {};
+    check(hostPause.resume(), "host Continue before peer later pause");
+    if (auto ack = guestPause.receive(2, false)) toHost.push_back(*ack);
+    toHost.push_back(guestPause.set_local(true, false));
+    drain();
+    check(hostPause.paused() && guestPause.paused(), "receiver pause after acknowledgement survives");
 
     std::vector<std::uint8_t> first;
     std::vector<std::uint8_t> second;

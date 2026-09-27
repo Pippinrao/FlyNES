@@ -1,22 +1,37 @@
 package com.flynes.emu;
 
 import com.google.zxing.BinaryBitmap;
+import com.google.zxing.MultiFormatReader;
+import com.google.zxing.NotFoundException;
 import com.google.zxing.PlanarYUVLuminanceSource;
-import com.google.zxing.ReaderException;
 import com.google.zxing.common.HybridBinarizer;
-import com.google.zxing.qrcode.QRCodeReader;
 
-/** Decodes only the luminance plane of a camera NV21 preview frame. */
+/** Decodes the Y plane without retaining camera frames or invitation data. */
 final class NearbyQrDecoder {
+    private final MultiFormatReader reader = new MultiFormatReader();
+    private int candidateCount;
+    NearbyQrDecoder() {
+        java.util.Map<com.google.zxing.DecodeHintType, Object> hints =
+                new java.util.EnumMap<>(com.google.zxing.DecodeHintType.class);
+        hints.put(com.google.zxing.DecodeHintType.POSSIBLE_FORMATS,
+                java.util.Collections.singletonList(com.google.zxing.BarcodeFormat.QR_CODE));
+        hints.put(com.google.zxing.DecodeHintType.TRY_HARDER, Boolean.TRUE);
+        hints.put(com.google.zxing.DecodeHintType.NEED_RESULT_POINT_CALLBACK,
+                (com.google.zxing.ResultPointCallback) point -> candidateCount++);
+        reader.setHints(hints);
+    }
+    int candidateCount() { return candidateCount; }
     static String decodeNv21(byte[] frame, int width, int height) {
-        if (frame == null || width <= 0 || height <= 0 || width > 4096 || height > 4096
-                || frame.length < width * height) return null;
+        return new NearbyQrDecoder().decode(frame, width, height);
+    }
+    String decode(byte[] data, int width, int height) {
+        candidateCount = 0;
+        if (data == null || width <= 0 || height <= 0 || width > 4096 || height > 4096
+                || data.length < width * height) return null;
         try {
-            PlanarYUVLuminanceSource source = new PlanarYUVLuminanceSource(
-                    frame, width, height, 0, 0, width, height, false);
-            return new QRCodeReader().decode(new BinaryBitmap(new HybridBinarizer(source))).getText();
-        } catch (ReaderException | IllegalArgumentException error) {
-            return null;
-        }
+            return reader.decodeWithState(new BinaryBitmap(new HybridBinarizer(
+                    new PlanarYUVLuminanceSource(data, width, height, 0, 0, width, height, false)))).getText();
+        } catch (NotFoundException | IllegalArgumentException missing) { return null; }
+        finally { reader.reset(); }
     }
 }

@@ -69,6 +69,7 @@ final class NearbyMvpSession implements AutoCloseable {
 
     synchronized boolean confirm() { return handle != 0 && nativeConfirm(handle); }
     synchronized boolean setPaused(boolean paused) { return handle != 0 && nativeSetPaused(handle, paused); }
+    synchronized boolean resumeGame() { return handle != 0 && nativeResumeGame(handle); }
     synchronized boolean returnLobby() { return handle != 0 && nativeReturnLobby(handle); }
 
     synchronized boolean submitInput(int buttons) {
@@ -98,6 +99,7 @@ final class NearbyMvpSession implements AutoCloseable {
         }
     }
 
+    private static native boolean nativeResumeGame(long handle);
     private static native long nativeCreate();
     private static native boolean nativeHost(long handle, String ipv4, byte[] token);
     private static native boolean nativeJoin(long handle, String localIpv4, String invite);

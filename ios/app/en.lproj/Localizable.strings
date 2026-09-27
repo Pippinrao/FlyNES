@@ -388,3 +388,10 @@
 "nearby.scan.afterScan" = "After a scan, wait for the host to accept, then verify identity.";
 "nearby.scan.footer" = "Invalid, expired, or already-used QR codes cannot join";
 "nearby.diagnostics.title" = "Connection details";
+
+"nearby.resumeGame" = "Continue game";
+"nearby.changeGame" = "Change game";
+"nearby.gamePaused" = "Game paused";
+
+"nearby.playerLocal" = "This device";
+"nearby.playerPeer" = "Other player";

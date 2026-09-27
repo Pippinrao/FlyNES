@@ -1,51 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/nearby_scanner_root"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/fly_background">
-
-    <SurfaceView
-        android:id="@+id/nearby_scanner_preview"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:padding="16dp">
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/nearby_scanner_toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:background="@color/fly_background"
-            app:navigationIcon="@drawable/ic_back"
-            app:navigationIconTint="@color/fly_on_surface"
-            app:title="@string/nearby_action_scanQr"
-            app:titleTextAppearance="@style/TextAppearance.FlyNes.Nearby.PageTitle"
-            app:titleTextColor="@color/fly_on_surface" />
-        <Space android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="1" />
-        <TextView
-            android:id="@+id/nearby_scanner_status"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="12dp"
-            android:gravity="center"
-            android:background="@drawable/bg_nearby_card"
-            android:text="@string/nearby_scanner_prompt"
-            android:textAppearance="@style/TextAppearance.FlyNes.Nearby.Body"
-            android:textColor="@color/fly_on_surface"
-            android:accessibilityLiveRegion="polite" />
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/nearby_scanner_retry"
-            style="@style/Widget.FlyNes.Nearby.Primary"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="8dp"
-            android:text="@string/nearby_scanner_retry"
-            android:visibility="gone" />
+<com.flynes.emu.NearbyFixedPage xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/nearby_scanner_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="@color/fly_background">
+    <com.google.android.material.appbar.MaterialToolbar android:id="@+id/nearby_scanner_toolbar" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:background="@color/fly_background" app:navigationIcon="@drawable/ic_back" app:navigationIconTint="@color/fly_on_surface" app:title="@string/nearby_action_scanQr" app:titleTextAppearance="@style/TextAppearance.FlyNes.Nearby.PageTitle" app:titleTextColor="@color/fly_on_surface" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal" android:baselineAligned="false" android:padding="16dp">
+        <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight=".44" android:background="@drawable/bg_nearby_card">
+            <com.flynes.emu.NearbyCameraPreview android:id="@+id/nearby_scanner_preview" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_gravity="center" />
+            <TextView android:id="@+id/nearby_scanner_result" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:padding="12dp" android:visibility="gone" android:textAppearance="@style/TextAppearance.FlyNes.Nearby.Body" android:textColor="@color/fly_on_surface_muted" />
+        </FrameLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight=".56" android:layout_marginStart="18dp" android:padding="8dp" android:orientation="vertical" android:gravity="center_vertical">
+            <TextView android:id="@+id/nearby_scan_headline" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/nearby_scan_headline" android:textAppearance="@style/TextAppearance.FlyNes.Nearby.PaneTitle" android:textColor="@color/fly_on_surface" />
+            <TextView android:id="@+id/nearby_scan_subtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="@string/nearby_network_auto_hint" android:textAppearance="@style/TextAppearance.FlyNes.Nearby.Muted" android:textColor="@color/fly_on_surface_muted" />
+            <TextView android:id="@+id/nearby_scanner_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="@string/nearby_scanner_prompt" android:textAppearance="@style/TextAppearance.FlyNes.Nearby.Body" android:textColor="@color/fly_on_surface" android:accessibilityLiveRegion="polite" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:orientation="horizontal">
+                <com.google.android.material.button.MaterialButton android:id="@+id/nearby_scanner_retry" style="@style/Widget.FlyNes.Nearby.Primary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/nearby_scanner_retry" android:visibility="gone" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/nearby_scanner_cancel" style="@style/Widget.FlyNes.Nearby.Action" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:text="@string/nearby_action_cancel" />
+            </LinearLayout>
+        </LinearLayout>
     </LinearLayout>
-</FrameLayout>
+</com.flynes.emu.NearbyFixedPage>

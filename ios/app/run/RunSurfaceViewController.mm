@@ -218,6 +218,8 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
     }
     [self reloadProductSettings];
     NSNotificationCenter *notifications = NSNotificationCenter.defaultCenter;
+    [notifications addObserver:self selector:@selector(nearbyGameResumed:)
+                          name:@"flynes.nearby.resumed" object:nil];
     [notifications addObserver:self selector:@selector(applicationWillResignActive:)
                           name:UIApplicationWillResignActiveNotification object:nil];
     [notifications addObserver:self selector:@selector(applicationDidBecomeActive:)
@@ -679,7 +681,7 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
     paused_ = NO;
     checkpointFailed_ = NO;
     if (self.nearbySession) {
-        [FlyNesNearbyBridge.sharedInstance setPaused:NO];
+        [FlyNesNearbyBridge.sharedInstance resumeGame];
         backgroundPauseOwned_ = NO;
     }
     [self dismissPauseLayerKeepingPaused:NO];
@@ -696,6 +698,14 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
     drawerOpen_ = NO;
     overlay_.hidden = NO;
     pauseButton_.hidden = NO;
+}
+
+- (void)nearbyGameResumed:(NSNotification *)notification
+{
+    if (!self.nearbySession || !visible_ || !foreground_) return;
+    [self dismissPauseLayerKeepingPaused:NO];
+    backgroundPauseOwned_ = NO;
+    [self updatePlayback];
 }
 
 - (void)displayTick:(CFTimeInterval)timestamp

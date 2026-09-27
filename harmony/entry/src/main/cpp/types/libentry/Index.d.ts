@@ -234,6 +234,7 @@ export const nearbyMvpCancel: () => boolean;
 export const nearbyMvpOpenPlay: () => boolean;
 export const nearbyMvpReturnLobby: () => boolean;
 export const nearbyMvpSetPaused: (paused: boolean) => boolean;
+export const nearbyMvpResumeGame: () => boolean;
 export const gameCenterFilter: (rows: GameCenterRow[], category: string, query: string) => GameCenterRow[];
 export const controlLayoutRecommended: () => string;
 export const controlLayoutDecodeOrRecommended: (value: string) => string;

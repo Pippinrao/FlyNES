@@ -111,6 +111,8 @@ int fly_lan_mvp_select_rom(fly_lan_mvp_session*, const uint8_t* bytes, size_t si
 int fly_lan_mvp_select_game(fly_lan_mvp_session*, const uint8_t* bytes, size_t size, const char* game_key);
 int fly_lan_mvp_confirm(fly_lan_mvp_session*);
 int fly_lan_mvp_set_paused(fly_lan_mvp_session*, int paused);
+/* Explicit user action: resume the current game, releasing both players' pauses. */
+int fly_lan_mvp_resume_game(fly_lan_mvp_session*);
 int fly_lan_mvp_return_lobby(fly_lan_mvp_session*);
 // capture_time_ns uses this process's monotonic clock. A zero timestamp means
 // "capture at submission"; sequence zero requests an assigned local sequence.

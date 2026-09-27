@@ -681,6 +681,29 @@ int main(int argc, char** argv) {
                   "clearing the guest pause cannot cancel an active host pause");
             check(fly_lan_mvp_set_paused(host, 0) == 1,
                   "host clears the remaining pause request");
+            for (auto* pauser : {host, guest}) {
+                auto* resumer = pauser == host ? guest : host;
+                check(fly_lan_mvp_set_paused(pauser, 1) == 1, "room return pauses current game");
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                (void)fly_lan_mvp_snapshot_read(host, &a);
+                const auto room_frame = a.completed_frames;
+                check(fly_lan_mvp_resume_game(resumer) == 1, "either player explicitly resumes current game");
+                std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                (void)fly_lan_mvp_snapshot_read(host, &a);
+                (void)fly_lan_mvp_snapshot_read(guest, &b);
+                check(!a.paused && !b.paused && a.completed_frames > room_frame,
+                      "continue in opposite room releases peer pause and advances original progress");
+                check(std::equal(connected_id.begin(), connected_id.end(), a.session_id),
+                      "continue retains the same connected session");
+            }
+            check(fly_lan_mvp_set_paused(host, 1) && fly_lan_mvp_set_paused(guest, 1),
+                  "both players can be in paused rooms");
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            check(fly_lan_mvp_resume_game(guest) == 1, "guest continues both paused rooms");
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            (void)fly_lan_mvp_snapshot_read(host, &a);
+            (void)fly_lan_mvp_snapshot_read(guest, &b);
+            check(!a.paused && !b.paused, "one continue action clears both room pauses");
             check(fly_lan_mvp_return_lobby(guest) == 1, "either player can return both apps to lobby");
             check(wait_pair(host, guest, 3000), "return lobby drains old inputs on the same connection");
             (void)fly_lan_mvp_snapshot_read(host, &a);

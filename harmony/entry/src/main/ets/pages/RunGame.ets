@@ -131,7 +131,8 @@ struct RunGame {
   }
 
   onPageHide(): void {
-    if (this.nearby && this.started) {
+    if (this.nearby && this.started && !this.returningToLobby &&
+      nativePlay.nearbyMvpSnapshot().state === 6) {
       this.play.setButtons(0);
       nativePlay.nearbyMvpSetPaused(true);
     }
@@ -481,6 +482,7 @@ struct RunGame {
     try {
       if (this.nearby) {
         const state = nativePlay.nearbyMvpSnapshot();
+        if (!state.paused && this.drawerOpen) this.drawerOpen = false;
         if (state.state !== 6) {
           if (!this.returningToLobby) {
             this.returningToLobby = true;
@@ -612,7 +614,7 @@ struct RunGame {
 
   private resumePlay(): void {
     this.drawerOpen = false;
-    if (this.nearby) { nativePlay.nearbyMvpSetPaused(false); return; }
+    if (this.nearby) { nativePlay.nearbyMvpResumeGame(); return; }
     if (!this.paused) {
       return;
     }
@@ -631,7 +633,7 @@ struct RunGame {
     }
     if (id === 'game_center') {
       if (this.nearby) {
-        nativePlay.nearbyMvpReturnLobby();
+        nativePlay.nearbyMvpSetPaused(true);
         this.returningToLobby = true;
         this.stopLoop();
         void router.replaceUrl({ url: 'pages/NearbyLobby' });
