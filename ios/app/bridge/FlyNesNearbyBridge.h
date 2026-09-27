@@ -15,6 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly, copy) NSString *gameTitle;
 @property(nonatomic, readonly, copy) NSString *canonicalId;
 @property(nonatomic, readonly) NSTimeInterval sourceFrameDuration;
+/// Local runtime identity; changes even when the same ROM is selected again.
+@property(nonatomic, readonly) uint64_t playbackGeneration;
 
 - (BOOL)startHost:(NSError * _Nullable * _Nullable)error;
 - (BOOL)hasUsableIPv4;
@@ -25,6 +27,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSDictionary<NSString *, id> *)snapshot;
 - (BOOL)selectHostGameROM:(NSData *)rom canonicalID:(NSString *)canonicalID
                    title:(NSString *)title;
+/// Nonblocking selection, including returning an existing game to the lobby.
+/// Call on the main thread. Completion is always asynchronous on the main thread.
+- (void)selectHostGameROM:(NSData *)rom canonicalID:(NSString *)canonicalID
+                   title:(NSString *)title completion:(void (^)(BOOL selected))completion;
 - (BOOL)selectGuestGameROM:(NSData *)rom canonicalID:(NSString *)canonicalID
                     title:(NSString *)title;
 - (BOOL)confirm;

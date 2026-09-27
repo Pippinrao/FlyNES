@@ -1,7 +1,7 @@
 struct NearbyScanLifecycle {
     private(set) var generation: UInt64 = 0
     private(set) var consumed = false
-    private(set) var active = true
+    private(set) var active = false
 
     init(generation: UInt64 = 0) { self.generation = generation }
 

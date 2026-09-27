@@ -395,3 +395,9 @@
 
 "nearby.playerLocal" = "This device";
 "nearby.playerPeer" = "Other player";
+
+"nearby.scan.invalid" = "This is not a FlyNES room QR code. Ask the host for a new QR code, then scan again.";
+"nearby.scan.networkUnavailable" = "Could not reach the host. Connect both devices to the same Wi-Fi or hotspot, then scan again.";
+"nearby.scan.expired" = "This room QR code has expired. Ask the host to refresh it, then scan again.";
+"nearby.invite.hotspotGuidance" = "No local network. Open Settings to enable a hotspot or join one, connect both devices, then refresh the QR code.";
+"nearby.action.returnToRoom" = "Return to room";

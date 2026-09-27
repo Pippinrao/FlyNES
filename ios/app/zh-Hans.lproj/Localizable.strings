@@ -394,3 +394,9 @@
 
 "nearby.playerLocal" = "本机";
 "nearby.playerPeer" = "另一位玩家";
+
+"nearby.scan.invalid" = "这不是 FlyNES 房间二维码。请房主提供新二维码后重新扫描。";
+"nearby.scan.networkUnavailable" = "无法连接房主。请让两台设备连接同一 Wi-Fi 或热点后重新扫描。";
+"nearby.scan.expired" = "房间二维码已过期。请房主刷新二维码后重新扫描。";
+"nearby.invite.hotspotGuidance" = "没有可用局域网。请到系统设置开启或连接热点，让两台设备连入后刷新二维码。";
+"nearby.action.returnToRoom" = "返回联机房间";

@@ -18,9 +18,8 @@ struct NearbyPairingView: View {
     @State private var inviteImage: UIImage?
     @State private var hostMessage = "nearby.invite.notReady"
     @State private var lobbyOpened = false
-    @State private var joining = false
-    @State private var scanFinished = false
-    @State private var lastState = 0
+    @State private var scanState = NearbyScanJoinState()
+    @State private var needsHotspotGuidance = false
 
     init(mode: NearbyPairingMode = .create) {
         self.mode = mode
@@ -71,11 +70,19 @@ struct NearbyPairingView: View {
                         .nearbyRole(NearbyTypography.paneTitle)
                         .foregroundStyle(ink)
                         .accessibilityIdentifier("nearby_invite_headline")
-                    Text(mode == .scan ? scannerMessage : LocalizedStringKey(hostMessage))
-                        .nearbyRole(NearbyTypography.body)
-                        .foregroundStyle(ink)
-                        .accessibilityIdentifier("nearby_pairing_status")
-                    if geometry.size.height > 400 {
+                    if mode == .scan || !needsHotspotGuidance {
+                        Text(mode == .scan ? scannerMessage : LocalizedStringKey(hostMessage))
+                            .nearbyRole(NearbyTypography.body)
+                            .foregroundStyle(ink)
+                            .accessibilityIdentifier("nearby_pairing_status")
+                    }
+                    if mode == .create && needsHotspotGuidance {
+                        Text("nearby.invite.hotspotGuidance")
+                            .nearbyRole(NearbyTypography.muted)
+                            .foregroundStyle(muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("nearby_hotspot_guidance")
+                    } else if geometry.size.height > 400 {
                         Text("nearby.network.autoHint")
                             .nearbyRole(NearbyTypography.muted)
                             .foregroundStyle(muted)
@@ -98,9 +105,7 @@ struct NearbyPairingView: View {
                     }
                     if mode == .scan {
                         Button("nearby.scan.retry") {
-                            if joining { NearbyBackendJoin.shared.cancel() }
-                            joining = false
-                            scanFinished = false
+                            if scanState.retry() { NearbyBackendJoin.shared.cancel() }
                             scannerUnavailable = false
                             scannerMessage = "nearby.scan.cameraHint"
                             scanGeneration += 1
@@ -144,28 +149,30 @@ struct NearbyPairingView: View {
             refreshSession()
         }
         .onDisappear {
-            if mode == .scan && joining && !scanFinished { NearbyBackendJoin.shared.cancel() }
+            if mode == .scan {
+                refreshSession()
+                if scanState.leave() { NearbyBackendJoin.shared.cancel() }
+            }
         }
     }
 
     private func joinScannedText(_ text: String) {
-        guard !joining && !scanFinished else { return }
-        joining = true
+        guard let generation = scanState.begin() else { return }
         scannerMessage = "nearby.scan.joining"
-        guard NearbyBackendJoin.shared.joinScannedText(text, completion: { joined in
+        guard NearbyBackendJoin.shared.joinScannedText(text, completion: { started in
+            let failure = NearbyBackendJoin.shared.failure ?? .general
             DispatchQueue.main.async {
-                joining = false
-                scanFinished = joined
-                if joined { refreshSession() }
-                else {
-                    scannerMessage = "nearby.scan.joinUnavailable"
-                    scanGeneration += 1
+                guard scanState.generation == generation else { return }
+                scanState.didStart(started, generation: generation, failure: failure)
+                if started { refreshSession() }
+                else if let failure = scanState.failure {
+                    scannerMessage = LocalizedStringKey(failure.messageKey)
                 }
             }
         }) else {
-            joining = false
-            scannerMessage = "nearby.scan.joinUnavailable"
-            scanGeneration += 1
+            let failure = NearbyBackendJoin.shared.failure ?? .invalid
+            scanState.didStart(false, generation: generation, failure: failure)
+            scannerMessage = LocalizedStringKey(failure.messageKey)
             return
         }
     }
@@ -178,8 +185,11 @@ struct NearbyPairingView: View {
 
     private func refreshSession() {
         let bridge = FlyNesNearbyBridge.sharedInstance
-        let state = (bridge.snapshot()["state"] as? NSNumber)?.intValue ?? 0
+        let snapshot = bridge.snapshot()
+        let state = (snapshot["state"] as? NSNumber)?.intValue ?? 0
+        let reason = (snapshot["reason"] as? NSNumber)?.intValue ?? 0
         if mode == .create {
+            needsHotspotGuidance = !bridge.hasUsableIPv4()
             let currentInvite = bridge.inviteText() ?? ""
             if currentInvite != invite {
                 invite = currentInvite
@@ -189,16 +199,16 @@ struct NearbyPairingView: View {
                 hostMessage = "nearby.role.host.hint"
             }
         }
+        if mode == .scan {
+            scanState.observe(state: state, reason: reason)
+            if let failure = scanState.failure {
+                scannerMessage = LocalizedStringKey(failure.messageKey)
+            }
+        }
         if (state == 3 || state == 5 || state == 6 || state == 7) && !lobbyOpened {
             lobbyOpened = true
             NotificationCenter.default.post(name: Notification.Name("flynes.nearby.connected"), object: nil)
         }
-        if state == 4 && mode == .scan && lastState != 4 {
-            scanFinished = false
-            scannerMessage = "nearby.scan.joinUnavailable"
-            scanGeneration += 1
-        }
-        if lastState != state { lastState = state }
     }
 
     private func qrImage(_ text: String) -> UIImage? {
@@ -230,30 +240,27 @@ private struct NearbyCameraPreview: UIViewControllerRepresentable {
     }
 }
 
-private final class NearbyCameraController: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
+private final class NearbyCameraController: UIViewController {
     var onCode: ((String) -> Void)?
     var onUnavailable: (() -> Void)?
-    private let session = AVCaptureSession()
+    private lazy var scanner = NearbyQRScanner(
+        onCode: { [weak self] in self?.onCode?($0) },
+        onUnavailable: { [weak self] in self?.onUnavailable?() }
+    )
     private var preview: AVCaptureVideoPreviewLayer?
-    private var finished = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .black
-        #if targetEnvironment(simulator)
-        DispatchQueue.main.async { [weak self] in self?.onUnavailable?() }
-        return
-        #endif
-        switch AVCaptureDevice.authorizationStatus(for: .video) {
-        case .authorized: start()
-        case .notDetermined:
-            AVCaptureDevice.requestAccess(for: .video) { [weak self] allowed in
-                DispatchQueue.main.async {
-                    if allowed { self?.start() } else { self?.onUnavailable?() }
-                }
-            }
-        default: DispatchQueue.main.async { [weak self] in self?.onUnavailable?() }
-        }
+        let layer = AVCaptureVideoPreviewLayer(session: scanner.captureSession)
+        layer.videoGravity = .resizeAspectFill
+        view.layer.addSublayer(layer)
+        preview = layer
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        scanner.start()
     }
 
     override func viewDidLayoutSubviews() {
@@ -261,39 +268,7 @@ private final class NearbyCameraController: UIViewController, AVCaptureMetadataO
         preview?.frame = view.bounds
     }
 
-    private func start() {
-        guard let device = AVCaptureDevice.default(for: .video),
-              let input = try? AVCaptureDeviceInput(device: device),
-              session.canAddInput(input) else { onUnavailable?(); return }
-        session.addInput(input)
-        let output = AVCaptureMetadataOutput()
-        guard session.canAddOutput(output) else { onUnavailable?(); return }
-        session.addOutput(output)
-        output.setMetadataObjectsDelegate(self, queue: .main)
-        output.metadataObjectTypes = [.qr]
-        let layer = AVCaptureVideoPreviewLayer(session: session)
-        layer.videoGravity = .resizeAspectFill
-        layer.frame = view.bounds
-        view.layer.addSublayer(layer)
-        preview = layer
-        DispatchQueue.global(qos: .userInitiated).async { [session] in session.startRunning() }
-    }
-
-    func metadataOutput(_ output: AVCaptureMetadataOutput,
-                        didOutput objects: [AVMetadataObject], from connection: AVCaptureConnection) {
-        guard !finished,
-              let value = (objects.first as? AVMetadataMachineReadableCodeObject)?.stringValue,
-              !value.isEmpty else { return }
-        finished = true
-        onCode?(value)
-        stop()
-    }
-
-    func stop() {
-        if session.isRunning {
-            DispatchQueue.global(qos: .userInitiated).async { [session] in session.stopRunning() }
-        }
-    }
+    func stop() { scanner.stop() }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)

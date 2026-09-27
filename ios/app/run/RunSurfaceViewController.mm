@@ -58,30 +58,6 @@ NSString *pause_command_title(flynes::product::PauseCommand command)
     return FlyNesLocalizedString(@"pause.resume");
 }
 
-// One in-game status row: the §2.4 label and, while the session ABI has no
-// value to give, the blocked reason beneath it. Never a fabricated value
-// (spec §4).
-void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *reasonKey)
-{
-    UILabel *label = [[UILabel alloc] init];
-    label.translatesAutoresizingMaskIntoConstraints = NO;
-    label.text = NSLocalizedString(labelKey, nil);
-    label.font = [UIFont systemFontOfSize:13.0 weight:UIFontWeightRegular];
-    label.textColor = [UIColor colorWithWhite:0.96 alpha:1.0];
-    label.numberOfLines = 0;
-    [stack addArrangedSubview:label];
-    if (reasonKey != nil)
-    {
-        UILabel *reason = [[UILabel alloc] init];
-        reason.translatesAutoresizingMaskIntoConstraints = NO;
-        reason.text = NSLocalizedString(reasonKey, nil);
-        reason.font = [UIFont systemFontOfSize:11.5 weight:UIFontWeightRegular];
-        reason.textColor = [UIColor colorWithWhite:0.62 alpha:1.0];
-        reason.numberOfLines = 0;
-        [stack addArrangedSubview:reason];
-    }
-}
-
 } // namespace
 
 @implementation RunSurfaceViewController {
@@ -90,8 +66,6 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
     UIButton *pauseButton_;
     UIView *pauseLayer_;
     UILabel *pauseTitle_;
-    UIView *nearbyBanner_;
-    NSArray<NSLayoutConstraint *> *nearbyBannerConstraints_;
     FlyNesRuntimeBridge *runtime_;
     FlyNesMetalRenderer *renderer_;
     FlyNesDisplayLinkPacer *pacer_;
@@ -111,6 +85,9 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
     BOOL romReady_;
     BOOL videoFailureShown_;
     BOOL backgroundPauseOwned_;
+    NSTimer *nearbyStateTimer_;
+    uint64_t nearbyPlaybackGeneration_;
+    BOOL leavingNearbySession_;
 }
 
 @synthesize gameTitle = _gameTitle;
@@ -124,6 +101,7 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
 - (void)viewDidLoad
 {
     [super viewDidLoad];
+    nearbyPlaybackGeneration_ = FlyNesNearbyBridge.sharedInstance.playbackGeneration;
     self.view.backgroundColor = UIColor.blackColor;
     self.view.multipleTouchEnabled = YES;
     paused_ = NO;
@@ -179,7 +157,6 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
     pauseButton_.accessibilityLabel = FlyNesLocalizedString(@"run.pause");
     [pauseButton_ addTarget:self action:@selector(openPauseDrawer) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:pauseButton_];
-    [self buildNearbyBanner];
 
     UILayoutGuide *safe = self.view.safeAreaLayoutGuide;
     [NSLayoutConstraint activateConstraints:@[
@@ -200,6 +177,7 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
     if (self.nearbySession) {
         NSDictionary *session = FlyNesNearbyBridge.sharedInstance.snapshot;
         romReady_ = [session[@"state"] unsignedIntValue] == 6;
+        NSLog(@"FlyNesNearbyUI event=load state=%@ ready=%d generation=%llu", session[@"state"], romReady_, nearbyPlaybackGeneration_);
     } else {
         runtime_ = [[FlyNesRuntimeBridge alloc] init];
         [runtime_ createRuntime:nil];
@@ -232,6 +210,7 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
 
 - (void)dealloc
 {
+    [nearbyStateTimer_ invalidate];
     [NSNotificationCenter.defaultCenter removeObserver:self];
     [pacer_ invalidate];
     [audio_ pause];
@@ -244,6 +223,16 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
     visible_ = YES;
     [self drawFrame];
     foreground_ = UIApplication.sharedApplication.applicationState == UIApplicationStateActive;
+    if (self.nearbySession) NSLog(@"FlyNesNearbyUI event=appear ready=%d foreground=%d paused=%d drawer=%d", romReady_, foreground_, paused_, drawerOpen_);
+    if (self.nearbySession) {
+        [nearbyStateTimer_ invalidate];
+        __weak RunSurfaceViewController *weakSelf = self;
+        nearbyStateTimer_ = [NSTimer timerWithTimeInterval:0.05 repeats:YES block:^(NSTimer *) {
+            [weakSelf reconcileNearbySession];
+        }];
+        [NSRunLoop.mainRunLoop addTimer:nearbyStateTimer_ forMode:NSRunLoopCommonModes];
+        [self reconcileNearbySession];
+    }
     [self releaseBackgroundPauseIfReady];
     [self updatePlayback];
 }
@@ -252,7 +241,13 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
 {
     [super viewWillDisappear:animated];
     visible_ = NO;
-    if (self.nearbySession) [FlyNesNearbyBridge.sharedInstance setPaused:YES];
+    if (self.nearbySession) NSLog(@"FlyNesNearbyUI event=disappear generation=%llu current=%llu", nearbyPlaybackGeneration_, FlyNesNearbyBridge.sharedInstance.playbackGeneration);
+    [nearbyStateTimer_ invalidate];
+    nearbyStateTimer_ = nil;
+    if (self.nearbySession && !leavingNearbySession_ &&
+        nearbyPlaybackGeneration_ == FlyNesNearbyBridge.sharedInstance.playbackGeneration &&
+        [FlyNesNearbyBridge.sharedInstance.snapshot[@"state"] intValue] == 6)
+        [FlyNesNearbyBridge.sharedInstance setPaused:YES];
     [self stopPlayback];
     [self saveAutosaveIfEnabled];
 }
@@ -398,150 +393,6 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
     });
 }
 
-// Whether a nearby session exists at all. `FlyNesAppBridge` exposes no
-// `fly_session` handle or snapshot yet (spec §3, §10 D4), so no `FlyNES`
-// build can prove that one does — which is why local single-player shows no
-// nearby block at all rather than a permanently blocked row (spec §10 D7).
-// When the shared/session line adds the session surface to the binding, this
-// becomes the read of that snapshot and the banner, drawer block and rows
-// start answering on their own.
-- (BOOL)nearbySessionActive
-{
-    const unsigned state = [FlyNesNearbyBridge.sharedInstance.snapshot[@"state"] unsignedIntValue];
-    return self.nearbySession && state >= 3 && state <= 7;
-}
-
-// The states that demand user action — 冻结, 重连倒计时 and the
-// authority-timeout options — live in a non-dismissible banner pinned to the
-// top of the run surface, not in a modal and not only in the pause drawer: a
-// frozen end must not have to hunt through the drawer to recover (spec §4,
-// §10 D6). It is built once here and shown only once a session exists (§10 D7).
-- (void)buildNearbyBanner
-{
-    nearbyBanner_ = [[UIView alloc] init];
-    nearbyBanner_.translatesAutoresizingMaskIntoConstraints = NO;
-    nearbyBanner_.backgroundColor = [UIColor colorWithWhite:0.11 alpha:0.92];
-    nearbyBanner_.accessibilityIdentifier = @"nearby_status_banner";
-    nearbyBanner_.hidden = YES;
-
-    UIScrollView *scroll = [[UIScrollView alloc] init];
-    scroll.translatesAutoresizingMaskIntoConstraints = NO;
-
-    UIStackView *stack = [[UIStackView alloc] init];
-    stack.translatesAutoresizingMaskIntoConstraints = NO;
-    stack.axis = UILayoutConstraintAxisVertical;
-    stack.spacing = 6.0;
-    [scroll addSubview:stack];
-    [nearbyBanner_ addSubview:scroll];
-    [self populateNearbyBanner:stack];
-
-    UILayoutGuide *safe = self.view.safeAreaLayoutGuide;
-    // Built here, activated only in `updateNearbyBanner` once the banner is
-    // actually in the hierarchy. Activating these while `nearbyBanner_` still has
-    // no superview raises "Unable to activate constraint ... because they have no
-    // common ancestor", which aborted the run surface on every game launch in
-    // local single-player — the one state this build is always in (spec §10 D7).
-    nearbyBannerConstraints_ = @[
-        [nearbyBanner_.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
-        [nearbyBanner_.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        [nearbyBanner_.topAnchor constraintEqualToAnchor:safe.topAnchor],
-        [scroll.leadingAnchor constraintEqualToAnchor:nearbyBanner_.leadingAnchor],
-        [scroll.trailingAnchor constraintEqualToAnchor:nearbyBanner_.trailingAnchor],
-        [scroll.topAnchor constraintEqualToAnchor:nearbyBanner_.topAnchor],
-        [scroll.bottomAnchor constraintEqualToAnchor:nearbyBanner_.bottomAnchor],
-        [scroll.heightAnchor constraintEqualToConstant:140.0],
-        [stack.leadingAnchor constraintEqualToAnchor:scroll.leadingAnchor constant:16.0],
-        [stack.trailingAnchor constraintEqualToAnchor:scroll.trailingAnchor constant:-16.0],
-        [stack.topAnchor constraintEqualToAnchor:scroll.topAnchor constant:10.0],
-        [stack.bottomAnchor constraintEqualToAnchor:scroll.bottomAnchor constant:-10.0],
-        [stack.widthAnchor constraintEqualToAnchor:scroll.widthAnchor constant:-32.0],
-    ];
-    // Attached only while a session exists, so local single-player loses no
-    // vertical play space to an empty band (spec §10 D7).
-    [self updateNearbyBanner];
-}
-
-// Banner content. The banner carries no dismiss control by design: while the
-// state persists it stays. 接管 / 继续单人 / 保存结束 are the three
-// authority-timeout actions (spec §10 D9); each is disabled with a specific
-// reason until the ABI can say whether it is available, and none is ever
-// rendered from wire text (spec §10 D9).
-- (void)populateNearbyBanner:(UIStackView *)stack
-{
-    if (![self nearbySessionActive])
-        return;
-
-    add_nearby_status_row(stack, @"nearby.ingame.frozen", @"nearby.blocked.session_read");
-    add_nearby_status_row(stack, @"nearby.ingame.reconnect_countdown",
-                          @"nearby.ingame.reconnect_countdown.blocked");
-    add_nearby_status_row(stack, @"nearby.ingame.authority_timeout",
-                          @"nearby.ingame.authority_timeout.available");
-    add_nearby_status_row(stack, @"nearby.ingame.takeover", @"nearby.blocked.session_read");
-    add_nearby_status_row(stack, @"nearby.ingame.continue_solo", @"nearby.blocked.session_read");
-    add_nearby_status_row(stack, @"nearby.ingame.save_and_end", @"nearby.blocked.session_read");
-    add_nearby_status_row(stack, @"nearby.ingame.option_unavailable_reason",
-                          @"nearby.blocked.session_read");
-    add_nearby_status_row(stack, @"nearby.ingame.branch_no_auto_merge", nil);
-}
-
-- (void)updateNearbyBanner
-{
-    if (nearbyBanner_ == nil)
-        return;
-    if ([self nearbySessionActive])
-    {
-        if (nearbyBanner_.superview == nil)
-        {
-            [self.view addSubview:nearbyBanner_];
-            // The constraints only become valid here: they tie the banner to
-            // `self.view`, so both must already share an ancestor.
-            [NSLayoutConstraint activateConstraints:nearbyBannerConstraints_];
-        }
-        nearbyBanner_.hidden = NO;
-        return;
-    }
-    nearbyBanner_.hidden = YES;
-    [nearbyBanner_ removeFromSuperview];
-}
-
-// The in-game status block inside the existing pause drawer: every §2.4 field
-// as a row labelled per the vocabulary, each with the blocked reason that
-// follows from the session ABI gap (spec §3, §4). Multi-branch visualisation is
-// deferred, but the always-known no-auto-merge invariant stays (spec §10 D10).
-//
-// These rows are built when the drawer opens, so they pick the session up on
-// the next open — unlike the banner, which needs one `populateNearbyBanner:`
-// call at the moment a session actually begins.
-- (void)addNearbyDrawerRowsToStack:(UIStackView *)stack
-{
-    if (![self nearbySessionActive])
-        return;
-
-    UILabel *heading = [[UILabel alloc] init];
-    heading.translatesAutoresizingMaskIntoConstraints = NO;
-    heading.text = NSLocalizedString(@"nearby.ingame.section", nil);
-    heading.font = [UIFont systemFontOfSize:12.0 weight:UIFontWeightSemibold];
-    heading.textColor = [UIColor colorWithWhite:0.62 alpha:1.0];
-    heading.numberOfLines = 0;
-    [stack addArrangedSubview:heading];
-
-    add_nearby_status_row(stack, @"nearby.ingame.mode", @"nearby.blocked.mode_gate");
-    add_nearby_status_row(stack, @"nearby.ingame.connection_quality",
-                          @"nearby.blocked.connection_quality");
-    add_nearby_status_row(stack, @"nearby.ingame.seat", @"nearby.blocked.mode_gate");
-    add_nearby_status_row(stack, @"nearby.ingame.pause_state", @"nearby.blocked.session_read");
-    add_nearby_status_row(stack, @"nearby.ingame.frozen", @"nearby.blocked.session_read");
-    add_nearby_status_row(stack, @"nearby.ingame.reconnect_countdown",
-                          @"nearby.ingame.reconnect_countdown.blocked");
-    add_nearby_status_row(stack, @"nearby.ingame.authority_timeout",
-                          @"nearby.blocked.authority_recovery");
-    add_nearby_status_row(stack, @"nearby.ingame.save_and_end", @"nearby.blocked.session_read");
-    add_nearby_status_row(stack, @"nearby.ingame.branch_reunion",
-                          @"nearby.blocked.branch_merge");
-    add_nearby_status_row(stack, @"nearby.ingame.branch_no_auto_merge", nil);
-    add_nearby_status_row(stack, @"nearby.ingame.local_mute", @"nearby.blocked.local_mute");
-}
-
 - (void)applyOverlayButtons:(uint32_t)buttons
 {
     buttons_ = running_ ? buttons : 0;
@@ -606,17 +457,14 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
         [stack addArrangedSubview:failure];
     }
 
-    // In-game status rows for a nearby session, added above the command stack
-    // (spec §4, §10 D6). Nothing is added at all in local single-player: no
-    // session means nothing to report, and a permanent blocked block would be
-    // noise (spec §10 D7).
-    [self addNearbyDrawerRowsToStack:stack];
-
     for (const flynes::product::PauseCommand command : flynes::product::kPauseDrawerCommands)
     {
+        if (self.nearbySession && command == flynes::product::PauseCommand::Settings) continue;
         UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
         NSString *commandId = pause_command_id(command);
-        [button setTitle:pause_command_title(command) forState:UIControlStateNormal];
+        [button setTitle:(self.nearbySession && command == flynes::product::PauseCommand::GameCenter
+            ? FlyNesLocalizedString(@"nearby.action.returnToRoom") : pause_command_title(command))
+            forState:UIControlStateNormal];
         button.accessibilityIdentifier = commandId;
         button.tag = static_cast<NSInteger>(command);
         button.backgroundColor = command == flynes::product::PauseCommand::Resume
@@ -670,6 +518,9 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
             self.onPauseCommand(commandId);
         return;
     }
+    // The explicit Room command owns its pause. A later disappearance must not
+    // send another Pause after the peer has already pressed Continue.
+    if (self.nearbySession) leavingNearbySession_ = YES;
     [self dismissPauseLayerKeepingPaused:YES];
     if (self.onPauseCommand != nil)
         self.onPauseCommand(commandId);
@@ -702,10 +553,28 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
 
 - (void)nearbyGameResumed:(NSNotification *)notification
 {
-    if (!self.nearbySession || !visible_ || !foreground_) return;
-    [self dismissPauseLayerKeepingPaused:NO];
-    backgroundPauseOwned_ = NO;
-    [self updatePlayback];
+    [self reconcileNearbySession];
+}
+
+- (void)reconcileNearbySession
+{
+    if (!self.nearbySession || !visible_ || leavingNearbySession_) return;
+    FlyNesNearbyBridge *bridge = FlyNesNearbyBridge.sharedInstance;
+    NSDictionary *snapshot = bridge.snapshot;
+    if (nearbyPlaybackGeneration_ != bridge.playbackGeneration || [snapshot[@"state"] intValue] != 6) {
+        leavingNearbySession_ = YES;
+        paused_ = YES;
+        [self stopPlayback];
+        if (self.onPauseCommand) self.onPauseCommand(@"nearby_session_changed");
+        return;
+    }
+    // A paused display link cannot detect peer Continue, and a background
+    // notification may have been missed. Reconcile the authoritative snapshot.
+    if (foreground_ && drawerOpen_ && ![snapshot[@"paused"] boolValue]) {
+        [self dismissPauseLayerKeepingPaused:NO];
+        backgroundPauseOwned_ = NO;
+        [self updatePlayback];
+    }
 }
 
 - (void)displayTick:(CFTimeInterval)timestamp
@@ -732,6 +601,9 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
                 return;
             }
             if (action == flynes::ios::NearbyPlaybackAction::Hold) {
+                [overlay_ releaseAllButtons];
+                buttons_ = 0;
+                input_.clear();
                 clock_.reset();
                 [self drawFrame];
                 return;
@@ -934,6 +806,7 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
 {
     (void)notification;
     foreground_ = YES;
+    [self reconcileNearbySession];
     [self releaseBackgroundPauseIfReady];
     [self reloadProductSettings];
 }

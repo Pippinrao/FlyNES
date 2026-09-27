@@ -49,7 +49,7 @@ struct RunGameView: UIViewControllerRepresentable {
 }
 
 struct NearbyRunGameContainer: View {
-    @Environment(\.dismiss) private var dismiss
+    let playbackGeneration: UInt64
 
     var body: some View {
         RunGameView(canonicalId: FlyNesNearbyBridge.sharedInstance.canonicalId,
@@ -57,8 +57,13 @@ struct NearbyRunGameContainer: View {
                     gameTitle: FlyNesNearbyBridge.sharedInstance.gameTitle,
                     onPauseCommand: { command in
             if command == "game_center" {
-                _ = FlyNesNearbyBridge.sharedInstance.setPaused(true)
-                dismiss()
+                if playbackGeneration == FlyNesNearbyBridge.sharedInstance.playbackGeneration {
+                    _ = FlyNesNearbyBridge.sharedInstance.setPaused(true)
+                }
+            }
+            if command == "game_center" || command == "nearby_session_changed" {
+                NotificationCenter.default.post(name: Notification.Name("flynes.nearby.playClosed"),
+                                                object: NSNumber(value: playbackGeneration))
             }
         })
         .ignoresSafeArea()

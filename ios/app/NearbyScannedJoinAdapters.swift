@@ -26,12 +26,15 @@ final class NearbyBackendJoin {
     private let session = NearbyBridgeJoinPort()
     private lazy var flow = NearbyScannedJoinFlow(network: network, session: session)
     private var monitor: Timer?
+    var failure: NearbyScanFailure? { flow.failure }
 
     private init() {}
 
     @discardableResult func joinScannedText(_ text: String,
                                            completion: @escaping (Bool) -> Void) -> Bool {
-        guard NearbyNetworkInvite.parse(text) != nil else { return false }
+        guard NearbyNetworkInvite.parse(text) != nil else {
+            return flow.joinScannedText(text, completion: completion)
+        }
         monitor?.invalidate()
         monitor = nil
         return flow.joinScannedText(text) { [weak self] joined in
@@ -52,7 +55,11 @@ final class NearbyBackendJoin {
         monitor = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             guard let self else { return }
             let state = (FlyNesNearbyBridge.sharedInstance.snapshot()["state"] as? NSNumber)?.intValue ?? 0
-            if NearbySessionLeasePolicy.shouldRelease(state: state) { self.cancel() }
+            if NearbySessionLeasePolicy.shouldRelease(state: state) {
+                self.monitor?.invalidate()
+                self.monitor = nil
+                self.flow.releaseNetwork()
+            }
         }
     }
 }

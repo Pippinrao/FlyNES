@@ -57,6 +57,26 @@
     XCTAssertFalse([self element:@"nearby_join_code_input" inApp:app].exists);
 }
 
+- (void)testSimulatorScannerFailureRequiresExplicitRetryAndCanExit {
+    XCUIDevice.sharedDevice.orientation = UIDeviceOrientationLandscapeLeft;
+    XCUIApplication *app = [self launchApp];
+    [self openNearby:app];
+    [[self element:@"nearby_action_scan_qr" inApp:app] tap];
+    XCUIElement *status = [self element:@"nearby_pairing_status" inApp:app];
+    NSPredicate *unavailable = [NSPredicate predicateWithFormat:
+        @"label == %@", @"Camera unavailable. Check permission and try again."];
+    [self expectationForPredicate:unavailable evaluatedWithObject:status handler:nil];
+    [self waitForExpectationsWithTimeout:10 handler:nil];
+    XCUIElement *retry = [self element:@"nearby_scan_retry" inApp:app];
+    XCTAssertTrue(retry.isHittable);
+    XCTAssertTrue(CGRectContainsRect(app.windows.firstMatch.frame, retry.frame));
+    [retry tap];
+    [self expectationForPredicate:unavailable evaluatedWithObject:status handler:nil];
+    [self waitForExpectationsWithTimeout:10 handler:nil];
+    [[self element:@"nearby_invite_disconnect" inApp:app] tap];
+    XCTAssertTrue([[self element:@"nearby_action_scan_qr" inApp:app] waitForExistenceWithTimeout:5]);
+}
+
 - (void)testLobbyHasNoEntryConfirmation {
     XCUIApplication *app = [[XCUIApplication alloc] initWithBundleIdentifier:@"com.flynes.app"];
     app.launchArguments = @[@"-flynes.test.nearby_lobby", @"-AppleLanguages", @"(en)"];

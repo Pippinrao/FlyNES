@@ -4,6 +4,7 @@
 #include <flynes/flynes_nearby_mvp.h>
 
 #import <Security/Security.h>
+#import <os/log.h>
 
 #include <arpa/inet.h>
 #include <cstring>
@@ -11,6 +12,11 @@
 #include <net/if.h>
 
 namespace {
+void nearby_diagnostic(void *, const char *line)
+{
+    // Shared diagnostics contain counters/states, never QR payloads or ROM bytes.
+    os_log_info(OS_LOG_DEFAULT, "FlyNesNearby %{public}s", line);
+}
 NSError *nearby_error(NSInteger code, NSString *message)
 {
     return [NSError errorWithDomain:@"FlyNesNearby" code:code
@@ -42,6 +48,8 @@ NSString *local_ipv4(bool wifi_only = false)
     fly_lan_mvp_session *session_;
     NSString *_gameTitle;
     NSString *_canonicalId;
+    uint64_t selectionGeneration_;
+    uint64_t playbackGeneration_;
 }
 
 + (instancetype)sharedInstance
@@ -68,6 +76,7 @@ NSString *local_ipv4(bool wifi_only = false)
 
 - (NSString *)gameTitle { return _gameTitle; }
 - (NSString *)canonicalId { return _canonicalId; }
+- (uint64_t)playbackGeneration { return playbackGeneration_; }
 - (NSTimeInterval)sourceFrameDuration
 {
     fly_runtime_source_timing_v1 timing{};
@@ -80,8 +89,11 @@ NSString *local_ipv4(bool wifi_only = false)
 
 - (BOOL)replaceSession:(NSError **)error
 {
+    ++selectionGeneration_;
+    ++playbackGeneration_;
     if (session_ != nullptr) fly_lan_mvp_destroy(session_);
     session_ = fly_lan_mvp_create();
+    if (session_) fly_lan_mvp_set_diagnostic_sink(session_, nearby_diagnostic, nullptr);
     _gameTitle = @"";
     _canonicalId = @"";
     if (session_ != nullptr) return YES;
@@ -181,25 +193,54 @@ NSString *local_ipv4(bool wifi_only = false)
 - (BOOL)selectHostGameROM:(NSData *)rom canonicalID:(NSString *)canonicalID
                    title:(NSString *)title
 {
-    fly_lan_mvp_snapshot previous{};
-    if (session_ && fly_lan_mvp_snapshot_read(session_, &previous) &&
-        previous.role == FLY_LAN_MVP_ROLE_HOST_P1 &&
-        (previous.state == FLY_LAN_MVP_RUNNING || previous.state == FLY_LAN_MVP_CONFIGURING)) {
-        if (!fly_lan_mvp_return_lobby(session_)) return NO;
-        const auto deadline = NSDate.timeIntervalSinceReferenceDate + 3.0;
-        do {
-            if (!fly_lan_mvp_snapshot_read(session_, &previous)) return NO;
-            if (previous.state != FLY_LAN_MVP_RETURNING) break;
-            [NSThread sleepForTimeInterval:0.01];
-        } while (NSDate.timeIntervalSinceReferenceDate < deadline);
-    }
+    // Immediate initial selection only; UI game changes use the asynchronous API.
     if (session_ == nullptr || rom.length == 0 || canonicalID.length == 0 ||
         fly_lan_mvp_select_game(session_, static_cast<const uint8_t *>(rom.bytes),
                                 rom.length, canonicalID.UTF8String) != 1 ||
         fly_lan_mvp_confirm(session_) != 1) return NO;
     _canonicalId = [canonicalID copy];
     _gameTitle = [title copy];
+    ++playbackGeneration_;
     return YES;
+}
+
+- (void)selectHostGameROM:(NSData *)rom canonicalID:(NSString *)canonicalID
+                   title:(NSString *)title completion:(void (^)(BOOL))completion
+{
+    NSAssert(NSThread.isMainThread, @"Nearby UI selection must run on the main thread");
+    const uint64_t generation = ++selectionGeneration_;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        fly_lan_mvp_snapshot state{};
+        if (generation != self->selectionGeneration_ || !self->session_ ||
+            !fly_lan_mvp_snapshot_read(self->session_, &state) ||
+            state.role != FLY_LAN_MVP_ROLE_HOST_P1 || rom.length == 0 || canonicalID.length == 0) {
+            completion(NO);
+            return;
+        }
+        if (state.state == FLY_LAN_MVP_RUNNING || state.state == FLY_LAN_MVP_CONFIGURING) {
+            if (!fly_lan_mvp_return_lobby(self->session_)) { completion(NO); return; }
+        }
+        [self finishSelection:rom canonicalID:canonicalID title:title generation:generation
+                     deadline:NSProcessInfo.processInfo.systemUptime + 3.0 completion:completion];
+    });
+}
+
+- (void)finishSelection:(NSData *)rom canonicalID:(NSString *)canonicalID title:(NSString *)title
+             generation:(uint64_t)generation deadline:(NSTimeInterval)deadline
+             completion:(void (^)(BOOL))completion
+{
+    fly_lan_mvp_snapshot state{};
+    if (generation != selectionGeneration_ || !session_ ||
+        !fly_lan_mvp_snapshot_read(session_, &state)) { completion(NO); return; }
+    if (state.state == FLY_LAN_MVP_RETURNING && NSProcessInfo.processInfo.systemUptime < deadline) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10 * NSEC_PER_MSEC), dispatch_get_main_queue(), ^{
+            [self finishSelection:rom canonicalID:canonicalID title:title generation:generation
+                         deadline:deadline completion:completion];
+        });
+        return;
+    }
+    completion(state.state == FLY_LAN_MVP_LOBBY &&
+               [self selectHostGameROM:rom canonicalID:canonicalID title:title]);
 }
 
 - (BOOL)selectGuestGameROM:(NSData *)rom canonicalID:(NSString *)canonicalID
@@ -214,6 +255,7 @@ NSString *local_ipv4(bool wifi_only = false)
                                rom.length) != 1 || fly_lan_mvp_confirm(session_) != 1) return NO;
     _canonicalId = [canonicalID copy];
     _gameTitle = [title copy];
+    ++playbackGeneration_;
     return YES;
 }
 - (BOOL)stepWithButtons:(uint32_t)buttons { return session_ != nullptr && fly_lan_mvp_submit_input(session_, buttons) == 1; }
@@ -249,6 +291,8 @@ NSString *local_ipv4(bool wifi_only = false)
 
 - (void)cancel
 {
+    ++selectionGeneration_;
+    ++playbackGeneration_;
     if (session_ != nullptr) { fly_lan_mvp_destroy(session_); session_ = nullptr; }
     _gameTitle = @"";
     _canonicalId = @"";

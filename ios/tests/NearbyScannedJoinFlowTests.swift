@@ -57,6 +57,45 @@ private final class FakeSession: NearbyJoinSessionPort {
         network.pending?(true)
         precondition(result == false && network.cancelCalls == beforeFailure + 1,
                      "failed session join must release the requested hotspot")
+        precondition(flow.failure == .general)
+        precondition(flow.joinScannedText(invite) { result = $0 })
+        let beforeNetworkFailure = session.joinCalls
+        network.pending?(false)
+        precondition(flow.failure == .network && session.joinCalls == beforeNetworkFailure,
+                     "network failure must be distinguished and must not start a native join")
+        precondition(!flow.joinScannedText("not a room QR") { _ in })
+        precondition(flow.failure == .invalid, "invalid QR must have actionable feedback")
+
+        var state = NearbyScanJoinState()
+        let attempt = state.begin()!
+        state.didStart(true, generation: attempt)
+        precondition(state.phase == .connecting, "accepted join is still connecting")
+        precondition(state.leave(), "leaving during CONNECTING must cancel the pending session")
+        state.didStart(true, generation: attempt)
+        precondition(state.phase == .scanning, "late completion cannot revive an exited page")
+        let retryAttempt = state.begin()!
+        state.didStart(true, generation: retryAttempt)
+        precondition(state.retry(), "retry during CONNECTING must cancel before scanning again")
+        state.didStart(false, generation: retryAttempt)
+        precondition(state.phase == .scanning, "late failure cannot replace the retried page")
+        let connectedAttempt = state.begin()!
+        state.didStart(true, generation: connectedAttempt)
+        state.observe(state: 3, reason: 0)
+        precondition(state.phase == .connected)
+        precondition(!state.leave(), "navigation to the lobby must retain a connected session")
+        var fastConnection = NearbyScanJoinState()
+        _ = fastConnection.begin()
+        fastConnection.observe(state: 3, reason: 0)
+        precondition(!fastConnection.leave(),
+                     "native connection before the queued start callback must survive navigation")
+        var expired = NearbyScanJoinState()
+        expired.didStart(true, generation: expired.begin()!)
+        expired.observe(state: 4, reason: 4)
+        precondition(expired.failure == .expired)
+        precondition(expired.begin() == nil, "failure must wait for explicit retry")
+        precondition(NearbyScanFailure.sessionReason(1) == .invalid)
+        precondition(NearbyScanFailure.sessionReason(2) == .network)
+        precondition(NearbyScanFailure.sessionReason(3) == .general)
         print("NearbyScannedJoinFlowTests passed")
     }
 }

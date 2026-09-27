@@ -8,6 +8,8 @@ import { PlayService, RomLaunchLocator } from '../service/PlayService';
 import { image } from '@kit.ImageKit';
 import { CoverStore } from '../service/CoverStore';
 import { nearbyRoomGame } from '../service/NearbyRoomGame';
+import { i18n } from '@kit.LocalizationKit';
+import { localizedGameTitle } from '../service/CatalogProductService';
 
 @Entry
 @Component
@@ -78,7 +80,8 @@ struct NearbyLobby {
       locator.canonicalId = key;
       const builtin = BuiltinGames.loadSync(context).byCanonicalId(key);
       if (builtin !== undefined) {
-        this.gameTitle = builtin.titleZhHans || builtin.titleEn;
+        this.gameTitle = localizedGameTitle(builtin.titleEn, builtin.titleZhHans, key,
+          nativeSession.settingsGet().localeTag, i18n.System.getSystemLanguage());
       } else {
         const row = nativeSession.catalogSnapshot().find((row) => row.canonicalId === key);
         if (row === undefined) throw new Error('Local game missing');
@@ -86,7 +89,8 @@ struct NearbyLobby {
         locator.sourceRelativePath = row.sourceRelativePath;
         locator.packageFormat = row.packageFormat;
         locator.zipEntryName = row.originalFilename;
-        this.gameTitle = row.titleZhHans || row.titleEn || row.originalFilename;
+        this.gameTitle = localizedGameTitle(row.titleEn, row.titleZhHans, row.originalFilename,
+          nativeSession.settingsGet().localeTag, i18n.System.getSystemLanguage());
       }
       const rom = await new PlayService().readRom(context, locator);
       const latest = nativeSession.nearbyMvpSnapshot();

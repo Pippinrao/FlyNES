@@ -285,21 +285,20 @@ def main() -> int:
             "the nearby entry must render visible connection-status text, not only an icon label")
 
     nearby_friends = read("ios/app/NearbyFriendsView.swift")
-    require("GeometryReader" in nearby_friends and "> 580" in nearby_friends,
-            "Nearby must switch to the shared two-column layout only above 580pt")
-    require("HStack(spacing: 18)" in nearby_friends and ".frame(width: 224)" in nearby_friends,
-            "wide Nearby layout must use the shared 224pt action pane and 18pt gap")
-    require('accessibilityIdentifier("nearby_action_pane")' in nearby_friends
-            and 'accessibilityIdentifier("nearby_status_pane")' in nearby_friends,
-            "Nearby responsive panes must expose stable geometry identifiers")
-    require(nearby_friends.find("nearbyActions") < nearby_friends.find("switch tab"),
-            "the three primary actions must remain visible when switching Nearby tabs")
+    # The approved September 23 UX replaces the historical friends/tabs/three
+    # actions design. Native layout geometry is checked by NearbyUxRestorationTests.
+    require('identifier: "nearby_action_create"' in nearby_friends
+            and 'identifier: "nearby_action_scan_qr"' in nearby_friends,
+            "Nearby must expose the approved create/scan roles")
+    require("switch tab" not in nearby_friends and "nearbyActions" not in nearby_friends,
+            "retired friend/tab actions must not return to the QR-only entry")
 
     nearby_pairing = read("ios/app/NearbyPairingView.swift")
-    require("nearbyHostPublish" in bridge and "nearbyHostRegenerate" in bridge
-            and "nearbyInviteSnapshot" in bridge,
-            "the iOS bridge must expose the shared invitation route and snapshot")
-    require("FlyNesAppBridge.sharedInstance()" in nearby_pairing,
+    nearby_bridge = read("ios/app/bridge/FlyNesNearbyBridge.mm")
+    require("fly_lan_mvp_host" in nearby_bridge and "fly_lan_mvp_copy_invite" in nearby_bridge
+            and "fly_lan_mvp_snapshot_read" in nearby_bridge,
+            "the iOS bridge must expose the active shared invitation route and snapshot")
+    require("FlyNesNearbyBridge.sharedInstance" in nearby_pairing,
             "the pairing page must submit invitation actions to the shared bridge")
     require("Int.random" not in nearby_pairing,
             "the iOS pairing page must not fabricate a local-only invitation")
@@ -343,10 +342,12 @@ def main() -> int:
     )
     review_require(pops_to_root,
                    "pause Game Center must pop to the library root, not dismiss() one NavigationLink")
-    gc_at = run_swift.find("game_center")
+    # Nearby returns to its preserved room; local play returns to library root.
+    local_run_swift = run_swift[run_swift.find("struct RunGameContainer:"):]
+    gc_at = local_run_swift.find("game_center")
     review_require(gc_at >= 0, "pause must handle game_center")
     if gc_at >= 0:
-        review_require("dismiss()" not in run_swift[gc_at:gc_at + 180],
+        review_require("dismiss()" not in local_run_swift[gc_at:gc_at + 180],
                        "pause Game Center must not dismiss() a single NavigationLink")
     # Android resolves and commits the selection before leaving the Game Center, so a
     # launch failure stays in the library. Play therefore hands the resolved ROM to the

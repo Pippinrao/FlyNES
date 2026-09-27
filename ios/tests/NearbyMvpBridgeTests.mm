@@ -2,16 +2,67 @@
 
 #import "FlyNesNearbyBridge.h"
 #import "BuiltinGames.h"
+#import "../app/run/RunSurfaceViewController.h"
 #include <flynes/flynes_nearby_mvp.h>
 #include "NearbyPlaybackState.hpp"
 
 #include <vector>
 #include <map>
 
+// Declaration lets the regression fail at its assertion before the API is added.
+@interface FlyNesNearbyBridge (AsyncSelectionContract)
+- (void)selectHostGameROM:(NSData *)rom canonicalID:(NSString *)canonicalID
+                   title:(NSString *)title completion:(void (^)(BOOL))completion;
+@end
+
+@interface RunSurfaceViewController (NearbyDrawerContract)
+- (void)openPauseDrawer;
+- (void)resumeFromPause;
+- (void)applicationWillResignActive:(NSNotification *)notification;
+- (void)applicationDidBecomeActive:(NSNotification *)notification;
+@end
+
+static UIView *viewWithId(UIView *root, NSString *identifier)
+{
+    if ([root.accessibilityIdentifier isEqualToString:identifier]) return root;
+    for (UIView *child in root.subviews) {
+        UIView *found = viewWithId(child, identifier);
+        if (found) return found;
+    }
+    return nil;
+}
+
 @interface NearbyMvpBridgeTests : XCTestCase
 @end
 
 @implementation NearbyMvpBridgeTests
+
+- (void)testSelectionCompletesAsynchronouslyAndRejectsCancelledRequest
+{
+    FlyNesNearbyBridge *host = FlyNesNearbyBridge.sharedInstance;
+    SEL selector = @selector(selectHostGameROM:canonicalID:title:completion:);
+    XCTAssertTrue([host respondsToSelector:selector], @"Changing games must not synchronously wait on the UI thread");
+    if (![host respondsToSelector:selector]) return;
+    [host cancel];
+    NSError *error = nil;
+    XCTAssertTrue([host startHost:&error], @"%@", error);
+    XCTestExpectation *completed = [self expectationWithDescription:@"cancelled selection completes"];
+    __block BOOL returned = NO;
+    [host selectHostGameROM:[NSData dataWithBytes:"invalid" length:7]
+               canonicalID:@"test:cancelled" title:@"Cancelled" completion:^(BOOL selected) {
+        XCTAssertTrue(returned, @"Selection must yield the main run loop");
+        XCTAssertTrue(NSThread.isMainThread);
+        XCTAssertFalse(selected);
+        XCTAssertEqualObjects(host.canonicalId, @"");
+        [completed fulfill];
+    }];
+    returned = YES;
+    [host cancel];
+    XCTAssertTrue([host startHost:&error], @"%@", error);
+    [self waitForExpectations:@[completed] timeout:4];
+    XCTAssertEqualObjects(host.canonicalId, @"");
+    [host cancel];
+}
 
 - (void)testPeerPauseHoldsPlaybackWithoutLeavingTheSession
 {
@@ -101,6 +152,20 @@
             [NSThread sleepForTimeInterval:0.01];
         }
         XCTAssertEqual(guest_state.state, FLY_LAN_MVP_RUNNING);
+        RunSurfaceViewController *surface = [[RunSurfaceViewController alloc] init];
+        surface.nearbySession = YES;
+        surface.canonicalId = game.canonicalId;
+        surface.gameTitle = game.titleEn;
+        [surface loadViewIfNeeded];
+        XCTAssertNil(viewWithId(surface.view, @"nearby_status_banner"), @"Retired recovery placeholders must not obscure gameplay");
+        [surface openPauseDrawer];
+        XCTAssertNotNil(viewWithId(surface.view, @"resume"));
+        XCTAssertNotNil(viewWithId(surface.view, @"game_center"));
+        XCTAssertNil(viewWithId(surface.view, @"settings"), @"Nearby settings command has no supported destination");
+        [surface resumeFromPause];
+        deadline = [NSDate dateWithTimeIntervalSinceNow:2.0];
+        while ([host.snapshot[@"paused"] boolValue] && deadline.timeIntervalSinceNow > 0)
+            [NSThread sleepForTimeInterval:0.002];
         for (uint64_t frame = 0; frame < 20; ++frame) {
             deadline = [NSDate dateWithTimeIntervalSinceNow:2.0];
             while (![host stepWithButtons:frame == 0 ? 1u : 0u] &&
@@ -175,6 +240,62 @@
                deadline.timeIntervalSinceNow > 0)
             [NSThread sleepForTimeInterval:0.002];
         XCTAssertGreaterThan([host.snapshot[@"completedFrames"] unsignedLongLongValue], beforePause);
+        // Continue received while inactive must reconcile on becoming active,
+        // even if the SwiftUI paused edge notification was already consumed.
+        [surface viewDidAppear:NO];
+        [surface openPauseDrawer];
+        [surface applicationWillResignActive:nil];
+        XCTAssertEqual(fly_lan_mvp_resume_game(guest), 1);
+        deadline = [NSDate dateWithTimeIntervalSinceNow:2.0];
+        while ([host.snapshot[@"paused"] boolValue] && deadline.timeIntervalSinceNow > 0)
+            [NSThread sleepForTimeInterval:0.002];
+        [surface applicationDidBecomeActive:nil];
+        XCTAssertNil(viewWithId(surface.view, @"resume"), @"Foreground must reconcile remote Continue after a missed notification");
+
+        // Remote game transitions must leave the old drawer even with its
+        // display link stopped. A native return creates the same shared state.
+        [surface openPauseDrawer];
+        XCTestExpectation *left = [self expectationWithDescription:@"old game surface left"];
+        __block BOOL didLeave = NO;
+        surface.onPauseCommand = ^(NSString *command) {
+            if (!didLeave) { didLeave = YES; [left fulfill]; }
+        };
+        XCTAssertTrue([host returnLobby]);
+        [self waitForExpectations:@[left] timeout:3];
+        [surface viewWillDisappear:NO];
+
+        if ([host respondsToSelector:@selector(selectHostGameROM:canonicalID:title:completion:)]) {
+            XCTestExpectation *changed = [self expectationWithDescription:@"same connection selects again"];
+            [host selectHostGameROM:rom canonicalID:game.canonicalId title:game.titleEn completion:^(BOOL selected) {
+                XCTAssertTrue(selected);
+                [changed fulfill];
+            }];
+            [self waitForExpectations:@[changed] timeout:4];
+            XCTAssertEqual(fly_lan_mvp_select_rom(guest, static_cast<const uint8_t *>(rom.bytes), rom.length), 1);
+            XCTAssertEqual(fly_lan_mvp_confirm(guest), 1);
+            deadline = [NSDate dateWithTimeIntervalSinceNow:2.0];
+            while ([host.snapshot[@"state"] intValue] != FLY_LAN_MVP_RUNNING && deadline.timeIntervalSinceNow > 0)
+                [NSThread sleepForTimeInterval:0.002];
+            [surface viewWillDisappear:NO];
+            XCTAssertFalse([host.snapshot[@"paused"] boolValue], @"An old surface cannot pause a new game, even for the same ROM");
+            RunSurfaceViewController *returningSurface = [[RunSurfaceViewController alloc] init];
+            returningSurface.nearbySession = YES;
+            returningSurface.canonicalId = game.canonicalId;
+            returningSurface.gameTitle = game.titleEn;
+            [returningSurface loadViewIfNeeded];
+            [returningSurface viewDidAppear:NO];
+            [returningSurface openPauseDrawer];
+            returningSurface.onPauseCommand = ^(NSString *command) {
+                if ([command isEqual:@"game_center"]) [host setPaused:YES];
+            };
+            [(UIButton *)viewWithId(returningSurface.view, @"game_center") sendActionsForControlEvents:UIControlEventTouchUpInside];
+            XCTAssertEqual(fly_lan_mvp_resume_game(guest), 1);
+            deadline = [NSDate dateWithTimeIntervalSinceNow:2.0];
+            while ([host.snapshot[@"paused"] boolValue] && deadline.timeIntervalSinceNow > 0)
+                [NSThread sleepForTimeInterval:0.002];
+            [returningSurface viewWillDisappear:NO];
+            XCTAssertFalse([host.snapshot[@"paused"] boolValue], @"Late Room disappearance must not override the peer's newer Continue");
+        }
     } @finally {
         fly_lan_mvp_destroy(guest);
         [host cancel];

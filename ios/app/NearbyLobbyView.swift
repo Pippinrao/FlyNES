@@ -15,7 +15,6 @@ struct NearbyLobbyView: View {
     @State private var peerReady = false
     @State private var gameTitle = ""
     @State private var gameError = false
-    @State private var showGame = false
     @State private var pendingPicker = false
     @State private var loadingConfigToken = ""
     @State private var attemptedConfigToken = ""
@@ -30,6 +29,8 @@ struct NearbyLobbyView: View {
     @ObservedObject private var covers = GameCoverModel.shared
     @State private var gamePaused = false
     @State private var gameKey = ""
+    @State private var playbackGeneration: UInt64 = 0
+    @Environment(\.locale) private var locale
 
     var body: some View {
         GeometryReader { geometry in
@@ -115,9 +116,6 @@ struct NearbyLobbyView: View {
                 }
             }
         }
-        .navigationDestination(isPresented: $showGame) {
-            NearbyRunGameContainer()
-        }
         .onAppear { if !testHostLobby { refresh() } }
         .onReceive(Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()) { _ in
             if !testHostLobby { refresh() }
@@ -127,7 +125,10 @@ struct NearbyLobbyView: View {
     private func refresh() {
         let bridge = FlyNesNearbyBridge.sharedInstance
         let snapshot = bridge.snapshot()
+        let previousState = state
         state = (snapshot["state"] as? NSNumber)?.intValue ?? 0
+        if previousState != state { NSLog("FlyNesNearbyUI event=lobby state=%d", state) }
+        playbackGeneration = bridge.playbackGeneration
         let wasPaused = gamePaused
         gamePaused = (snapshot["paused"] as? NSNumber)?.boolValue ?? false
         if wasPaused && !gamePaused && state == 6 {
@@ -168,7 +169,7 @@ struct NearbyLobbyView: View {
                 let row = FlyNesAppBridge.sharedInstance().catalogSnapshotGames()
                     .first { ($0["canonicalId"] as? String) == peerKey }
                 guard let row else { gameError = true; return }
-                let title = (row["titleEn"] as? String) ?? peerKey
+                let title = CatalogGameFactory.game(from: row, localeIdentifier: locale.identifier)?.titlePrimary ?? peerKey
                 CatalogSourceModel.shared.prepareROM(peerKey) { result in
                     guard loadingConfigToken == configToken,
                           (bridge.snapshot()["peerConfigToken"] as? String) == configToken else { return }
@@ -186,10 +187,15 @@ struct NearbyLobbyView: View {
         }
         if state == 5 || state == 6 {
             gameTitle = bridge.gameTitle
-            gameKey = bridge.canonicalId
-            covers.preload(canonicalIds: gameKey.isEmpty ? [] : [gameKey])
+            if gameKey != bridge.canonicalId {
+                gameKey = bridge.canonicalId
+                covers.preload(canonicalIds: gameKey.isEmpty ? [] : [gameKey])
+            }
         } else { gameKey = "" }
-        if state == 6 && !gamePaused { showGame = true }
+        if state == 6 && !gamePaused {
+            NotificationCenter.default.post(name: Notification.Name("flynes.nearby.playRequest"),
+                                            object: NSNumber(value: playbackGeneration))
+        }
     }
 
     private func endRoom() {
@@ -223,7 +229,7 @@ struct NearbyLobbyView: View {
 /// Embeds the existing game center in its own UIKit host so the room route
 /// cannot recursively build the game center's nearby navigation tree.
 struct NearbyCatalogPicker: UIViewControllerRepresentable {
-        let onSelect: (CatalogGame, Data) -> Bool
+    let onSelect: (CatalogGame, Data, @escaping (Bool) -> Void) -> Void
     let onCancel: () -> Void
 
     func makeUIViewController(context: Context) -> UIHostingController<CatalogLibraryView> {

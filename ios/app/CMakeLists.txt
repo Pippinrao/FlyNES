@@ -287,6 +287,8 @@ endif()
 
 option(FLYNES_IOS_BUILD_XCTESTS "Build simulator integration tests" OFF)
 if(FLYNES_IOS_IS_SIMULATOR AND FLYNES_IOS_BUILD_XCTESTS)
+    target_sources(FlyNES PRIVATE ../tests/NearbyUITestPeer.mm)
+    target_compile_definitions(FlyNES PRIVATE "$<$<CONFIG:Debug>:FLYNES_UI_TEST_PEER=1>")
     get_filename_component(_sdk_parent "${CMAKE_OSX_SYSROOT}" DIRECTORY)
     get_filename_component(_platform_developer "${_sdk_parent}" DIRECTORY)
     set(XCTest_LIBRARY "${_platform_developer}/Library/Frameworks/XCTest.framework" CACHE FILEPATH "" FORCE)
@@ -318,6 +320,7 @@ if(FLYNES_IOS_IS_SIMULATOR AND FLYNES_IOS_BUILD_XCTESTS)
         XCODE_ATTRIBUTE_DEVELOPMENT_TEAM ""
         XCODE_ATTRIBUTE_LD_RUNPATH_SEARCH_PATHS "@loader_path/Frameworks @executable_path/Frameworks ${_platform_developer}/Library/Frameworks")
     add_library(FlyNESUITests MODULE ../tests/ProductUITests.mm ../tests/ProductImportUITests.mm ../tests/NearbyUiParityTests.mm ../tests/NearbyUxRestorationTests.mm
+        ../tests/NearbyLiveRoomUITests.mm
         "${FLYNES_IOS_BUNDLED_MANIFEST}")
     # The UI tests assert against the shared manifest instead of hardcoding a
     # single bundled game, so the manifest travels in the test bundle too.
