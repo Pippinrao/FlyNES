@@ -625,6 +625,7 @@ NSString *pause_command_title(flynes::product::PauseCommand command)
             produced = YES;
         }
         if (produced) {
+            [self captureCoverFrame];
             NSData *pixels = [FlyNesNearbyBridge.sharedInstance copyLatestRgb565Frame];
             if (pixels.length) [renderer_ uploadRgb565:pixels width:256 height:240];
         }
@@ -673,7 +674,16 @@ NSString *pause_command_title(flynes::product::PauseCommand command)
     uint64_t sequence = 0;
     uint32_t width = 0;
     uint32_t height = 0;
-    NSData *pixels = [runtime_ copyLatestRgb565FrameWithSequence:&sequence width:&width height:&height];
+    NSData *pixels = nil;
+    if (self.nearbySession) {
+        // Nearby owns a separate runtime; use its authoritative frame and local
+        // catalog ID so the room and game center read the same saved cover.
+        pixels = [FlyNesNearbyBridge.sharedInstance copyLatestRgb565FrameWithFrameIndex:&sequence];
+        width = 256;
+        height = 240;
+    } else {
+        pixels = [runtime_ copyLatestRgb565FrameWithSequence:&sequence width:&width height:&height];
+    }
     if (pixels.length == 0 || width == 0 || height == 0) return;
     if (!coverSession_.note_frame(sequence)) return;
     const std::string canonical(self.canonicalId.UTF8String ?: "");

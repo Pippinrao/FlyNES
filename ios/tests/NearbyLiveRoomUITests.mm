@@ -164,6 +164,26 @@
     XCTAssertFalse([self element:@"nearby_library_return_to_room"].exists);
 }
 
+- (void)testGuestAutomaticallyCapturesCoverFromRealNearbyFrames {
+    [self launchRole:@"guest"];
+    NSDictionary *game = nil;
+    for (NSDictionary *candidate in [self status][@"games"])
+        if ([candidate[@"coverEligible"] boolValue]) { game = candidate; break; }
+    XCTAssertNotNil(game);
+    NSString *covers = [self status][@"coverDirectory"];
+    XCTAssertEqual([NSFileManager.defaultManager contentsOfDirectoryAtPath:covers error:nil].count, 0u);
+    [self send:@"select-cover-game"];
+    [self waitForGame:game[@"key"] afterFrame:500];
+    // Only production playback may write the cover: no capture-cover fixture command.
+    [self waitForStatus:^BOOL(NSDictionary *status) {
+        return [NSFileManager.defaultManager contentsOfDirectoryAtPath:status[@"coverDirectory"] error:nil].count > 0;
+    } description:@"Nearby playback automatically persists a native-frame cover"];
+    unsigned long long pausedFrame = [self returnToRoom];
+    XCTAssertTrue([[self element:@"nearby_lobby_cover"] waitForExistenceWithTimeout:5]);
+    [[self element:@"nearby_lobby_resume"] tap];
+    [self waitForGame:game[@"key"] afterFrame:pausedFrame];
+}
+
 - (void)testGuestPauseDrawerIsReplacedWhenRealHostChangesGame {
     [self launchRole:@"guest"];
     NSArray *games = [self status][@"games"];

@@ -59,6 +59,11 @@
         if ([game[@"multiplayerProfile"][@"eligibility"] isEqual:@"SUPPORTED"] &&
             [game[@"multiplayerProfile"][@"maxPlayers"] integerValue] >= 2) [supported addObject:game];
     }
+    // The guest capture regression uses the manifest's quality-gate fixture ROM.
+    // It does not change the product's multiplayer eligibility filter.
+    for (NSDictionary *game in root[@"games"])
+        if ([game[@"coverEligible"] boolValue] && ![supported containsObject:game])
+            [supported addObject:game];
     games_ = supported;
     if (games_.count < 2) error_ = @"Two manifest-supported games are required";
     peer_ = fly_lan_mvp_create();
@@ -160,6 +165,10 @@
     if ([action isEqual:@"pause"]) fly_lan_mvp_set_paused(peer_, 1);
     if ([action isEqual:@"resume"]) fly_lan_mvp_resume_game(peer_);
     if ([action isEqual:@"select-first"]) pendingGame_ = 0;
+    if ([action isEqual:@"select-cover-game"]) {
+        for (NSUInteger index = 0; index < games_.count; ++index)
+            if ([games_[index][@"coverEligible"] boolValue]) pendingGame_ = index;
+    }
     if ([action isEqual:@"change-game"]) {
         pendingGame_ = 1;
         if (!fly_lan_mvp_return_lobby(peer_)) error_ = @"Native host return-to-lobby failed";
@@ -173,7 +182,8 @@
     FlyNesNearbyBridge *bridge = FlyNesNearbyBridge.sharedInstance;
     NSMutableArray *games = [NSMutableArray array];
     for (NSDictionary *game in games_)
-        [games addObject:@{@"key": [self key:game], @"title": game[@"titleEn"]}];
+        [games addObject:@{@"key": [self key:game], @"title": game[@"titleEn"],
+                          @"coverEligible": @([game[@"coverEligible"] boolValue])}];
     NSDictionary *status = @{@"app": bridge.snapshot, @"peerState": @(peer.state),
         @"fixtureID": NSProcessInfo.processInfo.environment[@"FLYNES_UI_NEARBY_FIXTURE_ID"] ?: @"",
         @"peerFrames": @(peer.completed_frames), @"peerPaused": @(peer.paused),
