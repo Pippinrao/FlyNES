@@ -15,10 +15,10 @@
 - [x] Keep post-scan connecting/failure in the scanner until the native snapshot is actually connected; stop camera after recognition, provide cancellation/retry and correct invalid/network/expired messages. Extend `NearbyQrScannerJoinTest.java` to cover failure staying on-page.
 - [x] Run `:app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest`; install with `adb -s emulator-5566 install -r`, run the affected instrumentation classes directly, and inspect saved scanner screenshots. Do not use connectedDebugAndroidTest.
 - [x] Record a source-backed three-platform comparison, separately identifying native system scanner differences, unresolved product gaps and evidence limits. Preserve the user-confirmed result that both physical phones now have audible sound.
-- [ ] Replace-install on the Android phone only after recording/play has ended; repeat the camera usability check. Commit verified changes with the repository version hook.
+- [x] Replace-install on the Android phone only after recording/play has ended; repeat the camera usability check. Commit verified changes with the repository version hook. Product commit: `18a5599`, 1.11.2. User accepted scan speed after three fixed-position physical camera trials.
 
 ## Approved room extension
 
 The user subsequently approved `../specs/2026-09-27-nearby-room-resume-design.md`. This extension adds the explicit Continue ABI and v4 resume acknowledgement handshake, native room game/screenshot identity, and picker resume monitoring. The original scanner-only protocol constraint above applies only to the scanner work.
 
-Red/green evidence and physical acceptance limits are recorded in `../../verification/2026-09-27-nearby-device-room.md`. The Android camera usability result is still pending after the QR sampling and worker correction.
+Red/green evidence and physical acceptance limits are recorded in `../../verification/2026-09-27-nearby-device-room.md`, including the accepted Android camera speed and live room recovery in both Android/Harmony host directions. Hotspot and measured hardware latency remain outside these LAN results.

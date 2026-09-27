@@ -6,4 +6,4 @@
 
 本目录是唯一现行入口；[历史文档](../archive/nearby-2026-09-21/README.md)仅供追溯。[最小可玩基线设计](DESIGN.md)保留原 Android 房主/P1 到 Harmony 客机/P2 的设计来历，其固定角色与热点范围已被本轮替代。[执行计划](PLAN.md)保留实机签收顺序；不能用模拟器、编译或合并结果代替真机画面、声音和延迟验收。
 
-9 月 27 日用户批准 [当前游戏截图与继续游戏房间](../superpowers/specs/2026-09-27-nearby-room-resume-design.md)：回房间暂停并保留双方进度，任一端继续恢复。最新 [真机、房间与扫码记录](../verification/2026-09-27-nearby-device-room.md)分别列出已通过项、扫码迟缓及未测量项。
+9 月 27 日用户批准 [当前游戏截图与继续游戏房间](../superpowers/specs/2026-09-27-nearby-room-resume-design.md)：回房间暂停并保留双方进度，任一端继续恢复。最新 [真机、房间与扫码记录](../verification/2026-09-27-nearby-device-room.md)补充安卓/鸿蒙双向房主验证、用户扫码速度签收、暂停恢复及同连接换游戏，并保留未解决偶发问题和未测量项。
