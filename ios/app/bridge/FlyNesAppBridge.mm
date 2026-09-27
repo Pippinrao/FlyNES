@@ -1,6 +1,7 @@
 #import "FlyNesAppBridge.h"
 #import "platform/AppLocalization.h"
 #import "platform/CatalogPresentation.h"
+#import "platform/BuiltinGames.h"
 
 #include <flynes/flynes_app.h>
 #include <flynes/flynes_session.h>
@@ -488,6 +489,30 @@ static fly_result complete_pending_invite(fly_session_t *session, bool success)
     }
     fly_catalog_snapshot_release(snapshot);
     return games;
+}
+
+- (NSDictionary<NSString *, id> *)catalogGameForNearbyKey:(NSString *)key
+{
+    NSArray<NSDictionary<NSString *, id> *> *rows = self.catalogSnapshotGames;
+    for (NSDictionary *row in rows)
+        if ([row[@"canonicalId"] isEqual:key]) return row;
+    FlyNesBuiltinGame *game = [FlyNesBuiltinGames.shared byCanonicalId:key];
+    if (game == nil) return nil;
+    for (NSDictionary *row in rows)
+        if ([row[@"sourceScope"] unsignedIntValue] == FLY_SOURCE_SCOPE_BUILTIN &&
+            [row[@"relativePath"] isEqual:game.assetFilename]) return row;
+    return nil;
+}
+
+- (NSString *)nearbyGameKeyForCanonicalID:(NSString *)canonicalID
+{
+    for (NSDictionary *row in self.catalogSnapshotGames) {
+        if (![row[@"canonicalId"] isEqual:canonicalID] ||
+            [row[@"sourceScope"] unsignedIntValue] != FLY_SOURCE_SCOPE_BUILTIN) continue;
+        FlyNesBuiltinGame *game = [FlyNesBuiltinGames.shared byAssetFilename:row[@"relativePath"]];
+        if (game != nil) return game.canonicalId;
+    }
+    return canonicalID;
 }
 
 - (BOOL)scanFileRecords:(NSArray<NSDictionary<NSString *, id> *> *)records

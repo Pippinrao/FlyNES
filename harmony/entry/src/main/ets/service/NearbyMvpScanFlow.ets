@@ -47,6 +47,8 @@ export class NearbyMvpScanFlow {
 
   /** Leave the UI without closing a connection already owned by the native session. */
   dismissPage(): void {
+    if (this.disposed) return;
+    if (this.scanning) this.wifiPort?.release();
     this.disposed = true;
     this.visible = false;
   }
@@ -82,7 +84,6 @@ export class NearbyMvpScanFlow {
         qrText = '';
         if (wifi === null || this.wifiPort === null ||
           !await this.wifiPort.connect(wifi.ssid, wifi.passphrase) || this.disposed) {
-          if (this.disposed) this.wifiPort?.release();
           if (!this.disposed) this.current = { state: 4, reason: 1, transportResult: 0, transportOperation: 0 };
           return false;
         }
@@ -104,8 +105,8 @@ export class NearbyMvpScanFlow {
       }
       return true;
     } catch {
-      this.wifiPort?.release();
       if (!this.disposed) {
+        this.wifiPort?.release();
         this.current = { state: 4, reason: 1, transportResult: 0, transportOperation: 0 };
       }
       return false;

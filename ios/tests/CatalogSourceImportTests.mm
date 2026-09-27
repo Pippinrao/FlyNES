@@ -6,10 +6,16 @@
 #import "../app/platform/CatalogSourceService.h"
 #import "../app/platform/FlyNesBookmarkStore.h"
 #import "../app/bridge/FlyNesAppBridge.h"
+#import "../app/platform/BuiltinGames.h"
 #include <spawn.h>
 #include <sys/wait.h>
 
 extern char **environ;
+
+@interface FlyNesAppBridge (NearbyCatalogIdentityContract)
+- (nullable NSDictionary<NSString *, id> *)catalogGameForNearbyKey:(NSString *)key;
+- (NSString *)nearbyGameKeyForCanonicalID:(NSString *)canonicalID;
+@end
 
 /// The simulator sandbox has no NSTask, so the fixture ZIP is produced by spawning
 /// `/usr/bin/zip` directly.
@@ -354,6 +360,44 @@ static int run_zip(NSString *workingDirectory, NSArray<NSString *> *arguments)
     NSDictionary *root = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
     NSArray *games = root[@"games"];
     return [games isKindOfClass:NSArray.class] ? games.count : 0;
+}
+
+- (void)testNearbyBuiltinKeysResolveWithoutChangingCatalogOrSaveIdentity
+{
+    XCTAssertTrue([service_ prepareBuiltin:nil]);
+    BOOL available = [bridge_ respondsToSelector:@selector(catalogGameForNearbyKey:)] &&
+        [bridge_ respondsToSelector:@selector(nearbyGameKeyForCanonicalID:)];
+    XCTAssertTrue(available, @"Nearby must translate manifest keys and catalog content IDs in both directions");
+    if (!available) return;
+    NSArray *before = bridge_.catalogSnapshotGames;
+    for (FlyNesBuiltinGame *game in FlyNesBuiltinGames.shared.all) {
+        NSDictionary *row = [bridge_ catalogGameForNearbyKey:game.canonicalId];
+        XCTAssertNotNil(row);
+        NSString *localID = row[@"canonicalId"];
+        XCTAssertNotEqualObjects(localID, game.canonicalId);
+        XCTAssertEqualObjects(row[@"relativePath"], game.assetFilename);
+        XCTAssertEqualObjects([bridge_ nearbyGameKeyForCanonicalID:localID], game.canonicalId);
+        XCTAssertEqualObjects([bridge_ catalogGameForNearbyKey:localID], row);
+        NSError *failure = nil;
+        XCTAssertGreaterThan([service_ romDataForCanonicalID:localID error:&failure].length, 0u, @"%@", failure);
+    }
+    XCTAssertNil([bridge_ catalogGameForNearbyKey:@"builtin:missing-test-game"]);
+    XCTAssertEqualObjects([bridge_ nearbyGameKeyForCanonicalID:@"test:imported"], @"test:imported");
+    XCTAssertEqualObjects(bridge_.catalogSnapshotGames, before, @"Nearby identity translation must not rewrite the library");
+}
+
+- (void)testNearbyImportedGameWithBuiltinFilenameKeepsItsContentKey
+{
+    FlyNesBuiltinGame *game = FlyNesBuiltinGames.shared.all.firstObject;
+    XCTAssertNotNil(game);
+    NSURL *url = [sources_ URLByAppendingPathComponent:game.assetFilename];
+    XCTAssertTrue([[self romFixture] writeToURL:url atomically:YES]);
+    XCTAssertNotNil([service_ addURL:url directory:NO error:nil]);
+    NSDictionary *row = bridge_.catalogSnapshotGames.firstObject;
+    NSString *key = row[@"canonicalId"];
+    XCTAssertEqualObjects([bridge_ nearbyGameKeyForCanonicalID:key], key);
+    XCTAssertEqualObjects([bridge_ catalogGameForNearbyKey:key], row);
+    XCTAssertNil([bridge_ catalogGameForNearbyKey:game.canonicalId]);
 }
 
 - (void)testBuiltinPlusOneImportedGamePresentsWithoutCollectionMutation

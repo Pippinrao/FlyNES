@@ -539,6 +539,21 @@ void test_rollback_capture_accepts_reserialized_lengths()
           "rollback retries when the second serialization exceeds the size probe");
 
     calls = 0;
+    const auto varying = flynes::runtime_detail::capture_serialized_state(bytes,
+        [&calls](std::uint8_t* out, std::size_t capacity, std::size_t* written,
+                 std::size_t* needed) -> int {
+            // Repeated compressed captures can grow slightly without a frame step.
+            *written = 0;
+            *needed = 4257 + ++calls;
+            if (out == nullptr || capacity < *needed) return NES_ERR_BUFFER_TOO_SMALL;
+            std::fill(out, out + *needed, static_cast<std::uint8_t>(0x5a));
+            *written = *needed;
+            return NES_OK;
+        });
+    check(varying == FLY_RESULT_OK && bytes.size() == 4257 + calls && bytes.back() == 0x5a,
+          "rollback tolerates successive small serialization growth within bounded retries");
+
+    calls = 0;
     const auto unbounded = flynes::runtime_detail::capture_serialized_state(bytes,
         [&calls](std::uint8_t* out, std::size_t capacity, std::size_t* written,
                  std::size_t* needed) -> int {

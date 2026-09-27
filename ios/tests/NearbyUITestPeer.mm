@@ -111,7 +111,7 @@
 - (void)selectGame:(NSDictionary *)game {
     NSData *rom = [self rom:game];
     if (!rom.length || fly_lan_mvp_select_game(peer_, static_cast<const uint8_t *>(rom.bytes),
-            rom.length, [self key:game].UTF8String) != 1 || fly_lan_mvp_confirm(peer_) != 1)
+            rom.length, [game[@"canonicalId"] UTF8String]) != 1 || fly_lan_mvp_confirm(peer_) != 1)
         error_ = @"Native peer ROM selection failed";
 }
 
@@ -202,7 +202,9 @@
                    !state.local_configured && state.peer_game_key[0]) {
             NSString *key = @(state.peer_game_key);
             for (NSDictionary *game in games_)
-                if ([[self key:game] isEqual:key]) { [self selectGame:game]; break; }
+                if ([game[@"canonicalId"] isEqual:key] || [[self key:game] isEqual:key]) {
+                    [self selectGame:game]; break;
+                }
         }
         if (state.state == FLY_LAN_MVP_RUNNING && !state.paused)
             fly_lan_mvp_submit_input(peer_, 0);

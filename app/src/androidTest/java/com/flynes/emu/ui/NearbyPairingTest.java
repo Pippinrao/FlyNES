@@ -247,7 +247,9 @@ public final class NearbyPairingTest {
             bitmap.getPixels(pixels, 0, bitmap.getWidth(), 0, 0,
                     bitmap.getWidth(), bitmap.getHeight());
             String payload = new QRCodeReader().decode(new BinaryBitmap(new HybridBinarizer(
-                    new RGBLuminanceSource(bitmap.getWidth(), bitmap.getHeight(), pixels)))).getText();
+                    new RGBLuminanceSource(bitmap.getWidth(), bitmap.getHeight(), pixels))),
+                    java.util.Collections.singletonMap(com.google.zxing.DecodeHintType.PURE_BARCODE,
+                            Boolean.TRUE)).getText();
             org.junit.Assert.assertTrue("Unexpected LAN QR format", payload.startsWith("flynes-lan-v1:"));
         }
     }

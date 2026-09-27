@@ -1,4 +1,5 @@
 import SwiftUI
+import os.log
 import UIKit
 
 /// The shared session owns role, readiness and game identity across page transitions.
@@ -127,7 +128,7 @@ struct NearbyLobbyView: View {
         let snapshot = bridge.snapshot()
         let previousState = state
         state = (snapshot["state"] as? NSNumber)?.intValue ?? 0
-        if previousState != state { NSLog("FlyNesNearbyUI event=lobby state=%d", state) }
+        if previousState != state { os_log("FlyNesNearbyUI event=lobby state=%d", log: .default, type: .info, state) }
         playbackGeneration = bridge.playbackGeneration
         let wasPaused = gamePaused
         gamePaused = (snapshot["paused"] as? NSNumber)?.boolValue ?? false
@@ -166,20 +167,25 @@ struct NearbyLobbyView: View {
                 attemptedConfigToken = configToken
                 loadingConfigToken = configToken
                 gameError = false
-                let row = FlyNesAppBridge.sharedInstance().catalogSnapshotGames()
-                    .first { ($0["canonicalId"] as? String) == peerKey }
-                guard let row else { gameError = true; return }
+                let row = FlyNesAppBridge.sharedInstance().catalogGame(forNearbyKey: peerKey)
+                os_log("FlyNesNearbyUI event=guestMatch matched=%d", log: .default, type: .info, row == nil ? 0 : 1)
+                guard let row, let localKey = row["canonicalId"] as? String else { gameError = true; return }
                 let title = CatalogGameFactory.game(from: row, localeIdentifier: locale.identifier)?.titlePrimary ?? peerKey
-                CatalogSourceModel.shared.prepareROM(peerKey) { result in
+                CatalogSourceModel.shared.prepareROM(localKey) { result in
                     guard loadingConfigToken == configToken,
                           (bridge.snapshot()["peerConfigToken"] as? String) == configToken else { return }
                     switch result {
                     case .success(let rom):
-                        if bridge.selectGuestGameROM(rom, canonicalID: peerKey, title: title) {
+                        if bridge.selectGuestGameROM(rom, canonicalID: localKey, title: title) {
                             gameTitle = title
                             gameError = false
-                        } else { gameError = true }
-                    case .failure: gameError = true
+                        } else {
+                            os_log("FlyNesNearbyUI event=guestConfigure failed reason=%d", log: .default, type: .info, (bridge.snapshot()["reason"] as? NSNumber)?.intValue ?? -1)
+                            gameError = true
+                        }
+                    case .failure(let error):
+                        os_log("FlyNesNearbyUI event=guestRomRead failed code=%d", log: .default, type: .info, (error as NSError).code)
+                        gameError = true
                     }
                     loadingConfigToken = ""
                 }

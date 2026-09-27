@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <vector>
 
 namespace flynes::runtime_detail {
@@ -48,6 +49,11 @@ fly_result capture_serialized_state(std::vector<std::uint8_t>& bytes, Save save)
         if (result != NES_ERR_BUFFER_TOO_SMALL || next_needed <= bytes.size())
             return FLY_RESULT_INTERNAL_ERROR;
         needed = next_needed;
+        // Independent serializations may keep growing by a few bytes. Leave
+        // headroom rather than chasing each exact size until retries run out.
+        if (bytes.size() <= std::numeric_limits<std::size_t>::max() / 2 &&
+            needed < bytes.size() * 2)
+            needed = bytes.size() * 2;
     }
     return FLY_RESULT_INTERNAL_ERROR;
 }

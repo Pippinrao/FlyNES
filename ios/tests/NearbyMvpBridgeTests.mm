@@ -2,6 +2,8 @@
 
 #import "FlyNesNearbyBridge.h"
 #import "BuiltinGames.h"
+#import "FlyNesAppBridge.h"
+#import "CatalogSourceService.h"
 #import "../app/run/RunSurfaceViewController.h"
 #include <flynes/flynes_nearby_mvp.h>
 #include "NearbyPlaybackState.hpp"
@@ -134,7 +136,11 @@ static UIView *viewWithId(UIView *root, NSString *identifier)
             [FlyNesBuiltinGames resourceNameForAssetFilename:game.assetFilename] ofType:@"nes"];
         NSData *rom = [NSData dataWithContentsOfFile:path];
         XCTAssertGreaterThan(rom.length, 0u);
-        XCTAssertTrue([host selectHostGameROM:rom canonicalID:game.canonicalId title:game.titleEn]);
+        XCTAssertTrue([CatalogSourceService.sharedInstance prepareBuiltin:nil]);
+        NSString *localID = [FlyNesAppBridge.sharedInstance catalogGameForNearbyKey:game.canonicalId][@"canonicalId"];
+        XCTAssertNotNil(localID);
+        XCTAssertTrue([host selectHostGameROM:rom canonicalID:localID title:game.titleEn]);
+        XCTAssertEqualObjects(host.canonicalId, localID, @"The local cover/save identity stays unchanged");
         XCTAssertEqual([host.snapshot[@"localReady"] intValue], 1);
         XCTAssertEqual(fly_lan_mvp_select_rom(guest,
             static_cast<const uint8_t *>(rom.bytes), rom.length), 1);
@@ -152,6 +158,8 @@ static UIView *viewWithId(UIView *root, NSString *identifier)
             [NSThread sleepForTimeInterval:0.01];
         }
         XCTAssertEqual(guest_state.state, FLY_LAN_MVP_RUNNING);
+        XCTAssertEqualObjects([NSString stringWithUTF8String:guest_state.peer_game_key], game.canonicalId,
+                              @"Peers receive the manifest key used by Android and Harmony");
         RunSurfaceViewController *surface = [[RunSurfaceViewController alloc] init];
         surface.nearbySession = YES;
         surface.canonicalId = game.canonicalId;

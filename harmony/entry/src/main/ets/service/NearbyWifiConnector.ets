@@ -1,4 +1,6 @@
 import { wifiManager } from '@kit.ConnectivityKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { BusinessError } from '@kit.BasicServicesKit';
 import { NearbyWifiPort } from './NearbyMvpScanFlow';
 
 export interface WifiCandidateApi {
@@ -53,6 +55,7 @@ export class NearbyWifiConnector implements NearbyWifiPort {
     const generation = this.generation;
     let networkId = -1;
     let connected = false;
+    let stage: string = 'add';
     try {
       networkId = await this.api.add(ssid, passphrase);
       if (generation !== this.generation) {
@@ -60,18 +63,28 @@ export class NearbyWifiConnector implements NearbyWifiPort {
         return false;
       }
       this.candidateId = networkId;
+      stage = 'request';
+      hilog.info(0, 'FlyNesWifi', 'candidate ready; requesting system approval');
       await this.api.request(networkId);
+      stage = 'address';
       const deadline = Date.now() + 15000;
       while (generation === this.generation && Date.now() < deadline) {
         try {
           if (await this.api.ready(ssid)) {
             connected = generation === this.generation;
+            hilog.info(0, 'FlyNesWifi', 'hotspot address ready');
             return connected;
           }
         } catch { /* The Wi-Fi link may still be acquiring an address. */ }
         await new Promise<void>((resolve: () => void): void => { setTimeout(resolve, 250); });
       }
-    } catch { /* User refusal and unsupported devices leave the invite retryable. */ }
+      hilog.info(0, 'FlyNesWifi', 'join stopped stage=%{public}s superseded=%{public}s',
+        stage, String(generation !== this.generation));
+    } catch (error) {
+      // Never include system error messages: they may contain SSIDs or credentials.
+      hilog.info(0, 'FlyNesWifi', 'join failed stage=%{public}s code=%{public}d',
+        stage, (error as BusinessError).code ?? -1);
+    }
     finally {
       if (!connected && networkId >= 0 && this.candidateId === networkId) {
         this.candidateId = -1;

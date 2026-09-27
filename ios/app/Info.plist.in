@@ -22,6 +22,10 @@
     <string>@FLYNES_IOS_BUILD_NUMBER@</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
+    <key>UIFileSharingEnabled</key>
+    <true/>
+    <key>LSSupportsOpeningDocumentsInPlace</key>
+    <true/>
     <key>MinimumOSVersion</key>
     <string>$(IPHONEOS_DEPLOYMENT_TARGET)</string>
     <key>NSLocalNetworkUsageDescription</key>

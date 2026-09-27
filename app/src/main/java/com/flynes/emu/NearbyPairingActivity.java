@@ -88,6 +88,8 @@ public final class NearbyPairingActivity extends AppCompatActivity {
         ((FrameLayout) findViewById(R.id.nearby_invite_qr)).removeAllViews();
         String lan = NearbyUiNetworkPath.connectedLan(this);
         if (lan != null) {
+            // The invite must describe the network used by this host session.
+            ((FlyNesApplication) getApplication()).nearbyUiHotspot().close();
             showNetworkStatus(R.string.nearby_network_lan_selected);
             startHostOn(lan);
             return;
@@ -255,6 +257,10 @@ public final class NearbyPairingActivity extends AppCompatActivity {
             return;
         }
         String qr = mvpSession.invite();
+        NearbyUiHotspot hotspot = ((FlyNesApplication) getApplication()).nearbyUiHotspot();
+        if (hotspot.ssid() != null) {
+            qr = NearbyNetworkInvite.withWifi(hotspot.ssid(), hotspot.passphrase(), qr);
+        }
         if (qr == null || qr.equals(shownMvpQr)) return;
         try {
             BitMatrix matrix = new QRCodeWriter().encode(qr, BarcodeFormat.QR_CODE, 512, 512);

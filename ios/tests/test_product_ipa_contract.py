@@ -4,6 +4,7 @@
 from pathlib import Path
 import re
 import sys
+import xml.etree.ElementTree as ET
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -25,6 +26,13 @@ def read(relative: str) -> str:
 
 
 def main() -> int:
+    plist = ET.fromstring(read("ios/app/Info.plist.in")).find("dict")
+    values = list(plist)
+    for key in ("UIFileSharingEnabled", "LSSupportsOpeningDocumentsInPlace"):
+        require(any(node.tag == "key" and node.text == key and
+                    index + 1 < len(values) and values[index + 1].tag == "true"
+                    for index, node in enumerate(values)),
+                f"{key} must allow user-supplied ROM folders in Files")
     workflow = read(WORKFLOW)
     stage1 = read(STAGE1)
     docs = read(SIDELOADLY)

@@ -61,6 +61,9 @@ export class NearbyScanJoinService {
 
   snapshot(): NearbyMvpSnapshot { return this.flow.snapshot(); }
   poll(): void {
+    // Native state still belongs to the previous session while the system Wi-Fi
+    // prompt is pending. It must not release this attempt's candidate network.
+    if (this.flow.isScanning()) return;
     this.flow.poll();
     const state = this.flow.snapshot().state;
     if (state === 0 || state === 4) {

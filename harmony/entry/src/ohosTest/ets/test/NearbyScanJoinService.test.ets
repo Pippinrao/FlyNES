@@ -27,8 +27,57 @@ class FakeClock implements NearbyScanClock {
   stop(_: number): void { this.stops++; this.tick = (): void => {}; }
 }
 
+class PendingWifi extends FakeWifi {
+  complete: (value: boolean) => void = (_: boolean): void => {};
+  connect(ssid: string, _: string): Promise<boolean> {
+    this.requested = ssid;
+    return new Promise<boolean>((resolve: (value: boolean) => void): void => { this.complete = resolve; });
+  }
+}
+
 export default function nearbyScanJoinServiceTest(): void {
   describe('NearbyScanJoinService', () => {
+    it('cancelled_wifi_completion_cannot_release_replacement_attempt', 0, async () => {
+      const wifi = new PendingWifi();
+      const service = new NearbyScanJoinService(new FakeNative(), wifi, new FakeClock());
+      const qr = 'flynes-wifi-v1:Host:password8:' + encodeURIComponent(INVITE);
+      const first = service.joinScannedText(qr);
+      await Promise.resolve();
+      const finishFirst = wifi.complete;
+      service.cancel();
+      const second = service.joinScannedText(qr);
+      await Promise.resolve();
+      const finishSecond = wifi.complete;
+      const before = wifi.releases;
+      finishFirst(false);
+      const firstResult = await first;
+      const after = wifi.releases;
+      finishSecond(true);
+      const secondResult = await second;
+      service.cancel();
+      expect(firstResult).assertFalse();
+      expect(after).assertEqual(before);
+      expect(secondResult).assertTrue();
+    });
+    it('page_poll_preserves_pending_wifi_prompt_with_idle_or_old_ended_session', 0, async () => {
+      for (const previousState of [0, 4]) {
+        const native = new FakeNative();
+        native.state = previousState;
+        const wifi = new PendingWifi();
+        const service = new NearbyScanJoinService(native, wifi, new FakeClock());
+        const pending = service.joinScannedText('flynes-wifi-v1:Host:password8:' + encodeURIComponent(INVITE));
+        await Promise.resolve();
+        const before = wifi.releases;
+        service.poll();
+        const after = wifi.releases;
+        wifi.complete(true);
+        const joined = await pending;
+        service.cancel();
+        expect(wifi.requested).assertEqual('Host');
+        expect(after).assertEqual(before);
+        expect(joined).assertTrue();
+      }
+    });
     it('joins_inner_lan_invite_only_after_hotspot_join', 0, async () => {
       const native = new FakeNative();
       const wifi = new FakeWifi();

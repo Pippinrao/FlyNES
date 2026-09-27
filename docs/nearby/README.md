@@ -9,3 +9,5 @@
 9 月 27 日用户批准 [当前游戏截图与继续游戏房间](../superpowers/specs/2026-09-27-nearby-room-resume-design.md)：回房间暂停并保留双方进度，任一端继续恢复。最新 [真机、房间与扫码记录](../verification/2026-09-27-nearby-device-room.md)补充安卓/鸿蒙双向房主验证、用户扫码速度签收、暂停恢复及同连接换游戏，并保留未解决偶发问题和未测量项。
 
 随后按用户要求补齐 iOS 扫码、异步换游戏、暂停恢复与房间导航差异，并统一 iOS/Harmony 客机标题语言策略。[三端一致性补齐与模拟器复测](../verification/2026-09-27-nearby-ios-parity.md)记录本次失败复现、实际原生会话 UI 回归和隔离鸿蒙模拟器结果；iOS 真机仍未验收。
+
+当晚继续 [安卓/鸿蒙热点真机测试](../verification/2026-09-27-nearby-hotspot-device.md)，修复热点邀请、配网等待与状态捕获容量问题。接入 iPhone 后完成保留进度的覆盖安装，定位并修复内置游戏联机 ID 差异；[iOS 真机与游戏库补齐记录](../verification/2026-09-27-nearby-ios-device.md)区分已确认的入房、开局和客机输入，以及仍待进行的完整试玩、房主方向、热点和 ROM 推送。

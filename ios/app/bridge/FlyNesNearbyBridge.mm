@@ -1,4 +1,5 @@
 #import "FlyNesNearbyBridge.h"
+#import "FlyNesAppBridge.h"
 #include "NearbyLanAddressSelector.hpp"
 
 #include <flynes/flynes_nearby_mvp.h>
@@ -194,9 +195,10 @@ NSString *local_ipv4(bool wifi_only = false)
                    title:(NSString *)title
 {
     // Immediate initial selection only; UI game changes use the asynchronous API.
+    NSString *gameKey = [FlyNesAppBridge.sharedInstance nearbyGameKeyForCanonicalID:canonicalID];
     if (session_ == nullptr || rom.length == 0 || canonicalID.length == 0 ||
         fly_lan_mvp_select_game(session_, static_cast<const uint8_t *>(rom.bytes),
-                                rom.length, canonicalID.UTF8String) != 1 ||
+                                rom.length, gameKey.UTF8String) != 1 ||
         fly_lan_mvp_confirm(session_) != 1) return NO;
     _canonicalId = [canonicalID copy];
     _gameTitle = [title copy];
@@ -248,9 +250,11 @@ NSString *local_ipv4(bool wifi_only = false)
 {
     if (session_ == nullptr || rom.length == 0 || canonicalID.length == 0) return NO;
     fly_lan_mvp_snapshot state{};
+    NSString *gameKey = [FlyNesAppBridge.sharedInstance nearbyGameKeyForCanonicalID:canonicalID];
     if (fly_lan_mvp_snapshot_read(session_, &state) != 1 ||
         state.role != FLY_LAN_MVP_ROLE_GUEST_P2 ||
-        ![canonicalID isEqualToString:[NSString stringWithUTF8String:state.peer_game_key]] ||
+        (![canonicalID isEqualToString:[NSString stringWithUTF8String:state.peer_game_key]] &&
+         ![gameKey isEqualToString:[NSString stringWithUTF8String:state.peer_game_key]]) ||
         fly_lan_mvp_select_rom(session_, static_cast<const uint8_t *>(rom.bytes),
                                rom.length) != 1 || fly_lan_mvp_confirm(session_) != 1) return NO;
     _canonicalId = [canonicalID copy];

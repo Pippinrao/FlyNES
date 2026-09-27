@@ -24,6 +24,9 @@ NS_ASSUME_NONNULL_BEGIN
                      error:(NSError * _Nullable * _Nullable)error;
 
 - (NSArray<NSDictionary<NSString *, id> *> *)catalogSnapshotGames;
+// Nearby peers use manifest keys for bundled games; local saves keep content IDs.
+- (nullable NSDictionary<NSString *, id> *)catalogGameForNearbyKey:(NSString *)key NS_SWIFT_NAME(catalogGame(forNearbyKey:));
+- (NSString *)nearbyGameKeyForCanonicalID:(NSString *)canonicalID;
 - (BOOL)scanFileRecords:(NSArray<NSDictionary<NSString *, id> *> *)records
              sourceUUID:(NSData *)sourceUUID
             sourceScope:(uint32_t)sourceScope

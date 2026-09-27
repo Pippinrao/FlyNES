@@ -124,6 +124,9 @@
     [self launchRole:@"host"];
     NSDictionary *game = [self status][@"games"][0];
     [[self element:@"nearby_lobby_choose_game"] tap];
+    if ([self element:@"close_search"].exists) [[self element:@"close_search"] tap];
+    XCTAssertTrue([[self element:@"category_builtin"] waitForExistenceWithTimeout:10]);
+    [[self element:@"category_builtin"] tap];
     NSString *card = [@"game_card_" stringByAppendingString:game[@"key"]];
     XCTAssertTrue([[self element:card] waitForExistenceWithTimeout:15]);
     [[self element:card] tap];
