@@ -62,7 +62,10 @@ public final class AndroidNativeSourceRegistrationTest {
                 throw slowLibrary;
             }
             assertEquals(result.candidateCount(), result.packageOutcomes().size());
-            assertTrue("successful scan must return its indexed packages", !result.packages().isEmpty());
+            assertTrue("successful scan must return its indexed packages: candidates="
+                            + result.candidateCount() + " outcomes=" + result.packageOutcomes()
+                            + " projected=" + runtime.stateSnapshot().sources().get(sourceId).packages().size(),
+                    !result.packages().isEmpty());
             int packages = runtime.stateSnapshot().sources().get(sourceId).packages().size();
             assertTrue("test library must contain ROM packages", packages > 0);
             runtime.addOrReauthorizeTree(tree, 1).get(30, TimeUnit.SECONDS);

@@ -38,7 +38,6 @@ using flynes::session::loopback::loopback_content_id_v1;
 using flynes::session::loopback::loopback_source_choice_ref_v1;
 using flynes::session::loopback::pump_engine;
 using flynes::session::loopback::relay_gatt;
-using flynes::session::loopback::shutdown_engine_with_the_pump;
 using flynes::session::loopback::submit;
 using flynes::session::loopback::submit_choice;
 using flynes::session::nes_port::NesDualRuntimeCAbiV1;
@@ -199,8 +198,37 @@ void log_link(const char* tag, EngineFixture& engine)
 
 void shutdown_pair(LobbyPair& pair)
 {
-    shutdown_engine_with_the_pump(pair.inviter, pair.inviter_pump, pair.limits);
-    shutdown_engine_with_the_pump(pair.joiner, pair.joiner_pump, pair.limits);
+    pair.inviter.bearer.cancel_result = FLY_SESSION_V2_OK;
+    pair.joiner.bearer.cancel_result = FLY_SESSION_V2_OK;
+    (void)fly_session_begin_shutdown_v2(pair.inviter.engine, 900);
+    (void)fly_session_begin_shutdown_v2(pair.joiner.engine, 901);
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+    while (std::chrono::steady_clock::now() < deadline &&
+           (pair.inviter.engine != nullptr || pair.joiner.engine != nullptr))
+    {
+        (void)pair.inviter_quic.drain();
+        (void)pair.joiner_quic.drain();
+        if (pair.inviter.engine != nullptr)
+        {
+            pair.inviter.executor.run_all();
+            pump_engine(pair.inviter, pair.inviter_pump, pair.limits);
+            pair.inviter.executor.run_all();
+            if (fly_session_destroy_v2(pair.inviter.engine) == FLY_SESSION_V2_OK)
+                pair.inviter.engine = nullptr;
+        }
+        if (pair.joiner.engine != nullptr)
+        {
+            pair.joiner.executor.run_all();
+            pump_engine(pair.joiner, pair.joiner_pump, pair.limits);
+            pair.joiner.executor.run_all();
+            if (fly_session_destroy_v2(pair.joiner.engine) == FLY_SESSION_V2_OK)
+                pair.joiner.engine = nullptr;
+        }
+        if (pair.inviter.engine != nullptr || pair.joiner.engine != nullptr)
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    check(pair.inviter.engine == nullptr && pair.joiner.engine == nullptr,
+          "both engines destroy after their real QUIC completions drain");
 }
 
 void submit_kind(LobbyPair& pair, EngineFixture& fixture, std::uint32_t kind,

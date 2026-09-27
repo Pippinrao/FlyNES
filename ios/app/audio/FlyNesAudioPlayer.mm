@@ -1,5 +1,6 @@
 #import "FlyNesAudioPlayer.h"
 #import <AVFoundation/AVFoundation.h>
+#import <TargetConditionals.h>
 #include "PlaybackAudioQueue.hpp"
 #include "PlaybackAudioFocus.hpp"
 
@@ -9,13 +10,30 @@
     AVAudioFormat *format_;
     flynes::ios::PlaybackAudioQueue queue_;
     BOOL active_;
+    BOOL offlineAutoRender_;
 }
 - (instancetype)init {
+#if TARGET_OS_SIMULATOR
+    if ([NSProcessInfo.processInfo.environment[@"FLYNES_TEST_OFFLINE_AUDIO"] isEqualToString:@"1"]) {
+        AVAudioEngine *engine = [[AVAudioEngine alloc] init];
+        AVAudioFormat *renderFormat = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:48000 channels:2];
+        NSError *error = nil;
+        if ([engine enableManualRenderingMode:AVAudioEngineManualRenderingModeOffline
+                                       format:renderFormat maximumFrameCount:4096 error:&error]) {
+            FlyNesAudioPlayer *player = [self initWithEngine:engine];
+            player->offlineAutoRender_ = YES;
+            return player;
+        }
+    }
+#endif
+    return [self initWithEngine:[[AVAudioEngine alloc] init]];
+}
+- (instancetype)initWithEngine:(AVAudioEngine *)engine {
     self = [super init];
     if (self) {
         _enabled = YES;
         _focusPolicy = 1;
-        engine_ = [[AVAudioEngine alloc] init];
+        engine_ = engine;
         player_ = [[AVAudioPlayerNode alloc] init];
         format_ = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:48000 channels:1];
         [engine_ attachNode:player_];
@@ -40,6 +58,12 @@
         return YES;
     }
     AVAudioSession *session = AVAudioSession.sharedInstance;
+    if (engine_.isInManualRenderingMode) {
+        [self updateGameVolume];
+        [engine_ prepare];
+        active_ = [engine_ startAndReturnError:error];
+        return active_;
+    }
     // DUCK lowers this game's gain, not the volume of other audio sessions.
     const auto focus = flynes::ios::playbackAudioFocus(static_cast<unsigned>(self.focusPolicy),
         session.secondaryAudioShouldBeSilencedHint, session.otherAudioPlaying);
@@ -60,8 +84,10 @@
     active_ = NO;
     [self flush];
     [engine_ pause];
-    [AVAudioSession.sharedInstance setActive:NO
-        withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation error:nil];
+    if (!engine_.isInManualRenderingMode) {
+        [AVAudioSession.sharedInstance setActive:NO
+            withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation error:nil];
+    }
 }
 - (void)flush {
     NSAssert(NSThread.isMainThread, @"Audio player is main-thread owned");
@@ -107,6 +133,11 @@
         }];
     // One frame of pre-roll absorbs alternating 60/120 Hz callback intervals.
     if (!player_.playing && queue_.count() >= 2) [player_ play];
+    if (offlineAutoRender_) {
+        AVAudioPCMBuffer *rendered = [[AVAudioPCMBuffer alloc] initWithPCMFormat:engine_.manualRenderingFormat
+                                                                 frameCapacity:count];
+        [engine_ renderOffline:count toBuffer:rendered error:nil];
+    }
 }
 - (void)configurationChanged:(NSNotification *)notification {
     (void)notification;

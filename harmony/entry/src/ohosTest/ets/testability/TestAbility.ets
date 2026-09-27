@@ -5,8 +5,6 @@ import { window } from '@kit.ArkUI';
 import { Hypium } from '@ohos/hypium';
 import testsuite from '../test/List.test';
 
-const ON_DESTROY_ERROR = -2;
-
 export default class TestAbility extends UIAbility {
   abilityDelegator: abilityDelegatorRegistry.AbilityDelegator;
 
@@ -19,14 +17,13 @@ export default class TestAbility extends UIAbility {
     hilog.info(0x0000, 'testTag', '%{public}s', 'TestAbility onCreate');
     hilog.info(0x0000, 'testTag', '%{public}s', 'want param:' + JSON.stringify(want) ?? '');
     hilog.info(0x0000, 'testTag', '%{public}s', 'launchParam:' + JSON.stringify(launchParam) ?? '');
-    const abilityDelegatorArguments = abilityDelegatorRegistry.getArguments();
+    const args = abilityDelegatorRegistry.getArguments();
     hilog.info(0x0000, 'testTag', '%{public}s', 'start run testcase!!!');
-    Hypium.hypiumTest(this.abilityDelegator, abilityDelegatorArguments, testsuite);
+    Hypium.hypiumTest(this.abilityDelegator, args, testsuite);
   }
 
   onDestroy() {
     hilog.info(0x0000, 'testTag', '%{public}s', 'TestAbility onDestroy');
-    this.abilityDelegator.finishTest('TestAbility onDestroy unexpectedly!', ON_DESTROY_ERROR, () => {});
   }
 
   onWindowStageCreate(windowStage: window.WindowStage) {

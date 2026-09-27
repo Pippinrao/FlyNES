@@ -9,6 +9,7 @@
 #include <fstream>
 #include <filesystem>
 #include <iterator>
+#include <map>
 #include <string>
 #include <thread>
 #include <vector>
@@ -309,13 +310,84 @@ int main(int argc, char** argv) {
             fly_lan_mvp_destroy(host);
             return failures == 0 ? 0 : 1;
         }
-        if (mode == "--ready" || mode == "--stall") {
+        if (mode == "--early-ready") {
+            const auto rom = read_rom(FLYNES_RUNTIME_ROM_FIXTURE);
+            check(!rom.empty(), "real ROM fixture is readable");
+            check(fly_lan_mvp_select_rom(host, rom.data(), rom.size()) == 1,
+                  "host publishes configuration before guest loads ROM");
+            check(fly_lan_mvp_confirm(host) == 1,
+                  "host may confirm before guest selects ROM");
+            const auto ready_deadline = std::chrono::steady_clock::now() +
+                std::chrono::seconds(5);
+            do {
+                (void)fly_lan_mvp_snapshot_read(guest, &b);
+                if (b.peer_ready) break;
+                std::this_thread::sleep_for(std::chrono::milliseconds(2));
+            } while (std::chrono::steady_clock::now() < ready_deadline);
+            check(b.peer_ready == 1, "guest observes host READY before local ROM selection");
+            check(fly_lan_mvp_select_rom(guest, rom.data(), rom.size()) == 1,
+                  "guest selects the matching ROM after host READY");
+            (void)fly_lan_mvp_snapshot_read(guest, &b);
+            check(b.peer_ready == 1,
+                  "matching local selection preserves the already received host READY");
+            check(fly_lan_mvp_confirm(guest) == 1, "guest confirms matching ROM");
+            check(wait_running(host, guest, 5000),
+                  "early host READY still starts both runtimes");
+            fly_lan_mvp_destroy(guest);
+            fly_lan_mvp_destroy(host);
+            return failures == 0 ? 0 : 1;
+        }
+        if (mode == "--input-timestamp") {
+            const auto rom = read_rom(FLYNES_RUNTIME_ROM_FIXTURE);
+            check(fly_lan_mvp_select_rom(host, rom.data(), rom.size()) == 1,
+                  "host loads ROM for timestamped input");
+            check(fly_lan_mvp_select_rom(guest, rom.data(), rom.size()) == 1,
+                  "guest loads matching ROM for timestamped input");
+            check(fly_lan_mvp_confirm(host) == 1 && fly_lan_mvp_confirm(guest) == 1,
+                  "both devices confirm timestamped round");
+            check(wait_running(host, guest, 5000), "timestamped round starts");
+            fly_lan_mvp_input_v1 input{};
+            input.struct_size = FLY_LAN_MVP_INPUT_V1_SIZE;
+            input.version = FLY_LAN_MVP_INPUT_VERSION_1;
+            input.buttons = 1;
+            input.sequence = 42;
+            input.capture_time_ns = 123456789;
+            check(fly_lan_mvp_submit_input_v1(host, &input) == 1,
+                  "host submits a versioned captured button state");
+            const auto frame_deadline = std::chrono::steady_clock::now() +
+                std::chrono::seconds(2);
+            do {
+                (void)fly_lan_mvp_snapshot_read(host, &a);
+                if (a.completed_frames > 0) break;
+                std::this_thread::sleep_for(std::chrono::milliseconds(2));
+            } while (std::chrono::steady_clock::now() < frame_deadline);
+            std::vector<std::uint8_t> pixels(FLY_RUNTIME_RGB565_BYTES);
+            fly_latest_frame_v1 frame{};
+            frame.struct_size = FLY_LATEST_FRAME_V1_SIZE;
+            frame.version = FLY_LATEST_FRAME_VERSION_1;
+            check(fly_lan_mvp_copy_latest_frame(host, pixels.data(), pixels.size(), &frame) == 1,
+                  "timestamped frame is published");
+            check(frame.source_time_ns == input.capture_time_ns &&
+                  frame.applied_input_sequence[0] == input.sequence,
+                  "published frame preserves input capture time and sequence");
+            fly_lan_mvp_destroy(guest);
+            fly_lan_mvp_destroy(host);
+            return failures == 0 ? 0 : 1;
+        }
+        if (mode == "--prediction" || mode == "--ready" || mode == "--stall") {
             const auto rom = read_rom(FLYNES_RUNTIME_ROM_FIXTURE);
             check(!rom.empty(), "real ROM fixture is readable");
             check(fly_lan_mvp_select_rom(host, rom.data(), rom.size()) == 1,
                   "host selects configuration");
             check(fly_lan_mvp_select_rom(guest, rom.data(), rom.size()) == 1,
                   "guest selects matching configuration");
+            fly_runtime_source_timing_v1 source_timing{};
+            source_timing.struct_size = FLY_RUNTIME_SOURCE_TIMING_V1_SIZE;
+            source_timing.version = FLY_RUNTIME_SOURCE_TIMING_VERSION_1;
+            check(fly_lan_mvp_source_timing(host, &source_timing) == 1 &&
+                  source_timing.frame_rate_numerator > 0 &&
+                  source_timing.frame_rate_denominator > 0,
+                  "LAN presents the loaded source cadence without stepping");
             check(fly_lan_mvp_confirm(host) == 1, "first host confirmation is accepted");
             check(fly_lan_mvp_confirm(host) == 1, "duplicate host confirmation is idempotent");
             const auto one_ready_until = std::chrono::steady_clock::now() +
@@ -337,19 +409,101 @@ int main(int argc, char** argv) {
             }
             check(fly_lan_mvp_confirm(guest) == 1, "guest confirmation is accepted");
             check(wait_running(host, guest, 5000), "both confirmations start exactly one round");
+            if (mode == "--prediction") {
+                for (int frame = 0; frame < 4; ++frame) {
+                    check(fly_lan_mvp_submit_input(host, frame == 0 ? 1u : 0u) == 1,
+                          "local input is accepted without peer input");
+                    std::this_thread::sleep_for(std::chrono::milliseconds(17));
+                }
+                fly_lan_mvp_snapshot ahead{};
+                const auto ahead_until = std::chrono::steady_clock::now() +
+                                         std::chrono::milliseconds(500);
+                do {
+                    (void)fly_lan_mvp_snapshot_read(host, &ahead);
+                    if (ahead.completed_frames >= 4) break;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                } while (std::chrono::steady_clock::now() < ahead_until);
+                check(ahead.completed_frames >= 4 && ahead.completed_frames <= 10,
+                      "local frames advance at source cadence while remote input is late");
+                std::vector<std::uint8_t> pixels(FLY_RUNTIME_RGB565_BYTES);
+                fly_latest_frame_v1 before_replay{};
+                before_replay.struct_size = FLY_LATEST_FRAME_V1_SIZE;
+                before_replay.version = FLY_LATEST_FRAME_VERSION_1;
+                check(fly_lan_mvp_copy_latest_frame(host, pixels.data(), pixels.size(),
+                                                    &before_replay) == 1,
+                      "predicted picture is published");
+                std::array<std::int16_t, 256> heard{};
+                fly_pcm_block_v1 heard_block{};
+                heard_block.struct_size = FLY_PCM_BLOCK_V1_SIZE;
+                heard_block.version = FLY_PCM_BLOCK_VERSION_1;
+                check(fly_lan_mvp_pull_pcm(host, heard.data(),
+                                          static_cast<std::uint32_t>(heard.size()), &heard_block) == 1 &&
+                      heard_block.sample_count == heard.size(),
+                      "predicted PCM is available without peer confirmation");
+                check(fly_lan_mvp_submit_input(guest, 0x80u) == 1,
+                      "late differing peer input is accepted");
+                const auto corrected_until = std::chrono::steady_clock::now() +
+                                             std::chrono::milliseconds(600);
+                fly_latest_frame_v1 after_replay = before_replay;
+                while (std::chrono::steady_clock::now() < corrected_until &&
+                       after_replay.frame_sequence == before_replay.frame_sequence) {
+                    (void)fly_lan_mvp_copy_latest_frame(host, pixels.data(), pixels.size(),
+                                                        &after_replay);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                }
+                check(after_replay.frame_index >= before_replay.frame_index &&
+                      after_replay.frame_sequence > before_replay.frame_sequence,
+                      "rollback or later source frame publishes a monotonic external sequence");
+                fly_pcm_block_v1 next_block = heard_block;
+                const bool next_pcm = fly_lan_mvp_pull_pcm(host, heard.data(),
+                                          static_cast<std::uint32_t>(heard.size()), &next_block) == 1;
+                fly_lan_mvp_stats_v1 stats{};
+                stats.struct_size = FLY_LAN_MVP_STATS_V1_SIZE;
+                stats.version = FLY_LAN_MVP_STATS_VERSION_1;
+                check(fly_lan_mvp_stats_read(host, &stats) == 1,
+                      "versioned statistics are readable");
+                check(next_pcm && next_block.first_sample_sequence ==
+                      heard_block.sample_count + stats.pcm_dropped_samples,
+                      "rollback keeps delivered PCM and reports any bounded-queue drop");
+                check(fly_lan_mvp_stats_read(host, &stats) == 1 &&
+                      stats.simulated_frames >= 4 && stats.predicted_frames >= 4 &&
+                      stats.rollback_count >= 1 && stats.replayed_frames >= 4 &&
+                      stats.published_frames >= 5 &&
+                      stats.pcm_delivered_samples >= heard_block.sample_count,
+                      "versioned statistics separate real frames, replay, video and PCM");
+                for (int burst = 0; burst < 10; ++burst)
+                    check(fly_lan_mvp_submit_input(host, 0) == 1,
+                          "high-frequency input sampling remains accepted");
+                check(fly_lan_mvp_submit_input(host, 8) == 1,
+                      "a fresh button overrides sampled idle input without a ten-frame queue");
+                fly_lan_mvp_destroy(guest);
+                fly_lan_mvp_destroy(host);
+                return failures == 0 ? 0 : 1;
+            }
             check(fly_lan_mvp_confirm(host) == 0 && fly_lan_mvp_confirm(guest) == 0,
                   "late confirmation cannot restart a running round");
             if (mode == "--stall") {
-                check(wait_completed(host, guest, 2, 1000),
-                      "agreed delay frames start before stall");
+                check(fly_lan_mvp_submit_input(host, 0) == 1,
+                      "host begins producing frames while the guest stops supplying input");
+                const auto started_until = std::chrono::steady_clock::now() +
+                                           std::chrono::milliseconds(1000);
+                do {
+                    (void)fly_lan_mvp_snapshot_read(host, &a);
+                    if (a.completed_frames > 0) break;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+                } while (std::chrono::steady_clock::now() < started_until);
+                check(a.completed_frames > 0,
+                      "host advances locally before the prediction window fills");
                 std::this_thread::sleep_for(std::chrono::milliseconds(2100));
                 (void)fly_lan_mvp_snapshot_read(host, &a);
                 (void)fly_lan_mvp_snapshot_read(guest, &b);
                 check(a.state == FLY_LAN_MVP_ENDED && b.state == FLY_LAN_MVP_ENDED,
                       "missing required input ends both runtimes");
-                check(a.reason == FLY_LAN_MVP_REASON_STALL &&
-                      b.reason == FLY_LAN_MVP_REASON_STALL,
-                      "two-second progress timeout reports STALL");
+                check(b.reason == FLY_LAN_MVP_REASON_STALL &&
+                      (a.reason == FLY_LAN_MVP_REASON_STALL ||
+                       a.reason == FLY_LAN_MVP_REASON_CONNECTION ||
+                       a.reason == FLY_LAN_MVP_REASON_PEER_ENDED),
+                      "two-second progress timeout ends the stalled peer and its connection");
             }
             fly_lan_mvp_destroy(guest);
             fly_lan_mvp_destroy(host);
@@ -374,9 +528,6 @@ int main(int argc, char** argv) {
                   "one confirmation cannot start the game");
             check(fly_lan_mvp_confirm(guest) == 1, "guest confirms configuration");
             check(wait_running(host, guest, 5000), "both confirmations start one round");
-            check(wait_completed(host, guest, 2, 1000),
-                  "two-frame delay starts with agreed zero input");
-
             (void)fly_lan_mvp_snapshot_read(host, &a);
             const auto before = a.completed_frames;
             check(fly_lan_mvp_submit_input(host, 0x01u) == 1,
@@ -388,12 +539,12 @@ int main(int argc, char** argv) {
                 (void)fly_lan_mvp_snapshot_read(guest, &b);
                 std::this_thread::sleep_for(std::chrono::milliseconds(5));
             }
-            check(a.completed_frames == before && b.completed_frames == before,
-                  "one player's input cannot advance either runtime");
+            check(a.completed_frames > before && b.completed_frames == before,
+                  "local frame advances without waiting for remote input");
             check(fly_lan_mvp_submit_input(guest, 0x80u) == 1,
                   "P2 submits a different input");
             check(wait_completed(host, guest, before + 1, 2000),
-                  "both inputs advance exactly one frame");
+                   "late remote input corrects the predicted frame");
             (void)fly_lan_mvp_snapshot_read(host, &a);
             (void)fly_lan_mvp_snapshot_read(guest, &b);
             check(a.applied_buttons[0] == 0x01u && a.applied_buttons[1] == 0x80u &&
@@ -410,8 +561,8 @@ int main(int argc, char** argv) {
             }
             (void)fly_lan_mvp_snapshot_read(host, &a);
             (void)fly_lan_mvp_snapshot_read(guest, &b);
-            check(a.completed_frames == b.completed_frames,
-                  "both runtimes expose the same completed frame count");
+            check(a.completed_frames > 60 && b.completed_frames > 60,
+                  "both runtimes progress independently past the digest boundary");
             check(a.last_digest_frame == b.last_digest_frame &&
                   std::memcmp(a.last_state_digest, b.last_state_digest, 32) == 0,
                   "periodic real-core state digests match");
@@ -428,8 +579,34 @@ int main(int argc, char** argv) {
             check(fly_lan_mvp_copy_latest_frame(guest, guest_frame.data(), guest_frame.size(),
                                                &guest_meta) == 1,
                   "guest exposes the real core frame");
-            check(host_meta.frame_index == guest_meta.frame_index && host_frame == guest_frame,
-                  "both peers render the same completed frame");
+            check(host_meta.frame_index > 0 && guest_meta.frame_index > 0,
+                  "both peers publish real core frames during independent scheduling");
+
+            std::map<std::uint64_t, std::vector<std::uint8_t>> host_pictures;
+            std::map<std::uint64_t, std::vector<std::uint8_t>> guest_pictures;
+            bool same_frame_pixels = false;
+            for (int attempt = 0; attempt < 240 && !same_frame_pixels; ++attempt) {
+                (void)fly_lan_mvp_submit_input(host, 0);
+                (void)fly_lan_mvp_submit_input(guest, 0);
+                if (fly_lan_mvp_copy_latest_frame(host, host_frame.data(), host_frame.size(),
+                        &host_meta) == 1 && host_meta.frame_index >= 60)
+                    host_pictures[host_meta.frame_index] = host_frame;
+                if (fly_lan_mvp_copy_latest_frame(guest, guest_frame.data(), guest_frame.size(),
+                        &guest_meta) == 1 && guest_meta.frame_index >= 60)
+                    guest_pictures[guest_meta.frame_index] = guest_frame;
+                const auto matched_host = guest_pictures.find(host_meta.frame_index);
+                const auto matched_guest = host_pictures.find(guest_meta.frame_index);
+                same_frame_pixels =
+                    (matched_host != guest_pictures.end() &&
+                     host_pictures[host_meta.frame_index] == matched_host->second) ||
+                    (matched_guest != host_pictures.end() &&
+                     matched_guest->second == guest_pictures[guest_meta.frame_index]);
+                if (host_pictures.size() > 64) host_pictures.erase(host_pictures.begin());
+                if (guest_pictures.size() > 64) guest_pictures.erase(guest_pictures.begin());
+                std::this_thread::sleep_for(std::chrono::milliseconds(8));
+            }
+            check(same_frame_pixels,
+                  "independent peers publish identical raw pixels for one shared core frame");
 
             std::array<std::int16_t, 2048> host_pcm{};
             std::array<std::int16_t, 2048> guest_pcm{};
@@ -445,20 +622,19 @@ int main(int argc, char** argv) {
                   "guest PCM reaches the shared consumer API");
             check(host_block.sample_count > 0 && guest_block.sample_count > 0,
                   "both peers produce PCM samples");
-            check(std::equal(host_pcm.begin(), host_pcm.begin() + host_block.sample_count,
-                             guest_pcm.begin()),
-                  "both peers produce the same PCM prefix");
+            check(host_block.media_time_ns == host_block.first_sample_sequence * 1'000'000'000ull / 48000 &&
+                  guest_block.media_time_ns == guest_block.first_sample_sequence * 1'000'000'000ull / 48000,
+                  "both peers expose coherent source PCM sample timestamps");
             for (int drain = 0; drain < 128 && host_block.sample_count != 0; ++drain)
                 (void)fly_lan_mvp_pull_pcm(host, host_pcm.data(),
                     static_cast<std::uint32_t>(host_pcm.size()), &host_block);
-            check(host_block.sample_count == 0,
-                  "polling without new core frames must not enqueue synthetic silence");
+            check(host_block.first_sample_sequence >= 2048,
+                  "PCM reads advance the source sequence without synthetic silence");
 
-            check(fly_lan_mvp_submit_input(host, 0) == 1 &&
-                  fly_lan_mvp_submit_input(host, 0) == 1,
-                  "fast peer may queue the agreed two input frames");
-            check(fly_lan_mvp_submit_input(host, 0) == 0,
-                  "fast peer cannot queue seconds of stale input behind a slower peer");
+            std::uint32_t queued = 0;
+            while (queued < 20 && fly_lan_mvp_submit_input(host, 0) == 1) ++queued;
+            check(queued == 20 && fly_lan_mvp_submit_input(host, 0) == 1,
+                  "rapid UI sampling replaces the current button state instead of queuing frames");
 
             const auto connected_id = std::vector<std::uint8_t>(a.session_id, a.session_id + 16);
             check(fly_lan_mvp_set_paused(host, 1) == 1, "host pauses the current game");
@@ -473,7 +649,38 @@ int main(int argc, char** argv) {
             check(a.state == FLY_LAN_MVP_RUNNING && b.state == FLY_LAN_MVP_RUNNING &&
                   a.paused && b.paused && a.completed_frames == paused_frame,
                   "pause freezes the game without disconnecting or timing out");
+            check(fly_lan_mvp_set_paused(guest, 1) == 1,
+                  "guest can also hold an independent pause request");
+            std::this_thread::sleep_for(std::chrono::milliseconds(80));
             check(fly_lan_mvp_set_paused(host, 0) == 1, "host resumes the same game");
+            std::this_thread::sleep_for(std::chrono::milliseconds(80));
+            (void)fly_lan_mvp_snapshot_read(host, &a);
+            (void)fly_lan_mvp_snapshot_read(guest, &b);
+            check(a.paused && b.paused,
+                  "clearing the host pause cannot cancel an active guest pause");
+            check(fly_lan_mvp_set_paused(guest, 0) == 1,
+                  "guest clears the remaining pause request");
+            const auto resume_until = std::chrono::steady_clock::now() + std::chrono::milliseconds(1000);
+            do {
+                (void)fly_lan_mvp_snapshot_read(host, &a);
+                (void)fly_lan_mvp_snapshot_read(guest, &b);
+                if (!a.paused && !b.paused) break;
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            } while (std::chrono::steady_clock::now() < resume_until);
+            check(!a.paused && !b.paused, "both apps resume after both owners clear pause");
+            check(fly_lan_mvp_set_paused(host, 1) == 1 &&
+                  fly_lan_mvp_set_paused(guest, 1) == 1,
+                  "both players can pause again in the same running game");
+            std::this_thread::sleep_for(std::chrono::milliseconds(80));
+            check(fly_lan_mvp_set_paused(guest, 0) == 1,
+                  "guest can release its pause while host remains paused");
+            std::this_thread::sleep_for(std::chrono::milliseconds(80));
+            (void)fly_lan_mvp_snapshot_read(host, &a);
+            (void)fly_lan_mvp_snapshot_read(guest, &b);
+            check(a.paused && b.paused,
+                  "clearing the guest pause cannot cancel an active host pause");
+            check(fly_lan_mvp_set_paused(host, 0) == 1,
+                  "host clears the remaining pause request");
             check(fly_lan_mvp_return_lobby(guest) == 1, "either player can return both apps to lobby");
             check(wait_pair(host, guest, 3000), "return lobby drains old inputs on the same connection");
             (void)fly_lan_mvp_snapshot_read(host, &a);

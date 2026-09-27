@@ -1,8 +1,6 @@
 #import "FlyNesNearbyBridge.h"
 #include "NearbyLanAddressSelector.hpp"
 
-#import "BuiltinGames.h"
-
 #include <flynes/flynes_nearby_mvp.h>
 
 #import <Security/Security.h>
@@ -38,13 +36,6 @@ NSString *local_ipv4(bool wifi_only = false)
     return selected ? [NSString stringWithUTF8String:selected->c_str()] : nil;
 }
 
-NSData *bundled_rom(FlyNesBuiltinGame *game)
-{
-    if (game == nil) return nil;
-    NSString *resource = [FlyNesBuiltinGames resourceNameForAssetFilename:game.assetFilename];
-    NSString *path = [NSBundle.mainBundle pathForResource:resource ofType:@"nes"];
-    return path == nil ? nil : [NSData dataWithContentsOfFile:path];
-}
 }
 
 @implementation FlyNesNearbyBridge {
@@ -77,6 +68,15 @@ NSData *bundled_rom(FlyNesBuiltinGame *game)
 
 - (NSString *)gameTitle { return _gameTitle; }
 - (NSString *)canonicalId { return _canonicalId; }
+- (NSTimeInterval)sourceFrameDuration
+{
+    fly_runtime_source_timing_v1 timing{};
+    timing.struct_size = FLY_RUNTIME_SOURCE_TIMING_V1_SIZE;
+    timing.version = FLY_RUNTIME_SOURCE_TIMING_VERSION_1;
+    if (session_ == nullptr || fly_lan_mvp_source_timing(session_, &timing) != 1 ||
+        timing.frame_rate_numerator == 0) return 1.0 / 60.0;
+    return static_cast<double>(timing.frame_rate_denominator) / timing.frame_rate_numerator;
+}
 
 - (BOOL)replaceSession:(NSError **)error
 {
@@ -154,59 +154,73 @@ NSData *bundled_rom(FlyNesBuiltinGame *game)
     fly_lan_mvp_snapshot value{};
     if (session_ == nullptr || fly_lan_mvp_snapshot_read(session_, &value) != 1)
         return @{ @"state": @0, @"role": @0 };
+    NSMutableString *peerConfigToken = [NSMutableString string];
+    uint8_t peerConfigHash[32]{};
+    if (fly_lan_mvp_copy_peer_config_hash_v1(session_, peerConfigHash)) {
+        for (uint8_t byte : peerConfigHash) [peerConfigToken appendFormat:@"%02x", byte];
+    }
     return @{ @"state": @(value.state), @"reason": @(value.reason), @"role": @(value.role),
               @"localConfigured": @(value.local_configured), @"peerConfigured": @(value.peer_configured),
               @"localReady": @(value.local_ready), @"peerReady": @(value.peer_ready),
               @"paused": @(value.paused), @"completedFrames": @(value.completed_frames),
-              @"peerGameKey": [NSString stringWithUTF8String:value.peer_game_key] ?: @"" };
-}
-
-- (NSString *)configureLocalGameIfNeeded:(NSError **)error
-{
-    fly_lan_mvp_snapshot value{};
-    if (session_ == nullptr || fly_lan_mvp_snapshot_read(session_, &value) != 1) return @"";
-    if (value.local_configured != 0) return _gameTitle;
-    FlyNesBuiltinGame *game = nil;
-    BOOL host = value.role == FLY_LAN_MVP_ROLE_HOST_P1;
-    if (host && value.state == FLY_LAN_MVP_LOBBY) {
-        for (FlyNesBuiltinGame *candidate in FlyNesBuiltinGames.shared.all) {
-            if ([candidate.multiplayerEligibility isEqualToString:@"SUPPORTED"] &&
-                candidate.multiplayerMaxPlayers == 2) { game = candidate; break; }
-        }
-    } else if (!host && value.role == FLY_LAN_MVP_ROLE_GUEST_P2 &&
-               value.state == FLY_LAN_MVP_CONFIGURING && value.peer_game_key[0] != '\0') {
-        game = [FlyNesBuiltinGames.shared byCanonicalId:
-            [NSString stringWithUTF8String:value.peer_game_key]];
-    }
-    NSData *rom = bundled_rom(game);
-    if (game == nil || rom.length == 0) return @"";
-    const int selected = host
-        ? fly_lan_mvp_select_game(session_, static_cast<const uint8_t *>(rom.bytes), rom.length,
-                                  game.canonicalId.UTF8String)
-        : fly_lan_mvp_select_rom(session_, static_cast<const uint8_t *>(rom.bytes), rom.length);
-    if (selected != 1) {
-        if (error) *error = nearby_error(6, @"The matching local game could not be selected");
-        return @"";
-    }
-    _canonicalId = [game.canonicalId copy];
-    _gameTitle = [[NSLocale.preferredLanguages.firstObject ?: @"en" lowercaseString]
-        hasPrefix:@"zh"] ? [game.titleZhHans copy] : [game.titleEn copy];
-    return _gameTitle;
+              @"peerGameKey": [NSString stringWithUTF8String:value.peer_game_key] ?: @"",
+              @"peerConfigToken": peerConfigToken };
 }
 
 - (BOOL)confirm { return session_ != nullptr && fly_lan_mvp_confirm(session_) == 1; }
 - (BOOL)setPaused:(BOOL)paused { return session_ != nullptr && fly_lan_mvp_set_paused(session_, paused) == 1; }
-- (BOOL)returnLobby { return session_ != nullptr && fly_lan_mvp_return_lobby(session_) == 1; }
+- (BOOL)returnLobby
+{
+    if (session_ == nullptr || fly_lan_mvp_return_lobby(session_) != 1) return NO;
+    _gameTitle = @"";
+    _canonicalId = @"";
+    return YES;
+}
+
+- (BOOL)selectHostGameROM:(NSData *)rom canonicalID:(NSString *)canonicalID
+                   title:(NSString *)title
+{
+    if (session_ == nullptr || rom.length == 0 || canonicalID.length == 0 ||
+        fly_lan_mvp_select_game(session_, static_cast<const uint8_t *>(rom.bytes),
+                                rom.length, canonicalID.UTF8String) != 1 ||
+        fly_lan_mvp_confirm(session_) != 1) return NO;
+    _canonicalId = [canonicalID copy];
+    _gameTitle = [title copy];
+    return YES;
+}
+
+- (BOOL)selectGuestGameROM:(NSData *)rom canonicalID:(NSString *)canonicalID
+                    title:(NSString *)title
+{
+    if (session_ == nullptr || rom.length == 0 || canonicalID.length == 0) return NO;
+    fly_lan_mvp_snapshot state{};
+    if (fly_lan_mvp_snapshot_read(session_, &state) != 1 ||
+        state.role != FLY_LAN_MVP_ROLE_GUEST_P2 ||
+        ![canonicalID isEqualToString:[NSString stringWithUTF8String:state.peer_game_key]] ||
+        fly_lan_mvp_select_rom(session_, static_cast<const uint8_t *>(rom.bytes),
+                               rom.length) != 1 || fly_lan_mvp_confirm(session_) != 1) return NO;
+    _canonicalId = [canonicalID copy];
+    _gameTitle = [title copy];
+    return YES;
+}
 - (BOOL)stepWithButtons:(uint32_t)buttons { return session_ != nullptr && fly_lan_mvp_submit_input(session_, buttons) == 1; }
 
 - (NSData *)copyLatestRgb565Frame
+{
+    return [self copyLatestRgb565FrameWithFrameIndex:nullptr];
+}
+
+- (NSData *)copyLatestRgb565FrameWithFrameIndex:(uint64_t * _Nullable)frameIndex
 {
     if (session_ == nullptr) return nil;
     NSMutableData *data = [NSMutableData dataWithLength:FLY_RUNTIME_RGB565_BYTES];
     fly_latest_frame_v1 meta{};
     meta.struct_size = FLY_LATEST_FRAME_V1_SIZE;
     meta.version = FLY_LATEST_FRAME_VERSION_1;
-    return fly_lan_mvp_copy_latest_frame(session_, data.mutableBytes, data.length, &meta) == 1 ? data : nil;
+    if (fly_lan_mvp_copy_latest_frame(session_, data.mutableBytes, data.length, &meta) != 1)
+        return nil;
+    if (frameIndex != nullptr) *frameIndex = meta.frame_index;
+    return data;
 }
 
 - (NSData *)pullPCM

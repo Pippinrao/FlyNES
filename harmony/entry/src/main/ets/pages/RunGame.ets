@@ -131,7 +131,10 @@ struct RunGame {
   }
 
   onPageHide(): void {
-    if (this.nearby) { this.play.setButtons(0); nativePlay.nearbyMvpSetPaused(true); }
+    if (this.nearby && this.started) {
+      this.play.setButtons(0);
+      nativePlay.nearbyMvpSetPaused(true);
+    }
     this.stopLoop();
     nativePlay.renderSetPaused(true);
   }
@@ -435,6 +438,7 @@ struct RunGame {
       this.startLoop();
     } catch (error) {
       this.status = error instanceof Error ? error.message : 'Failed to start play session';
+      if (this.nearby) console.error(`FlyNesNearby event=play_open_error reason=${this.status}`);
       rememberRomOpenError(this.status);
       router.back();
     }

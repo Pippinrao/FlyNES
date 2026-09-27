@@ -64,6 +64,28 @@ typedef struct fly_lan_mvp_snapshot {
     char peer_game_key[256]; // Local catalog identity, never a filesystem path.
 } fly_lan_mvp_snapshot;
 
+// Process-local monotonic diagnostics. Counters are cumulative for this session;
+// timestamps from different devices must never be subtracted.
+#define FLY_LAN_MVP_STATS_VERSION_1 1u
+typedef struct fly_lan_mvp_stats_v1 {
+    uint32_t struct_size;
+    uint32_t version;
+    uint64_t simulated_frames;
+    uint64_t replayed_frames;
+    uint64_t predicted_frames;
+    uint64_t rollback_count;
+    uint64_t published_frames;
+    uint64_t repeated_frame_reads;
+    uint64_t pcm_generated_samples;
+    uint64_t pcm_delivered_samples;
+    uint64_t pcm_dropped_samples;
+    uint64_t pcm_queue_high_samples;
+    uint64_t last_input_submit_ns;
+    uint64_t last_remote_receive_ns;
+    uint64_t last_core_step_ns;
+} fly_lan_mvp_stats_v1;
+#define FLY_LAN_MVP_STATS_V1_SIZE ((uint32_t)sizeof(fly_lan_mvp_stats_v1))
+
 fly_lan_mvp_session* fly_lan_mvp_create(void);
 // Optional diagnostic sink. Lines contain metadata only, never QR/token/ROM bytes.
 // Called under the session lock; must not re-enter any session API. Context must
@@ -78,11 +100,33 @@ int fly_lan_mvp_join(fly_lan_mvp_session*, const char* local_ipv4,
 // Returns required bytes including NUL; 0 means no active QR. Never log the text.
 size_t fly_lan_mvp_copy_invite(fly_lan_mvp_session*, char* out, size_t capacity);
 int fly_lan_mvp_snapshot_read(fly_lan_mvp_session*, fly_lan_mvp_snapshot* out);
+// Copy the peer's current 32-byte configuration hash without changing snapshot ABI layout.
+// Returns 1 only after the peer has supplied a configuration.
+int fly_lan_mvp_copy_peer_config_hash_v1(fly_lan_mvp_session*, uint8_t out[32]);
+int fly_lan_mvp_stats_read(fly_lan_mvp_session*, fly_lan_mvp_stats_v1* out);
+// Reads the loaded game's actual source cadence without advancing the session.
+// Returns 0 before local ROM selection or for an invalid timing structure.
+int fly_lan_mvp_source_timing(fly_lan_mvp_session*, fly_runtime_source_timing_v1* out);
 int fly_lan_mvp_select_rom(fly_lan_mvp_session*, const uint8_t* bytes, size_t size);
 int fly_lan_mvp_select_game(fly_lan_mvp_session*, const uint8_t* bytes, size_t size, const char* game_key);
 int fly_lan_mvp_confirm(fly_lan_mvp_session*);
 int fly_lan_mvp_set_paused(fly_lan_mvp_session*, int paused);
 int fly_lan_mvp_return_lobby(fly_lan_mvp_session*);
+// capture_time_ns uses this process's monotonic clock. A zero timestamp means
+// "capture at submission"; sequence zero requests an assigned local sequence.
+// Neither value is sent to the peer or subtracted from a remote clock.
+#define FLY_LAN_MVP_INPUT_VERSION_1 1u
+typedef struct fly_lan_mvp_input_v1 {
+    uint32_t struct_size;
+    uint32_t version;
+    uint32_t buttons;
+    uint32_t reserved;
+    uint64_t sequence;
+    uint64_t capture_time_ns;
+} fly_lan_mvp_input_v1;
+#define FLY_LAN_MVP_INPUT_V1_SIZE ((uint32_t)sizeof(fly_lan_mvp_input_v1))
+int fly_lan_mvp_submit_input_v1(fly_lan_mvp_session*, const fly_lan_mvp_input_v1* input);
+// Legacy callers are timestamped at this function boundary.
 int fly_lan_mvp_submit_input(fly_lan_mvp_session*, uint32_t buttons);
 int fly_lan_mvp_copy_latest_frame(fly_lan_mvp_session*, void* rgb565_out,
                                   size_t capacity, fly_latest_frame_v1* meta_out);

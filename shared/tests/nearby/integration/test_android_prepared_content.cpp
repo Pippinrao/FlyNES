@@ -272,7 +272,7 @@ void verify_prepared_content() {
     snap.scope.link_id[0] = 7;
     fly_session_game_choice_v2 choice{};
     choice.selectable = 1; choice.source_choice_ref[0] = 1; choice.content_id[0] = 2;
-    auto bytes = std::make_shared<const std::vector<std::uint8_t>>(16, 3);
+    auto bytes = std::make_shared<const std::vector<std::uint8_t>>(std::size_t{16}, std::uint8_t{3});
     std::uint64_t ticket = 0;
     check(prepared.begin(snap, choice, &ticket) == FLY_SESSION_V2_OK && ticket != 0,
           "preparation starts an exact visible source ticket");
@@ -321,7 +321,8 @@ void verify_prepared_content() {
     }
     for (const auto& invalid_bytes : {std::shared_ptr<const std::vector<std::uint8_t>>{},
             std::make_shared<const std::vector<std::uint8_t>>(),
-            std::make_shared<const std::vector<std::uint8_t>>(8u * 1024u * 1024u + 1, 0)}) {
+            std::make_shared<const std::vector<std::uint8_t>>(
+                std::size_t{8u * 1024u * 1024u + 1}, std::uint8_t{0})}) {
         check(prepared.begin(snap, choice, &ticket) == FLY_SESSION_V2_OK, "prepare before byte-bound rejection");
         check(prepared.stage(ticket, choice.source_choice_ref, choice.content_id, invalid_bytes, snap) ==
               FLY_SESSION_V2_INVALID_ARGUMENT, "null empty and oversized bytes reject");

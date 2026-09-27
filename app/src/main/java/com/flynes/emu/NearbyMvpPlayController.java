@@ -1,47 +1,82 @@
 package com.flynes.emu;
 
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioTrack;
+import android.util.Log;
 import android.view.View;
+
+import com.flynes.emu.settings.FilterMode;
+import com.flynes.emu.video.FramePublisher;
+import com.flynes.emu.video.GameSurfaceView;
+import com.flynes.emu.video.PublishedFrame;
+
 import java.nio.ByteBuffer;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-/** Frame/input adapter used by the existing MainActivity game page. */
+/** Nearby replaces the source of the solo GPU presenter, never its viewport or filter path. */
 final class NearbyMvpPlayController implements AutoCloseable {
+    private static final int FRAME_BYTES = 256 * 240 * 2;
     private final MainActivity activity;
     private final NearbyMvpSession session;
     private final Runnable returnToLobby;
-    private final NearbyFrameView frameView;
+    private final GameSurfaceView frameView;
+    private final byte[] frameBuffer = new byte[FRAME_BYTES];
+    private final ByteBuffer directFrame = ByteBuffer.allocateDirect(FRAME_BYTES);
+    private final short[] pcmBuffer = new short[2048];
+    private final ArrayBlockingQueue<short[]> audioQueue = new ArrayBlockingQueue<>(12);
     private ScheduledExecutorService loop;
+    private Thread audioWorker;
     private AudioTrack audio;
     private volatile int buttons;
+    private volatile boolean audioRunning;
     private boolean navigationQueued;
-    private final byte[] frameBuffer = new byte[256 * 240 * 2];
-    private final short[] pcmBuffer = new short[2048];
+    private long published = -1;
+    private volatile long writtenSamples;
 
     NearbyMvpPlayController(MainActivity activity, NearbyMvpSession session, Runnable returnToLobby) {
         this.activity = activity;
         this.session = session;
         this.returnToLobby = returnToLobby;
-        frameView = new NearbyFrameView(activity);
+        FramePublisher publisher = new FramePublisher(() -> {
+            long sequence = session.copyLatestFrame(frameBuffer);
+            if (sequence < 0 || sequence == published) return null;
+            directFrame.clear();
+            directFrame.put(frameBuffer);
+            directFrame.flip();
+            published = sequence;
+            return new PublishedFrame(sequence, 256, 240, 512,
+                    PublishedFrame.Format.RGB565, directFrame, true);
+        });
+        frameView = new GameSurfaceView(activity, publisher, null);
         frameView.setId(R.id.game_surface);
     }
+
     View surface() { return frameView; }
+    long writtenSamplesForTest() { return writtenSamples; }
+    void setFilterMode(FilterMode mode) { frameView.setFilterMode(mode); }
     void setButtons(int value) {
-        android.util.Log.i("FlyNesNearby", "event=touch buttons=" + value);
+        Log.i("FlyNesNearby", "event=touch buttons=" + value);
         buttons = value;
     }
     void pause(boolean value) { session.setPaused(value); }
     void returnLobby() { buttons = 0; session.returnLobby(); }
+
     void start(boolean audioEnabled) {
         if (loop != null) return;
-        if (audio == null && audioEnabled) {
+        navigationQueued = false;
+        frameView.onResume();
+        if (audioEnabled) startAudio();
+        long periodNs = session.sourceFramePeriodNs();
+        loop = Executors.newSingleThreadScheduledExecutor();
+        loop.scheduleAtFixedRate(this::tick, 0, periodNs, TimeUnit.NANOSECONDS);
+    }
+
+    private void startAudio() {
+        if (audio == null) {
             int minimum = AudioTrack.getMinBufferSize(48000, AudioFormat.CHANNEL_OUT_MONO,
                     AudioFormat.ENCODING_PCM_16BIT);
             audio = new AudioTrack.Builder()
@@ -50,11 +85,14 @@ final class NearbyMvpPlayController implements AutoCloseable {
                             .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
                             .setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
                     .setBufferSizeInBytes(Math.max(minimum, 4096)).build();
-            if (audio.getState() == AudioTrack.STATE_INITIALIZED) audio.play();
         }
-        loop = Executors.newSingleThreadScheduledExecutor();
-        loop.scheduleAtFixedRate(this::tick, 0, 16639, TimeUnit.MICROSECONDS);
+        if (audio.getState() != AudioTrack.STATE_INITIALIZED) return;
+        audioRunning = true;
+        audio.play();
+        audioWorker = new Thread(this::writeAudio, "FlyNES-nearby-audio");
+        audioWorker.start();
     }
+
     private void tick() {
         int[] state = session.snapshot();
         if (state[0] != NearbyMvpSession.RUNNING) {
@@ -65,12 +103,38 @@ final class NearbyMvpPlayController implements AutoCloseable {
             return;
         }
         session.submitInput(buttons);
-        long frame = session.copyLatestFrame(frameBuffer);
-        if (frame >= 0) frameView.publish(frameBuffer, frame);
-        int count = session.pullPcm(pcmBuffer);
-        if (audio != null && count > 0 && audio.getPlayState() == AudioTrack.PLAYSTATE_PLAYING)
-            audio.write(pcmBuffer, 0, count, AudioTrack.WRITE_NON_BLOCKING);
+        long frame = session.completedFrames();
+        if (frame > 0) frameView.onFrameAvailable(frame);
+        if (audioQueue.remainingCapacity() > 0) {
+            int count = session.pullPcm(pcmBuffer);
+            if (count > 0 && audio != null && !audioQueue.offer(java.util.Arrays.copyOf(pcmBuffer, count)))
+                Log.e("FlyNesNearby", "event=audio_queue_overflow");
+        }
     }
+
+    private void writeAudio() {
+        while (audioRunning || !audioQueue.isEmpty()) {
+            try {
+                short[] block = audioQueue.poll(20, TimeUnit.MILLISECONDS);
+                if (block == null) continue;
+                int offset = 0;
+                while (offset < block.length && audioRunning) {
+                    int written = audio.write(block, offset, block.length - offset,
+                            AudioTrack.WRITE_BLOCKING);
+                    if (written > 0) { offset += written; writtenSamples += written; }
+                    else if (written == 0) Thread.yield();
+                    else {
+                        Log.e("FlyNesNearby", "event=audio_write_error code=" + written);
+                        audioRunning = false;
+                    }
+                }
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+    }
+
     void stop() {
         buttons = 0;
         if (loop != null) {
@@ -79,41 +143,22 @@ final class NearbyMvpPlayController implements AutoCloseable {
             catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             loop = null;
         }
+        frameView.onPause();
+        audioRunning = false;
+        if (audio != null) audio.pause();
+        if (audioWorker != null) {
+            audioWorker.interrupt();
+            try { audioWorker.join(2000); }
+            catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            audioWorker = null;
+        }
+        audioQueue.clear();
+        if (audio != null) audio.flush();
     }
+
     @Override public void close() {
         stop();
-        if (audio != null) { audio.pause(); audio.flush(); audio.release(); audio = null; }
-    }
-    static final class NearbyFrameView extends View {
-        private final Bitmap bitmap = Bitmap.createBitmap(256, 240, Bitmap.Config.RGB_565);
-        private final Paint paint = new Paint(Paint.FILTER_BITMAP_FLAG);
-        private long published = -1;
-
-        NearbyFrameView(android.content.Context context) { super(context); }
-
-        void publish(byte[] bytes, long frame) {
-            if (frame == published) return;
-            synchronized (bitmap) {
-                bitmap.copyPixelsFromBuffer(ByteBuffer.wrap(bytes));
-                published = frame;
-            }
-            postInvalidateOnAnimation();
-        }
-
-        long publishedFrameForTest() { return published; }
-
-        @Override protected void onDraw(Canvas canvas) {
-            super.onDraw(canvas);
-            synchronized (bitmap) {
-                float scale = Math.min(getWidth() / 256f, getHeight() / 240f);
-                float width = 256 * scale;
-                float height = 240 * scale;
-                canvas.drawBitmap(bitmap, null,
-                        new android.graphics.RectF((getWidth() - width) / 2f,
-                                (getHeight() - height) / 2f,
-                                (getWidth() + width) / 2f,
-                                (getHeight() + height) / 2f), paint);
-            }
-        }
+        frameView.release();
+        if (audio != null) { audio.release(); audio = null; }
     }
 }

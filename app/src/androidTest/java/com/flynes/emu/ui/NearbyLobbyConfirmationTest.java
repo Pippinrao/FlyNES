@@ -3,6 +3,7 @@ package com.flynes.emu.ui;
 import android.view.View;
 
 import androidx.test.core.app.ActivityScenario;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.lifecycle.Lifecycle;
 
@@ -16,21 +17,22 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.*;
 
-/** N09 confirmation must have a real action binding, even while no config is available. */
+/** Pairing has no extra entry confirmation control. */
 @RunWith(AndroidJUnit4.class)
 public final class NearbyLobbyConfirmationTest {
-    @Test public void confirmHasAnActionListener() {
+    @org.junit.Before public void resetMvpSession() {
+        ((FlyNesApplication) ApplicationProvider.getApplicationContext()).nearbyMvpOwner().close();
+    }
+    @Test public void lobbyHasNoEntryConfirmationControl() {
         try (ActivityScenario<NearbyLobbyActivity> scenario =
                      ActivityScenario.launch(NearbyLobbyActivity.class)) {
             scenario.onActivity(activity -> {
-                View confirm = activity.findViewById(R.id.nearby_lobby_confirm);
-                assertTrue("N09 must bind confirmation to the session owner", confirm.hasOnClickListeners());
+                assertEquals(0, activity.getResources().getIdentifier(
+                        "nearby_lobby_confirm", "id", activity.getPackageName()));
                 NearbySessionOwner owner = ((FlyNesApplication) activity.getApplication())
                         .nearbySessionOwner();
                 NearbySessionOwner.Snapshot before = owner.snapshot();
-                assertTrue(confirm.isEnabled());
                 assertFalse(before.canConfirmGameConfig());
-                confirm.performClick();
                 assertEquals(0, owner.snapshot().pendingConfigLocalConfirmed);
                 assertEquals(0, owner.snapshot().pendingConfigPeerConfirmed);
                 assertEquals(before.gameState, owner.snapshot().gameState);
@@ -67,7 +69,8 @@ public final class NearbyLobbyConfirmationTest {
                 NearbySessionOwner owner = ((FlyNesApplication) activity.getApplication())
                         .nearbySessionOwner();
                 assertEquals(owner.snapshot().linkState, activity.boundLinkState());
-                assertTrue(activity.findViewById(R.id.nearby_lobby_confirm).isEnabled());
+                assertEquals(0, activity.getResources().getIdentifier(
+                        "nearby_lobby_confirm", "id", activity.getPackageName()));
             });
         }
     }

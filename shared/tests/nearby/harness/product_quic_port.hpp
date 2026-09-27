@@ -536,6 +536,25 @@ private:
             }
             return true;
         }
+        if (pending.kind == OpKind::Close)
+        {
+            if (!pending.engine_visible && item.result == FLYNES_QUIC_OK)
+                transport_closed_for_test_ = true;
+            if (pending.inbox != nullptr)
+            {
+                if (item.result == FLYNES_QUIC_OK ||
+                    (item.result == FLYNES_QUIC_INVALID_HANDLE &&
+                     transport_closed_for_test_))
+                    loopback::deliver_provider_end(
+                        pending.inbox, pending.token,
+                        FLY_SESSION_PROVIDER_QUIC_END_V2);
+                else
+                    deliver_failure(pending, FLY_SESSION_PROVIDER_QUIC_END_V2,
+                                    map_result(item.result));
+                fly_session_inbox_release_v2(pending.inbox);
+            }
+            return true;
+        }
         if (pending.inbox != nullptr)
             fly_session_inbox_release_v2(pending.inbox);
         return true;
@@ -801,6 +820,7 @@ private:
     }
 
     FlynesQuicProvider* provider_ = nullptr;
+    bool transport_closed_for_test_ = false;
     fly_session_inbox_v2_t* last_read_inbox_ = nullptr;
     std::uint64_t preferred_failure_operation_ = 0;
     mutable std::mutex mutex_{};

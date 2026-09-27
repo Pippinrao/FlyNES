@@ -207,6 +207,7 @@ target_link_libraries(FlyNES PRIVATE
     flynes_runtime
     flynes_product
     flynes_session
+    flynes_lan_mvp
     nes_abi
     "-framework Foundation"
     "-framework UIKit"
@@ -296,6 +297,8 @@ if(FLYNES_IOS_IS_SIMULATOR AND FLYNES_IOS_BUILD_XCTESTS)
         ../tests/PlaybackRuntimeBridgeTests.mm
         ../tests/NearbySessionV2BridgeTests.mm
         ../tests/NearbyMvpBridgeTests.mm
+        ../tests/NearbyMvpExternalHostTests.mm
+        ../tests/NearbyMvpExternalGuestTests.mm
         ../tests/GamepadOverlayTests.mm
         ../tests/PlaybackAudioPlayerTests.mm
         ../tests/CatalogTitleCoverTests.mm
@@ -303,7 +306,7 @@ if(FLYNES_IOS_IS_SIMULATOR AND FLYNES_IOS_BUILD_XCTESTS)
         ../tests/MetalPixelParityTests.mm
         ../tests/PlaybackSoakTests.mm)
     target_include_directories(FlyNESRuntimeTests PRIVATE bridge run platform "../../shared/include" "../../core/include")
-    target_link_libraries(FlyNESRuntimeTests PRIVATE flynes_runtime "-framework UIKit" "-framework AVFoundation" "-framework CoreGraphics" "-framework Metal" "-framework QuartzCore")
+    target_link_libraries(FlyNESRuntimeTests PRIVATE flynes_runtime flynes_lan_mvp "-framework UIKit" "-framework AVFoundation" "-framework CoreGraphics" "-framework Metal" "-framework QuartzCore")
     target_compile_features(FlyNESRuntimeTests PRIVATE cxx_std_17)
     set_target_properties(FlyNESRuntimeTests PROPERTIES
         XCODE_GENERATE_SCHEME YES

@@ -123,7 +123,7 @@
                     android:layout_marginStart="8dp"
                     android:paddingVertical="0dp"
                     android:includeFontPadding="false"
-                    android:text="@string/nearby_action_cancel" />
+                    android:text="@string/nearby_action_disconnect" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

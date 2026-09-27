@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="nearby_choose_game">Choose game</string>
+    <string name="nearby_wait_host_game">Waiting for the host to choose a game</string>
+    <string name="nearby_game_preparing">Preparing the selected game</string>
+    <string name="nearby_local_game_missing">This game is not available locally. Import the same ROM to play.</string>
     <string name="app_name">FlyNES</string>
     <string name="open_pause">Pause game</string>
     <string name="pause_title">Game paused</string>

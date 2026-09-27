@@ -5,7 +5,7 @@ import { image } from '@kit.ImageKit';
 import { i18n } from '@kit.LocalizationKit';
 import nativeProduct, { GameCenterRow } from 'libentry.so';
 import { applyMultiplayerFilter, CatalogProductService, multiplayerCapabilitiesFrom, MultiplayerCapabilityRegistry, localizedGameTitle } from '../service/CatalogProductService';
-import { takeRomOpenError, builtinGamesSync } from '../service/PlayService';
+import { takeRomOpenError, builtinGamesSync, PlayService, RomLaunchLocator } from '../service/PlayService';
 import { BuiltinGames } from '../service/BuiltinGames';
 import { CoverStore } from '../service/CoverStore';
 
@@ -32,8 +32,11 @@ struct GameCenter {
   // changed by category, query, or connection events.
   @State private multiplayerOnly: boolean = false;
   private multiplayerRegistry: MultiplayerCapabilityRegistry = new MultiplayerCapabilityRegistry(0);
+  private nearbyChooseGame: boolean = false;
 
   aboutToAppear(): void {
+    const params = router.getParams() as Record<string, Object> | undefined;
+    this.nearbyChooseGame = params !== undefined && params['nearbyChooseGame'] === true;
     this.ensureApp();
     this.ensureCoverStore();
     this.reloadRows();
@@ -627,6 +630,10 @@ struct GameCenter {
     if (row === undefined) {
       return;
     }
+    if (this.nearbyChooseGame) {
+      void this.selectNearbyHostGame(row);
+      return;
+    }
     this.openFailed = false;
     void router.pushUrl({
       url: 'pages/RunGame',
@@ -641,6 +648,29 @@ struct GameCenter {
         'titleZhHans': row.titleZhHans
       }
     });
+  }
+
+  private async selectNearbyHostGame(row: GameCenterRow): Promise<void> {
+    const host = this.getUIContext().getHostContext();
+    if (host === undefined) { this.openFailed = true; return; }
+    const locator = new RomLaunchLocator();
+    locator.canonicalId = row.canonicalId;
+    locator.sourceUuidHex = row.sourceUuidHex;
+    locator.sourceRelativePath = row.sourceRelativePath;
+    locator.packageFormat = row.packageFormat;
+    locator.zipEntryName = row.originalFilename;
+    try {
+      const rom = await new PlayService().readRom(host as common.UIAbilityContext, locator);
+      const snapshot = nativeProduct.nearbyMvpSnapshot();
+      if (snapshot.role !== 1 || snapshot.state !== 3 ||
+          !nativeProduct.nearbyMvpSelectGame(rom, row.canonicalId) ||
+          !nativeProduct.nearbyMvpConfirm()) throw new Error('Session changed');
+      void router.replaceUrl({ url: 'pages/NearbyLobby', params: {
+        nearbyGameTitle: this.displayTitle(row), nearbyGameKey: row.canonicalId
+      } });
+    } catch (_) {
+      this.openFailed = true;
+    }
   }
 
   private selectedRow(): GameCenterRow | undefined {

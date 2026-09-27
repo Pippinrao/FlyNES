@@ -14,6 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property(class, nonatomic, readonly) FlyNesNearbyBridge *sharedInstance;
 @property(nonatomic, readonly, copy) NSString *gameTitle;
 @property(nonatomic, readonly, copy) NSString *canonicalId;
+@property(nonatomic, readonly) NSTimeInterval sourceFrameDuration;
 
 - (BOOL)startHost:(NSError * _Nullable * _Nullable)error;
 - (BOOL)hasUsableIPv4;
@@ -22,12 +23,16 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)joinInviteOnWifi:(NSString *)invite error:(NSError * _Nullable * _Nullable)error;
 - (nullable NSString *)inviteText;
 - (NSDictionary<NSString *, id> *)snapshot;
-- (NSString *)configureLocalGameIfNeeded:(NSError * _Nullable * _Nullable)error;
+- (BOOL)selectHostGameROM:(NSData *)rom canonicalID:(NSString *)canonicalID
+                   title:(NSString *)title;
+- (BOOL)selectGuestGameROM:(NSData *)rom canonicalID:(NSString *)canonicalID
+                    title:(NSString *)title;
 - (BOOL)confirm;
 - (BOOL)setPaused:(BOOL)paused;
 - (BOOL)returnLobby;
 - (BOOL)stepWithButtons:(uint32_t)buttons;
 - (nullable NSData *)copyLatestRgb565Frame;
+- (nullable NSData *)copyLatestRgb565FrameWithFrameIndex:(uint64_t * _Nullable)frameIndex;
 - (NSData *)pullPCM;
 - (void)cancel;
 

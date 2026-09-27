@@ -41,11 +41,11 @@ never move their inputs into `content/`.
 
 ## Change and verification policy
 
-### Current nearby milestone (2026-09-21 user direction)
+### Current nearby direction (2026-09-23 user direction)
 
 - Work from the consolidated `main`; do not reopen retired worktrees or start parallel branches without a new user request.
 - Read `docs/nearby/README.md` first. It is the only current nearby design/plan entry; `docs/archive/nearby-2026-09-21/` and old task prompts are historical references, not instructions.
-- Deliver Android host/P1 to HarmonyOS guest/P2, one pairing path, and one real two-player game. iOS, reverse hosting, STREAM, ROM transfer, persistent friends, automatic network setup and recovery are later milestones.
+- The Android host/P1 to HarmonyOS guest/P2 hotspot flow is the existing playable baseline, not the target role restriction. The next nearby UX and implementation target allows Android, HarmonyOS NEXT, and iOS each to host or join, over a shared router LAN or a hotspot. Prefer an available LAN; if none is available, Android hosts automatically attempt a local-only hotspot through the public API, while unsupported or other-platform hosts receive inline hotspot setup guidance. Use one QR pairing path only. Remove friends, Bluetooth discovery, and pairing-code product features rather than keeping placeholder controls. Read the current target in `docs/superpowers/specs/2026-09-23-nearby-three-platform-ux-design.md`. STREAM, ROM transfer, and automatic recovery remain later work.
 - First consolidate repository state, then design from that baseline. Repository/document cleanup does not require full product test runs.
 - During implementation fix the current playable-path blocker and run the affected checks. Expand testing only for a concrete regression risk; do not start unrelated full-platform sweeps or exhaustive edge-case projects.
 - Report progress by two real apps connecting, loading the same ROM, accepting both players' input, and playing. A mock/loopback test, ABI declaration, build or merged branch is not that outcome.

@@ -19,8 +19,12 @@ public:
     void didProduceSamples(unsigned samples, unsigned rate) {
         // Source duration comes from the core's fractional PCM sample clock.
         if (samples == 0 || rate == 0) { started_ = false; return; }
-        next_ += static_cast<double>(samples) / rate;
-        if (++steps_ == 3 && next_ <= now_) next_ = now_ + static_cast<double>(samples) / rate;
+        didProduceDuration(static_cast<double>(samples) / rate);
+    }
+    void didProduceDuration(double seconds) {
+        if (!std::isfinite(seconds) || seconds <= 0) { started_ = false; return; }
+        next_ += seconds;
+        if (++steps_ == 3 && next_ <= now_) next_ = now_ + seconds;
     }
 private:
     bool started_ = false;

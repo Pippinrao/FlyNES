@@ -226,7 +226,7 @@ void authorization_and_load_failure()
           "wrong ROM hash rejected");
     const auto after = f.digest();
     check(std::memcmp(&before, &after, sizeof(after)) == 0, "denied or wrong-hash load never touches runtime");
-    f.bytes = std::make_shared<const std::vector<std::uint8_t>>(32, 0x5A);
+    f.bytes = std::make_shared<const std::vector<std::uint8_t>>(std::size_t{32}, std::uint8_t{0x5A});
     const auto bad_hash = sha256(f.bytes->data(), f.bytes->size());
     std::memcpy(f.content.content_hash, bad_hash.data(), 32);
     check(f.table.load(f.table.context, &f.content) < 0, "authorized corrupt ROM fails real load");
@@ -418,7 +418,8 @@ void checkpoint_wrong_rom_preserves_observation()
 
 std::shared_ptr<const std::vector<std::uint8_t>> battery_rom(std::uint8_t token)
 {
-    auto bytes = std::make_shared<std::vector<std::uint8_t>>(16 + 16384 + 8192, 0);
+    auto bytes = std::make_shared<std::vector<std::uint8_t>>(
+        std::size_t{16 + 16384 + 8192}, std::uint8_t{0});
     auto& b = *bytes;
     b[0] = 'N'; b[1] = 'E'; b[2] = 'S'; b[3] = 0x1a;
     b[4] = 1; b[5] = 1; b[6] = 2;

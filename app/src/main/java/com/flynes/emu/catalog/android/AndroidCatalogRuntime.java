@@ -370,6 +370,19 @@ public final class AndroidCatalogRuntime implements AutoCloseable {
             if (nativeCatalog) {
                 incrementSourceEpoch();
                 rebuildProjectionAndCache();
+                SourceCatalogState projected = repository.state().sources().get(sourceId);
+                if (projected != null) {
+                    ArrayList<PhysicalPackage> indexedPackages = new ArrayList<>();
+                    for (PackageOutcome outcome : result.packageOutcomes()) {
+                        if (outcome.status() != PackageOutcome.Status.INDEXED) continue;
+                        var item = projected.packages().get(outcome.packageId());
+                        if (item != null) indexedPackages.add(item.physicalPackage());
+                    }
+                    result = new SourceScanResult(result.sourceId(), result.baseRevision(),
+                            result.scanToken(), result.completeness(), projected.source(),
+                            indexedPackages, result.packageOutcomes(), result.entryOutcomes(),
+                            result.issues(), result.candidateCount());
+                }
             }
             return result;
         });

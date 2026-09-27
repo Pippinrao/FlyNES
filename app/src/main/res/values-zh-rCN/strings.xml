@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="nearby_choose_game">更换游戏</string>
+    <string name="nearby_choose_game">选择游戏</string>
+    <string name="nearby_wait_host_game">等待房主选择游戏</string>
+    <string name="nearby_game_preparing">正在准备已选游戏</string>
+    <string name="nearby_local_game_missing">本机没有该游戏，请导入相同 ROM 后再玩。</string>
     <string name="app_name">FlyNES</string>
     <string name="open_pause">暂停游戏</string>
     <string name="pause_title">游戏已暂停</string>

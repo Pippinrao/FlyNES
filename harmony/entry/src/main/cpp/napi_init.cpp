@@ -17,6 +17,7 @@
 #include <hilog/log.h>
 
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -26,6 +27,7 @@
 #include <new>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <vector>
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -2807,6 +2809,14 @@ napi_value NearbyMvpSnapshot(napi_env env, napi_callback_info)
             create_bool(env, snapshot.paused != 0, "LAN paused")), "set LAN paused");
         require_napi(napi_set_named_property(env, result, "peerGameKey",
             create_string(env, snapshot.peer_game_key, "LAN peer game key")), "set LAN peer game key");
+        std::uint8_t peer_config_hash[32]{};
+        std::string peer_config_token;
+        if (g_mvp_session &&
+            fly_lan_mvp_copy_peer_config_hash_v1(g_mvp_session.get(), peer_config_hash))
+            peer_config_token = uuid_to_hex(peer_config_hash) + uuid_to_hex(peer_config_hash + 16);
+        require_napi(napi_set_named_property(env, result, "peerConfigToken",
+            create_string(env, peer_config_token, "LAN peer configuration")),
+            "set LAN peer configuration");
         require_napi(napi_set_named_property(env, result, "completedFrames",
             create_int64(env, static_cast<std::int64_t>(snapshot.completed_frames),
                          "LAN completed frames")), "set LAN completed frames");
@@ -2930,15 +2940,21 @@ napi_value NearbyMvpOpenPlay(napi_env env, napi_callback_info)
                 fly_latest_frame_v1 meta{};
                 meta.struct_size = FLY_LATEST_FRAME_V1_SIZE;
                 meta.version = FLY_LATEST_FRAME_VERSION_1;
-                if (!fly_lan_mvp_copy_latest_frame(session, result.rgb565.data(),
-                                                  result.rgb565.size(), &meta))
-                    throw std::runtime_error("LAN frame unavailable");
+                const auto first_frame_deadline = std::chrono::steady_clock::now() +
+                    std::chrono::milliseconds(500);
+                while (!fly_lan_mvp_copy_latest_frame(session, result.rgb565.data(),
+                                                     result.rgb565.size(), &meta)) {
+                    if (std::chrono::steady_clock::now() >= first_frame_deadline)
+                        throw std::runtime_error("LAN first frame unavailable");
+                    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                }
                 result.frame_index = meta.frame_index;
                 result.width = meta.width;
                 result.height = meta.height;
                 result.format = meta.format;
                 result.bytes_written = meta.bytes_written;
-                result.applied_buttons = state.applied_buttons[1];
+                const std::size_t seat = state.role == FLY_LAN_MVP_ROLE_HOST_P1 ? 0u : 1u;
+                result.applied_buttons = state.applied_buttons[seat];
                 result.pcm.resize(4096);
                 fly_pcm_block_v1 block{};
                 block.struct_size = FLY_PCM_BLOCK_V1_SIZE;

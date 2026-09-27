@@ -346,9 +346,9 @@ void the_public_dual_run_path_is_not_wired_into_the_engine()
 
     const bool publishes_dual_actions =
         std::find(run.action_kinds.begin(), run.action_kinds.end(),
-                  FLY_SESSION_ACTION_SELECT_CONTENT_V2) != run.action_kinds.end() ||
+                  static_cast<std::uint32_t>(FLY_SESSION_ACTION_SELECT_CONTENT_V2)) != run.action_kinds.end() ||
         std::find(run.action_kinds.begin(), run.action_kinds.end(),
-                  FLY_SESSION_ACTION_START_DUAL_V2) != run.action_kinds.end();
+                  static_cast<std::uint32_t>(FLY_SESSION_ACTION_START_DUAL_V2)) != run.action_kinds.end();
     std::printf("  app action kinds published at the lobby: %zu; DUAL kinds "
                 "present=%s\n",
                 run.action_kinds.size(), publishes_dual_actions ? "yes" : "no");

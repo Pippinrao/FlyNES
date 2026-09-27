@@ -8,27 +8,21 @@
 @interface PlaybackAudioPlayerTests : XCTestCase
 @end
 @implementation PlaybackAudioPlayerTests
-- (void)testRealGamePCMReachesRunningAudioOutput {
+- (void)testRealGamePCMReachesOfflineMixerAndPlayerClock {
     XCTAssertTrue(NSThread.isMainThread);
     FlyNesRuntimeBridge *runtime = [[FlyNesRuntimeBridge alloc] init];
     XCTAssertTrue([runtime createRuntime:nil]);
     NSData *rom = [NSData dataWithContentsOfURL:[NSBundle.mainBundle URLForResource:@"thwaite" withExtension:@"nes"]];
     XCTAssertTrue([runtime loadRom:rom error:nil]);
-    FlyNesAudioPlayer *audio = [[FlyNesAudioPlayer alloc] init];
-    // Observe the actual AVAudioEngine mixer and player clock, rather than
-    // treating a nonempty emulator PCM array as proof of playback.
-    AVAudioEngine *engine = [audio valueForKey:@"engine_"];
+    AVAudioFormat *renderFormat = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:48000 channels:2];
+    AVAudioEngine *engine = [[AVAudioEngine alloc] init];
+    NSError *failure = nil;
+    XCTAssertTrue([engine enableManualRenderingMode:AVAudioEngineManualRenderingModeOffline
+                                          format:renderFormat maximumFrameCount:1024 error:&failure], @"%@", failure);
+    FlyNesAudioPlayer *audio = [[FlyNesAudioPlayer alloc] initWithEngine:engine];
     AVAudioPlayerNode *player = [audio valueForKey:@"player_"];
     auto nonSilent = std::make_shared<std::atomic<bool>>(false);
-    [engine.mainMixerNode installTapOnBus:0 bufferSize:1024 format:nil block:^(AVAudioPCMBuffer *buffer, AVAudioTime *when) {
-        (void)when;
-        for (AVAudioChannelCount channel = 0; channel < buffer.format.channelCount; ++channel) {
-            for (AVAudioFrameCount frame = 0; frame < buffer.frameLength; ++frame) {
-                if (fabsf(buffer.floatChannelData[channel][frame]) > 0.0001f) nonSilent->store(true);
-            }
-        }
-    }];
-    NSError *failure = nil;
+    AVAudioPCMBuffer *mixed = [[AVAudioPCMBuffer alloc] initWithPCMFormat:renderFormat frameCapacity:1024];
     XCTAssertTrue([audio start:&failure], @"%@", failure);
     XCTestExpectation *played = [self expectationWithDescription:@"Four seconds of game audio output"];
     __block NSUInteger frames = 0;
@@ -36,6 +30,13 @@
         NSError *stepError = nil;
         XCTAssertTrue([runtime stepFrameWithButtons:(frames >= 60 && frames < 65 ? 8 : 0) error:&stepError], @"%@", stepError);
         [audio enqueuePCM:[runtime pullPCM]];
+        AVAudioEngineManualRenderingStatus status = [engine renderOffline:800 toBuffer:mixed error:&stepError];
+        XCTAssertEqual(status, AVAudioEngineManualRenderingStatusSuccess, @"%@", stepError);
+        for (AVAudioChannelCount channel = 0; channel < mixed.format.channelCount; ++channel) {
+            for (AVAudioFrameCount frame = 0; frame < mixed.frameLength; ++frame) {
+                if (fabsf(mixed.floatChannelData[channel][frame]) > 0.0001f) nonSilent->store(true);
+            }
+        }
         if (++frames >= 240) { [tick invalidate]; [played fulfill]; }
     }];
     [self waitForExpectations:@[played] timeout:15];
@@ -45,8 +46,7 @@
     XCTAssertTrue(engine.running);
     XCTAssertTrue(player.playing);
     XCTAssertGreaterThan(playerTime.sampleTime, 48000);
-    XCTAssertTrue(nonSilent->load(), @"Game PCM must produce nonzero samples at the output mixer");
-    [engine.mainMixerNode removeTapOnBus:0];
+    XCTAssertTrue(nonSilent->load(), @"Game PCM must produce nonzero samples at the mixer");
     [audio pause];
     XCTAssertFalse(player.playing);
 }

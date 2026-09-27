@@ -11,6 +11,8 @@ final class NearbyMvpSession implements AutoCloseable {
     static final int CONFIGURING = 5;
     static final int RUNNING = 6;
     static final int RETURNING = 7;
+    static final int HOST_P1 = 1;
+    static final int GUEST_P2 = 2;
 
     static { System.loadLibrary("nescore"); }
 
@@ -53,6 +55,11 @@ final class NearbyMvpSession implements AutoCloseable {
         return handle == 0 ? "" : nativePeerGameKey(handle);
     }
 
+    synchronized String peerConfigToken() {
+        byte[] hash = handle == 0 ? null : nativePeerConfigHash(handle);
+        return hash == null ? "" : Arrays.toString(hash);
+    }
+
     synchronized boolean selectRom(byte[] rom) {
         return handle != 0 && rom != null && nativeSelectRom(handle, rom);
     }
@@ -70,6 +77,10 @@ final class NearbyMvpSession implements AutoCloseable {
 
     synchronized long completedFrames() {
         return handle == 0 ? 0 : nativeCompletedFrames(handle);
+    }
+
+    synchronized long sourceFramePeriodNs() {
+        return handle == 0 ? 16_639_267L : nativeSourceFramePeriodNs(handle);
     }
 
     synchronized long copyLatestFrame(byte[] rgb565) {
@@ -94,6 +105,7 @@ final class NearbyMvpSession implements AutoCloseable {
     private static native int[] nativeSnapshot(long handle);
     private static native byte[] nativeSessionId(long handle);
     private static native String nativePeerGameKey(long handle);
+    private static native byte[] nativePeerConfigHash(long handle);
     private static native boolean nativeSelectRom(long handle, byte[] rom);
     private static native boolean nativeSelectGame(long handle, byte[] rom, String key);
     private static native boolean nativeConfirm(long handle);
@@ -101,6 +113,7 @@ final class NearbyMvpSession implements AutoCloseable {
     private static native boolean nativeReturnLobby(long handle);
     private static native boolean nativeSubmitInput(long handle, int buttons);
     private static native long nativeCompletedFrames(long handle);
+    private static native long nativeSourceFramePeriodNs(long handle);
     private static native long nativeCopyLatestFrame(long handle, byte[] rgb565);
     private static native int nativePullPcm(long handle, short[] samples);
     private static native void nativeDestroy(long handle);

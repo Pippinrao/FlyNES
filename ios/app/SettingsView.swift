@@ -151,6 +151,7 @@ struct SettingsView: View {
             }
             catch { failure = error.localizedDescription }
         }
+        .accessibilityIdentifier("settings_controls_reset")
     }
     @ViewBuilder private var audioSection: some View {
         Toggle("settings.audio_enabled", isOn: boolean("audio_enabled"))

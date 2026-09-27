@@ -3,6 +3,7 @@ package com.flynes.emu.ui;
 import android.content.Intent;
 import android.Manifest;
 import android.app.Activity;
+import android.os.SystemClock;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.HorizontalScrollView;
@@ -48,16 +49,15 @@ public final class NearbyApprovedEntryTest {
             scenario.onActivity(activity -> {
                 View root = activity.findViewById(R.id.nearby_lobby_root);
                 View game = activity.findViewById(R.id.nearby_lobby_row_rom_identity);
-                View confirm = activity.findViewById(R.id.nearby_lobby_confirm);
                 int detailsId = activity.getResources().getIdentifier("nearby_lobby_details",
                         "id", activity.getPackageName());
                 assertTrue(detailsId == 0 || activity.findViewById(detailsId) == null);
-                assertTrue(inside(game, root) && inside(confirm, root));
-                int[] gamePos = new int[2], confirmPos = new int[2];
+                assertTrue(inside(game, root));
+                int[] gamePos = new int[2];
                 game.getLocationOnScreen(gamePos);
-                confirm.getLocationOnScreen(confirmPos);
-                assertTrue("game and action should share the right pane",
-                        Math.abs(gamePos[0] - confirmPos[0]) < dp(root, 80));
+                assertTrue("game choice stays in the right pane", gamePos[0] > root.getWidth() / 3);
+                assertTrue(activity.getResources().getIdentifier("nearby_lobby_confirm", "id",
+                        activity.getPackageName()) == 0);
                 assertTrue(noScroll(root));
             });
         }
@@ -72,13 +72,18 @@ public final class NearbyApprovedEntryTest {
                     .performClick());
             androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().waitForIdleSync();
             final String[] resumed = {""};
-            androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
-                    .runOnMainSync(() -> {
-                        for (Activity activity : ActivityLifecycleMonitorRegistry.getInstance()
-                                .getActivitiesInStage(Stage.RESUMED)) {
-                            resumed[0] = activity.getClass().getSimpleName();
-                        }
-                    });
+            long deadline = SystemClock.elapsedRealtime() + 3000;
+            do {
+                androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+                        .runOnMainSync(() -> {
+                            for (Activity activity : ActivityLifecycleMonitorRegistry.getInstance()
+                                    .getActivitiesInStage(Stage.RESUMED)) {
+                                resumed[0] = activity.getClass().getSimpleName();
+                            }
+                        });
+                if ("NearbyQrScannerActivity".equals(resumed[0])) break;
+                SystemClock.sleep(20);
+            } while (SystemClock.elapsedRealtime() < deadline);
             assertTrue("scan should enter camera directly; got " + resumed[0],
                     "NearbyQrScannerActivity".equals(resumed[0]));
         }

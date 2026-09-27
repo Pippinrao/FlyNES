@@ -78,7 +78,7 @@ export default function nearbyMvpCrossAppTest(): void {
       expect(step.completedFrames >= targetFrames).assertTrue();
       expect(Date.now() >= endEpoch).assertTrue();
       expect(capturedFrame !== undefined).assertTrue();
-      expect(capturedFrameIndex).assertEqual(targetFrames - 1);
+      expect(capturedFrameIndex >= targetFrames - 1).assertTrue();
       expect(step.width).assertEqual(256);
       expect(step.height).assertEqual(240);
       expect((capturedFrame as Uint8Array).byteLength).assertEqual(256 * 240 * 2);

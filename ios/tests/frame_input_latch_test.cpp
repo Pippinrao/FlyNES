@@ -23,5 +23,10 @@ int main() {
     if (input.sample() != 0) { std::cerr << "FAIL: cancel clears pending input\n"; return 1; }
     input.update(8);
     if (input.sample() != 8 || input.sample() != 8) { std::cerr << "FAIL: held START persists\n"; return 1; }
+    input.clear(); input.release(1, 6.0, 6.002);
+    if (input.peek(6.100) != 1 || input.peek(6.101) != 1 ||
+        input.sample(6.102) != 1 || input.sample(6.103) != 0) {
+        std::cerr << "FAIL: rejected frame must not consume a pending short tap\n"; return 1;
+    }
     std::cout << "ios_frame_input_latch: PASS\n";
 }

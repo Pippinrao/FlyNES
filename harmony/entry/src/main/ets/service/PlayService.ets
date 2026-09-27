@@ -107,7 +107,7 @@ export class PlayService {
 
   setButtons(mask: number): void {
     this.buttons = mask;
-    nativePlay.playSetButtons(this.buttons);
+    if (this.opened) nativePlay.playSetButtons(this.buttons);
   }
 
   openNearby(): void {

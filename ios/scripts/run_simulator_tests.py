@@ -9,7 +9,7 @@ import sys
 import xml.etree.ElementTree as ET
 
 root = Path(__file__).resolve().parents[2]
-build = root / "build/ios-simulator"
+build = Path(os.environ.get("FLYNES_BUILD_DIR", root / "build/ios-simulator"))
 project = build / "flynes_ios_product.xcodeproj"
 scheme_name = sys.argv[2] if len(sys.argv) > 2 else "FlyNESRuntimeTests"
 scheme = project / ("xcshareddata/xcschemes/" + scheme_name + ".xcscheme")

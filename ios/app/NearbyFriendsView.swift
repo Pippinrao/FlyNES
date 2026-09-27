@@ -2,6 +2,7 @@ import SwiftUI
 
 /// The single nearby entry shared by hosts and guests on every platform.
 struct NearbyFriendsView: View {
+    @State private var connectedEventSent = false
     private let background = Color(red: 18 / 255, green: 19 / 255, blue: 22 / 255)
     private let surface = Color(red: 27 / 255, green: 29 / 255, blue: 34 / 255)
     private let ink = Color(red: 244 / 255, green: 239 / 255, blue: 230 / 255)
@@ -12,15 +13,6 @@ struct NearbyFriendsView: View {
         GeometryReader { geometry in
             VStack(alignment: .leading, spacing: 12) {
                 if geometry.size.height > 270 {
-                    Text("nearby.entry.headline")
-                        .nearbyRole(NearbyTypography.paneTitle)
-                        .foregroundStyle(ink)
-                        .accessibilityIdentifier("nearby_entry_headline")
-                    Text("nearby.entry.subtitle")
-                        .nearbyRole(NearbyTypography.muted)
-                        .foregroundStyle(muted)
-                        .lineLimit(2)
-                        .accessibilityIdentifier("nearby_entry_subtitle")
                     Text("nearby.network.autoHint")
                         .nearbyRole(NearbyTypography.muted)
                         .foregroundStyle(muted)
@@ -43,6 +35,22 @@ struct NearbyFriendsView: View {
         .accessibilityIdentifier("nearby_root")
         .navigationTitle("nearby.title")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear(perform: openConnectedRoomIfNeeded)
+        .onReceive(Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()) { _ in
+            openConnectedRoomIfNeeded()
+        }
+    }
+
+    private func openConnectedRoomIfNeeded() {
+        let state = ProcessInfo.processInfo.arguments.contains("-flynes.test.nearby_role_connected")
+            ? 3 : (FlyNesNearbyBridge.sharedInstance.snapshot()["state"] as? NSNumber)?.intValue ?? 0
+        guard state == 3 || state == 5 || state == 6 || state == 7 else {
+            connectedEventSent = false
+            return
+        }
+        guard !connectedEventSent else { return }
+        connectedEventSent = true
+        NotificationCenter.default.post(name: Notification.Name("flynes.nearby.connected"), object: nil)
     }
 
     private func roleCard<Destination: View>(title: LocalizedStringKey, symbol: String,

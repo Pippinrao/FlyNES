@@ -44,6 +44,8 @@ enum LibraryRoute: Hashable {
     /// 附近联机. A real destination, and the only route on this screen that does not
     /// need a ROM: the nearby pages exist to render the exact stage that blocks them.
     case nearby
+    case nearbyLobby
+    case nearbyGamePicker
 }
 
 enum LibraryFilter: String, CaseIterable, Identifiable {
@@ -118,6 +120,10 @@ enum MultiplayerCapabilitySource {
 /// Mirrors Android HomeActivity: selected detail on the left, two-row horizontal
 /// card grid on the right. Selecting a card never navigates away from the grid.
 struct CatalogLibraryView: View {
+    private let nearbySelection: ((CatalogGame, Data) -> Bool)?
+    private let onNearbyCancel: (() -> Void)?
+    private let testStartInHostLobby: Bool
+    private let testStartInNearbyEntry: Bool
     @State private var snapshot: CatalogSnapshot
     @State private var cachedRows: [[String: Any]] = []
     @AppStorage("GameCenterCategory") private var category = LibraryFilter.all.rawValue
@@ -130,16 +136,30 @@ struct CatalogLibraryView: View {
     @AppStorage("GameCenterSelected.FAVORITES") private var favoriteSelection = ""
     @AppStorage("GameCenterSelected.BUILTIN") private var builtinSelection = ""
     @State private var searchOpen = false
+    @FocusState private var searchFocused: Bool
     @State private var sourcesOpen = false
     @State private var settingsOpen = false
+    @State private var nearbySelectionFailed = false
     @State private var path = NavigationPath()
+    @State private var enteringLobby = false
+    @State private var pickerShown = false
+    @State private var testRouteOpened = false
+    @State private var navigationEpoch = 0
     @ObservedObject private var sources = CatalogSourceModel.shared
     @ObservedObject private var covers = GameCoverModel.shared
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.locale) private var locale
 
-    init(snapshot: CatalogSnapshot = CatalogSnapshot(generation: 0, games: [])) {
+    init(snapshot: CatalogSnapshot = CatalogSnapshot(generation: 0, games: []),
+         nearbySelection: ((CatalogGame, Data) -> Bool)? = nil,
+         onNearbyCancel: (() -> Void)? = nil,
+         testStartInHostLobby: Bool = false,
+         testStartInNearbyEntry: Bool = false) {
         _snapshot = State(initialValue: snapshot)
+        self.nearbySelection = nearbySelection
+        self.onNearbyCancel = onNearbyCancel
+        self.testStartInHostLobby = testStartInHostLobby
+        self.testStartInNearbyEntry = testStartInNearbyEntry
     }
 
     private var largeText: Bool { typeSize.isAccessibilitySize }
@@ -172,9 +192,14 @@ struct CatalogLibraryView: View {
                     HStack {
                         TextField("library.search", text: $searchText)
                             .textFieldStyle(.roundedBorder)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .submitLabel(.search)
+                            .focused($searchFocused)
+                            .onSubmit { searchFocused = false }
                             .accessibilityIdentifier("search_input")
                         icon("xmark", "common.cancel", "close_search") {
-                            searchText = ""; searchOpen = false
+                            searchFocused = false; searchText = ""; searchOpen = false
                         }
                     }.frame(minHeight: 56)
                 }
@@ -230,21 +255,87 @@ struct CatalogLibraryView: View {
             .navigationDestination(for: LibraryRoute.self) { route in
                 switch route {
                 case .run(let id, let rom, let game): RunGameContainer(canonicalId: id, romData: rom, game: game, path: $path)
-                case .nearby: NearbyFriendsView()
+                case .nearby:
+                    if nearbySelection == nil {
+                        NearbyFriendsView()
+                    } else {
+                        EmptyView()
+                    }
+                case .nearbyLobby:
+                    NearbyLobbyView(testHostLobby: ProcessInfo.processInfo.arguments.contains(
+                        "-flynes.test.nearby_host_lobby_route") || ProcessInfo.processInfo.arguments.contains(
+                        "-flynes.test.nearby_role_connected"))
+                case .nearbyGamePicker:
+                    NearbyCatalogPicker(onSelect: { game, rom in
+                        let selected = FlyNesNearbyBridge.sharedInstance.selectHostGameROM(
+                            rom, canonicalID: game.id, title: game.titlePrimary)
+                        if selected {
+                            NotificationCenter.default.post(name: Notification.Name("flynes.nearby.pickerClose"), object: nil)
+                        }
+                        return selected
+                    }, onCancel: {
+                        NotificationCenter.default.post(name: Notification.Name("flynes.nearby.pickerClose"), object: nil)
+                    })
                 }
             }
             .fullScreenCover(isPresented: $settingsOpen) { SettingsView() }
+            .onReceive(NotificationCenter.default.publisher(for: Notification.Name("flynes.nearby.connected"))) { _ in
+                if nearbySelection == nil { showNearbyLobby() }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: Notification.Name("flynes.nearby.leaveRoom"))) { _ in
+                guard nearbySelection == nil else { return }
+                enteringLobby = false
+                pickerShown = false
+                path = NavigationPath()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: Notification.Name("flynes.nearby.disconnected"))) { _ in
+                guard nearbySelection == nil else { return }
+                enteringLobby = false
+                pickerShown = false
+                var nextPath = NavigationPath()
+                nextPath.append(LibraryRoute.nearby)
+                path = nextPath
+                navigationEpoch += 1
+            }
+            .onReceive(NotificationCenter.default.publisher(for: Notification.Name("flynes.nearby.pickerRequest"))) { _ in
+                guard nearbySelection == nil && enteringLobby && !pickerShown else { return }
+                pickerShown = true
+                path.append(LibraryRoute.nearbyGamePicker)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: Notification.Name("flynes.nearby.pickerClose"))) { _ in
+                guard nearbySelection == nil && pickerShown else { return }
+                pickerShown = false
+                path = NavigationPath()
+                path.append(LibraryRoute.nearbyLobby)
+            }
             .onAppear {
                 searchOpen = !searchText.isEmpty
                 sources.initialize()
                 MultiplayerCapabilitySource.reload()
                 reloadSnapshot()
+                if testStartInHostLobby && !testRouteOpened {
+                    testRouteOpened = true
+                    showNearbyLobby()
+                } else if testStartInNearbyEntry && !testRouteOpened {
+                    testRouteOpened = true
+                    path.append(LibraryRoute.nearby)
+                }
             }
             .onReceive(sources.$generation) { _ in reloadSnapshot() }
             .onChange(of: category) { _ in sourcesOpen = false; reloadSnapshot() }
             .onChange(of: searchText) { _ in reloadSnapshot() }
             .onChange(of: multiplayerOnly) { _ in reloadSnapshot() }
             .onChange(of: locale) { _ in reprojectTitles() }
+        }
+        .id(navigationEpoch)
+    }
+
+    private func showNearbyLobby() {
+        guard !enteringLobby else { return }
+        enteringLobby = true
+        DispatchQueue.main.async {
+            path = NavigationPath()
+            path.append(LibraryRoute.nearbyLobby)
         }
     }
 
@@ -278,26 +369,38 @@ struct CatalogLibraryView: View {
             icon("magnifyingglass", "library.search", "open_search") { searchOpen = true; sourcesOpen = false }
             icon("folder", "library.sources", "open_sources") { sourcesOpen = true }
             icon("gearshape", "settings.title", "open_settings") { settingsOpen = true }
-            // HTML .fe-mode: visible 附近联机 text after the icon tools.
-            Button {
-                sourcesOpen = false
-                searchOpen = false
-                path.append(LibraryRoute.nearby)
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "dot.radiowaves.left.and.right")
-                    Text("nearby.open")
-                        .lineLimit(1)
-                        .accessibilityIdentifier("nearby_entry_text")
+            if let onNearbyCancel {
+                Button("nearby.lobby.title", action: onNearbyCancel)
+                    .frame(minHeight: 48)
+                    .accessibilityIdentifier("nearby_library_return_to_room")
+            } else {
+                Button {
+                    sourcesOpen = false
+                    searchOpen = false
+                    let state = (FlyNesNearbyBridge.sharedInstance.snapshot()["state"] as? NSNumber)?.intValue ?? 0
+                    if state == 3 || state == 5 || state == 6 || state == 7 {
+                        showNearbyLobby()
+                    } else {
+                        path.append(LibraryRoute.nearby)
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "dot.radiowaves.left.and.right")
+                        Text("nearby.open")
+                            .lineLimit(1)
+                            .accessibilityIdentifier("nearby_entry_text")
+                    }
+                    .frame(minHeight: 48)
                 }
-                .frame(minHeight: 48)
+                .accessibilityIdentifier("open_nearby")
             }
-            .accessibilityIdentifier("open_nearby")
         }.frame(height: largeText ? 80 : 64)
     }
 
     @ViewBuilder private var status: some View {
-        if sources.busy {
+        if nearbySelectionFailed {
+            Text("nearby.localGameMissing").foregroundColor(.red)
+        } else if sources.busy {
             HStack { ProgressView(); Text("library.source.working") }
         } else if let launching = sources.launching {
             HStack { ProgressView(); Text(String(format: FlyNesLocalizedString("library.launching_game"), launching)) }
@@ -323,8 +426,13 @@ struct CatalogLibraryView: View {
     /// Android resolves and commits the selected game before leaving the Game
     /// Center; a failure is reported in the status line with the grid still visible.
     private func launch(_ game: CatalogGame) {
+        nearbySelectionFailed = false
         sources.launch(canonicalID: game.id, title: game.titlePrimary) { rom in
-            path.append(LibraryRoute.run(canonicalId: game.id, rom: rom, game: game))
+            if let nearbySelection {
+                nearbySelectionFailed = !nearbySelection(game, rom)
+            } else {
+                path.append(LibraryRoute.run(canonicalId: game.id, rom: rom, game: game))
+            }
         }
     }
 

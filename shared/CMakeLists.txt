@@ -581,6 +581,12 @@ if(FLYNES_BUILD_TESTS)
                  COMMAND flynes_lan_mvp_session_test --rom-mismatch)
         add_test(NAME flynes_lan_mvp_session_ready
                  COMMAND flynes_lan_mvp_session_test --ready)
+        add_test(NAME flynes_lan_mvp_session_early_ready
+                 COMMAND flynes_lan_mvp_session_test --early-ready)
+        add_test(NAME flynes_lan_mvp_session_input_timestamp
+                 COMMAND flynes_lan_mvp_session_test --input-timestamp)
+        add_test(NAME flynes_lan_mvp_session_prediction
+                 COMMAND flynes_lan_mvp_session_test --prediction)
         add_test(NAME flynes_lan_mvp_session_stall
                  COMMAND flynes_lan_mvp_session_test --stall)
         add_test(NAME flynes_lan_mvp_session_expiry
@@ -691,6 +697,7 @@ if(FLYNES_BUILD_TESTS)
     target_compile_features(flynes_runtime_test PRIVATE cxx_std_17)
     target_compile_definitions(flynes_runtime_test PRIVATE
         FLYNES_RUNTIME_ROM_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/../content/assets/roms/thwaite.nes"
+        FLYNES_MULTIPLAYER_ROM_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/../content/assets/roms/super_tilt_bro.nes"
         FLYNES_RUNTIME_HEADER="${CMAKE_CURRENT_SOURCE_DIR}/include/flynes/flynes_runtime.h"
     )
     set_target_properties(flynes_runtime_test PROPERTIES CXX_EXTENSIONS NO)

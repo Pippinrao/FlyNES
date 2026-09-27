@@ -74,7 +74,9 @@ export default function nearbyMvpProductPlayTest(): void {
         try { await driver.longClick(Math.round(rect.left + target!.centerX), Math.round(rect.top + target!.centerY)); }
         finally { clearInterval(timer); }
         expect(observed).assertTrue();
-        await delay(100);
+        const releaseDeadline = Date.now() + 600;
+        while (nativePlay.playStep().appliedButtons !== 0 && Date.now() < releaseDeadline)
+          await delay(10);
         expect(nativePlay.playStep().appliedButtons).assertEqual(0);
       }
       const status = nativePlay.playRuntimeStatus();
@@ -109,7 +111,6 @@ export default function nearbyMvpProductPlayTest(): void {
         await delay(50);
       expect(nativePlay.nearbyMvpSnapshot().localConfigured).assertEqual(1);
       expect(nativePlay.nearbyMvpSnapshot().peerGameKey.length > 0).assertTrue();
-      await (await driver.findComponent(ON.id('nearby_lobby_confirm'))).click();
       while (nativePlay.nearbyMvpSnapshot().state !== 6 && Date.now() < nextDeadline) await delay(50);
       expect(nativePlay.nearbyMvpSnapshot().state).assertEqual(6);
       await delay(3000);
@@ -123,7 +124,6 @@ export default function nearbyMvpProductPlayTest(): void {
           await delay(50);
         expect(nativePlay.nearbyMvpSnapshot().localConfigured).assertEqual(1);
         expect(nativePlay.nearbyMvpSnapshot().peerGameKey).assertEqual(locator.canonicalId);
-        await (await driver.findComponent(ON.id('nearby_lobby_confirm'))).click();
         while (nativePlay.nearbyMvpSnapshot().state !== 6 && Date.now() < thirdDeadline) await delay(50);
         expect(nativePlay.nearbyMvpSnapshot().state).assertEqual(6);
         await delay(3000);

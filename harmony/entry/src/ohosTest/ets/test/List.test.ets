@@ -10,8 +10,10 @@ import nearbyServiceTest from './NearbyService.test';
 import nearbyUxRestorationTest from './NearbyUxRestoration.test';
 import nearbyMvpScanFlowTest from './NearbyMvpScanFlow.test';
 import nearbyMvpCrossAppTest from './NearbyMvpCrossApp.test';
+import nearbyMvpExternalHostTest from './NearbyMvpExternalHost.test';
 import nearbyMvpProductPlayTest from './NearbyMvpProductPlay.test';
 import nearbyMvpHostTest from './NearbyMvpHost.test';
+import nearbyMvpHostFlowTest from './NearbyMvpHostFlow.test';
 import nearbyLanNetworkTest from './NearbyLanNetwork.test';
 import nearbyWifiConnectorTest from './NearbyWifiConnector.test';
 import nearbyScanJoinServiceTest from './NearbyScanJoinService.test';
@@ -30,6 +32,7 @@ export default function testsuite() {
   if (abilityDelegatorRegistry.getArguments().parameters['-s nearbyMvpOnly'] === 'true') {
     nearbyMvpScanFlowTest();
     nearbyMvpHostTest();
+    nearbyMvpHostFlowTest();
     nearbyLanNetworkTest();
     nearbyWifiConnectorTest();
     nearbyScanJoinServiceTest();
@@ -37,6 +40,10 @@ export default function testsuite() {
   }
   if (abilityDelegatorRegistry.getArguments().parameters['-s nearbyCrossOnly'] === 'true') {
     nearbyMvpCrossAppTest();
+    return;
+  }
+  if (abilityDelegatorRegistry.getArguments().parameters['-s nearbyExternalHostOnly'] === 'true') {
+    nearbyMvpExternalHostTest();
     return;
   }
   // Targeted physical-device UX checks must not initialize unrelated ROM fixtures
@@ -55,6 +62,7 @@ export default function testsuite() {
   nearbyServiceTest();
   nearbyMvpScanFlowTest();
   nearbyMvpHostTest();
+  nearbyMvpHostFlowTest();
   nearbyLanNetworkTest();
   nearbyWifiConnectorTest();
   nearbyScanJoinServiceTest();

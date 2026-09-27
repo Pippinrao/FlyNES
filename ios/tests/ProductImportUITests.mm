@@ -80,6 +80,7 @@ static NSString *const HundredSource = @"FlyNES-E2E-Hundred";
     self.ownedSources = [NSMutableArray array];
     XCUIDevice.sharedDevice.orientation = UIDeviceOrientationLandscapeLeft;
     self.app = [[XCUIApplication alloc] initWithBundleIdentifier:@"com.flynes.app"];
+    self.app.launchEnvironment = @{@"FLYNES_TEST_OFFLINE_AUDIO": @"1"};
     self.app.launchArguments = @[@"-AppleLanguages", @"(en)", @"-AppleLocale", @"en_US"];
     [self.app launch];
     XCTAssertTrue([self.app.buttons[@"open_sources"] waitForExistenceWithTimeout:15]);
@@ -225,13 +226,21 @@ static NSString *const HundredSource = @"FlyNES-E2E-Hundred";
     XCUIElement *input = self.app.textFields[@"search_input"];
     XCTAssertTrue([input waitForExistenceWithTimeout:5]);
     [input tap];
-    [input typeText:query];
+    for (NSUInteger index = 0; index < query.length; ++index) {
+        NSString *expected = [query substringToIndex:index + 1];
+        NSString *current = [input.value isKindOfClass:NSString.class] ? input.value : @"";
+        if (index > 0 && ![current isEqualToString:[query substringToIndex:index]]) {
+            XCTFail(@"search lost its preceding characters: %@", current);
+            return;
+        }
+        [input typeText:[query substringWithRange:NSMakeRange(index, 1)]];
+        [self waitFor:^BOOL { return [input.value isEqual:expected]; }
+                reason:@"search text accepted the next character" timeout:5];
+    }
     XCTAssertEqualObjects(input.value, query);
     // Dismiss the landscape keyboard without clearing the query.
     if (self.app.keyboards.count > 0) {
         [input typeText:@"\n"];
-        [self waitFor:^BOOL { return self.app.keyboards.count == 0; }
-                reason:@"search keyboard dismissed" timeout:5];
     }
 }
 

@@ -143,6 +143,9 @@ public class MainActivity extends AppCompatActivity {
             new InputLatencyTracker(clockCalibrator);
     private GamepadView gamepad;
     private NearbyMvpPlayController nearbyPlay;
+    long nearbyAudioWrittenSamplesForTest() {
+        return nearbyPlay == null ? 0 : nearbyPlay.writtenSamplesForTest();
+    }
     private ImageButton pauseButton;
     private HapticController pauseHaptics;
     private InputRouter inputRouter;
@@ -481,7 +484,7 @@ public class MainActivity extends AppCompatActivity {
         root.addView(surface, new FrameLayout.LayoutParams(
                 viewport.width(), viewport.height(), Gravity.CENTER));
         root.setOnApplyWindowInsetsListener((container, insets) -> {
-            if (nearbyPlay == null) updateViewport(insets.getSystemWindowInsetLeft(),
+            updateViewport(insets.getSystemWindowInsetLeft(),
                     insets.getSystemWindowInsetRight());
             return insets;
         });
@@ -575,6 +578,9 @@ public class MainActivity extends AppCompatActivity {
         if (nearbyPlay != null) {
             appSettings = settings.load();
             applyHapticSettings();
+            nearbyPlay.setFilterMode(LegacyVideoRuntimeAdapter.project(
+                    appSettings.videoPreferences()).rendererFilter());
+            if (pauseLayer == null) nearbyPlay.pause(false);
             nearbyPlay.start(appSettings.audioEnabled());
             return;
         }
@@ -1642,16 +1648,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateViewport(int insetLeft, int insetRight) {
-        if (view == null || appSettings == null) return;
+        View target = nearbyPlay == null ? view : nearbyPlay.surface();
+        if (target == null || appSettings == null) return;
         DisplayMetrics metrics = getResources().getDisplayMetrics();
         ViewportLayout.Size viewport = viewportSize(metrics.widthPixels, metrics.heightPixels,
                 insetLeft, insetRight);
-        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) view.getLayoutParams();
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) target.getLayoutParams();
         if (params == null) return;
         params.width = viewport.width();
         params.height = viewport.height();
         params.gravity = Gravity.CENTER;
-        view.setLayoutParams(params);
+        target.setLayoutParams(params);
     }
 
     private ViewportLayout.Size viewportSize(int width, int height, int insetLeft, int insetRight) {

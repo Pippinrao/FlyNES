@@ -8,7 +8,9 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.platform.app.InstrumentationRegistry;
 import com.flynes.emu.catalog.GameCatalogEntry;
 import com.flynes.emu.catalog.GameVariant;
+import com.flynes.emu.catalog.BuiltinGames;
 import com.flynes.emu.input.GamepadHitMap;
+import androidx.test.espresso.contrib.RecyclerViewActions;
 import org.junit.Test;
 import java.io.File;
 import java.nio.file.Files;
@@ -19,6 +21,9 @@ import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.action.ViewActions.replaceText;
 import static androidx.test.espresso.Espresso.closeSoftKeyboard;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
+import static androidx.test.espresso.matcher.ViewMatchers.withText;
+import static org.hamcrest.Matchers.allOf;
+import static androidx.test.espresso.matcher.ViewMatchers.hasDescendant;
 
 /** Opt-in local acceptance. User ROMs stay in the existing catalog, never fixtures. */
 public final class NearbyMvpProductPlayTest {
@@ -27,14 +32,21 @@ public final class NearbyMvpProductPlayTest {
         var args = InstrumentationRegistry.getArguments();
         String query = args.getString("localGameQuery", "");
         byte[] rom;
-        if (query.isEmpty()) rom = NearbyMvpGame.load(app).rom;
+        String gameKey;
+        if (query.isEmpty()) {
+            NearbyMvpGame.Selection selection = NearbyMvpGame.load(app);
+            rom = selection.rom;
+            gameKey = selection.entry.canonicalId;
+        }
         else {
             app.catalogRuntime().bootstrap().get(30, TimeUnit.SECONDS);
             GameVariant selected = null;
+            String selectedKey = null;
             for (GameCatalogEntry entry : app.catalogRuntime().gameCatalog().canonicalEntries()) {
                 for (GameVariant candidate : entry.variants()) {
                     if (candidate.isLaunchable() && candidate.originalFilename().equals(query)) {
                         selected = candidate;
+                        selectedKey = entry.canonicalGame().id();
                         break;
                     }
                 }
@@ -42,6 +54,7 @@ public final class NearbyMvpProductPlayTest {
             }
             assertNotNull("Requested local catalog game is absent", selected);
             rom = app.catalogRuntime().nearbyContentLoader().load(selected.variantId()).bytes();
+            gameKey = selectedKey;
         }
         assertTrue(app.nearbyMvpOwner().startHost(NearbyMvpLanAddress.current()));
         NearbyMvpSession session = app.nearbyMvpOwner().session();
@@ -55,7 +68,7 @@ public final class NearbyMvpProductPlayTest {
         while (session.snapshot()[0] != NearbyMvpSession.LOBBY && SystemClock.elapsedRealtime() < deadline)
             SystemClock.sleep(20);
         assertEquals(NearbyMvpSession.LOBBY, session.snapshot()[0]);
-        assertTrue(session.selectRom(rom));
+        assertTrue(session.selectGame(rom, gameKey));
         assertTrue(session.confirm());
         while (session.snapshot()[0] != NearbyMvpSession.RUNNING && SystemClock.elapsedRealtime() < deadline)
             SystemClock.sleep(20);
@@ -115,17 +128,31 @@ public final class NearbyMvpProductPlayTest {
             SystemClock.sleep(1000);
             clearCatalogSearch();
             onView(withId(R.id.category_builtin)).perform(click());
+            BuiltinGames.Entry nextGame = null;
+            for (BuiltinGames.Entry candidate : BuiltinGames.fromAssets(app).all()) {
+                if (candidate.multiplayerEligibility == BuiltinGames.MultiplayerEligibility.SUPPORTED
+                        && candidate.multiplayerMaxPlayers == 2
+                        && !candidate.canonicalId.equals(gameKey)) {
+                    nextGame = candidate;
+                    break;
+                }
+            }
+            assertNotNull("Need a different playable bundled game", nextGame);
+            String nextTitle = java.util.Locale.getDefault().getLanguage().equals("zh")
+                    ? nextGame.titleZhHans : nextGame.titleEn;
+            onView(withId(R.id.game_grid)).perform(
+                    RecyclerViewActions.scrollTo(hasDescendant(withText(nextTitle))));
+            onView(allOf(withId(R.id.card_title), withText(nextTitle))).perform(click());
             onView(withId(R.id.launch_selected)).perform(click());
-            waitState(session, NearbyMvpSession.CONFIGURING);
-            long readyDeadline = SystemClock.elapsedRealtime() + 15000;
-            while (session.snapshot()[6] == 0 && SystemClock.elapsedRealtime() < readyDeadline)
-                SystemClock.sleep(50);
-            assertEquals("Guest must resolve the second game through its real catalog", 1, session.snapshot()[6]);
-            SystemClock.sleep(500);
-            onView(withId(R.id.nearby_lobby_confirm)).perform(click());
             waitState(session, NearbyMvpSession.RUNNING);
+            assertEquals("Guest must resolve the second game through its real catalog", 1, session.snapshot()[6]);
             assertArrayEquals("Changing games must retain the connection", connectedId, session.sessionId());
-            SystemClock.sleep(5000);
+            assertEquals("The host must play the newly chosen title", nextTitle,
+                    app.nearbyMvpOwner().gameTitle());
+            long secondGameDeadline = SystemClock.elapsedRealtime() + 3000;
+            while (session.completedFrames() <= 30 &&
+                    SystemClock.elapsedRealtime() < secondGameDeadline)
+                SystemClock.sleep(20);
             assertTrue("Second game must play", session.completedFrames() > 30);
             android.util.Log.i("FlyNesNearby", "event=product_lobby_switch second_game=PASS");
             if (!query.isEmpty()) {
@@ -141,14 +168,8 @@ public final class NearbyMvpProductPlayTest {
                 onView(withId(R.id.search_input)).perform(replaceText(query.replaceFirst("\\.[^.]+$", "")));
                 closeSoftKeyboard();
                 onView(withId(R.id.launch_selected)).perform(click());
-                waitState(session, NearbyMvpSession.CONFIGURING);
-                readyDeadline = SystemClock.elapsedRealtime() + 15000;
-                while (session.snapshot()[6] == 0 && SystemClock.elapsedRealtime() < readyDeadline)
-                    SystemClock.sleep(50);
-                assertEquals("Guest must resolve the user ROM from its real catalog", 1, session.snapshot()[6]);
-                SystemClock.sleep(500);
-                onView(withId(R.id.nearby_lobby_confirm)).perform(click());
                 waitState(session, NearbyMvpSession.RUNNING);
+                assertEquals("Guest must resolve the user ROM from its real catalog", 1, session.snapshot()[6]);
                 assertArrayEquals(connectedId, session.sessionId());
                 SystemClock.sleep(5000);
                 assertTrue(session.completedFrames() > 30);

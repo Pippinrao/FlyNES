@@ -1,4 +1,5 @@
 #include <flynes/flynes_runtime.h>
+#include "../src/runtime/serialized_state_capture.hpp"
 #include <nes/nes.h>
 #include "../src/session/wire/sha256.hpp"
 
@@ -501,6 +502,101 @@ void test_rollback_and_checkpoint()
               "imported checkpoint is session-agnostic wrapper plus core state");
     }
     fly_runtime_destroy(other);
+    fly_runtime_destroy(runtime);
+}
+
+void test_rollback_capture_accepts_reserialized_lengths()
+{
+    std::vector<std::uint8_t> bytes;
+    unsigned calls = 0;
+    const auto shrunk = flynes::runtime_detail::capture_serialized_state(bytes,
+        [&calls](std::uint8_t* out, std::size_t capacity, std::size_t* written,
+                 std::size_t* needed) -> int {
+            ++calls;
+            if (out == nullptr) { *written = 0; *needed = 10; return NES_ERR_BUFFER_TOO_SMALL; }
+            if (capacity != 10) return NES_ERR_INVALID_PARAM;
+            for (unsigned i = 0; i < 7; ++i) out[i] = static_cast<std::uint8_t>(i + 1);
+            *written = *needed = 7;
+            return NES_OK;
+        });
+    check(shrunk == FLY_RESULT_OK && bytes.size() == 7 && calls == 2 && bytes[6] == 7,
+          "rollback accepts a second serialization shorter than its size probe");
+
+    calls = 0;
+    const auto grown = flynes::runtime_detail::capture_serialized_state(bytes,
+        [&calls](std::uint8_t* out, std::size_t capacity, std::size_t* written,
+                 std::size_t* needed) -> int {
+            ++calls;
+            *written = 0;
+            if (out == nullptr) { *needed = 4; return NES_ERR_BUFFER_TOO_SMALL; }
+            if (capacity == 4) { *needed = 9; return NES_ERR_BUFFER_TOO_SMALL; }
+            if (capacity != 9) return NES_ERR_INVALID_PARAM;
+            for (unsigned i = 0; i < 9; ++i) out[i] = static_cast<std::uint8_t>(i + 1);
+            *written = *needed = 9;
+            return NES_OK;
+        });
+    check(grown == FLY_RESULT_OK && bytes.size() == 9 && calls == 3 && bytes[8] == 9,
+          "rollback retries when the second serialization exceeds the size probe");
+
+    calls = 0;
+    const auto unbounded = flynes::runtime_detail::capture_serialized_state(bytes,
+        [&calls](std::uint8_t* out, std::size_t capacity, std::size_t* written,
+                 std::size_t* needed) -> int {
+            ++calls;
+            *written = 0;
+            *needed = out == nullptr ? 1 : capacity + 1;
+            return NES_ERR_BUFFER_TOO_SMALL;
+        });
+    check(unbounded == FLY_RESULT_INTERNAL_ERROR && calls == 5,
+          "rollback stops after four growing write attempts");
+}
+
+void test_multiplayer_rom_rollback_capture_after_replay()
+{
+    const auto rom = read_file(FLYNES_MULTIPLAYER_ROM_FIXTURE);
+    check(!rom.empty(), "multiplayer ROM fixture is readable");
+    fly_runtime_t* runtime = create_runtime();
+    if (runtime == nullptr || rom.empty())
+    {
+        fly_runtime_destroy(runtime);
+        return;
+    }
+    check(fly_runtime_load_rom(runtime, rom.data(), rom.size(), nullptr) == FLY_RESULT_OK,
+          "multiplayer ROM opens for rollback capture");
+    for (std::uint64_t frame = 0; frame < 8; ++frame)
+    {
+        check(fly_runtime_capture_rollback(runtime, static_cast<std::uint32_t>(frame)) == FLY_RESULT_OK,
+              "multiplayer ROM captures the pre-frame rollback slot");
+        auto input = make_input(1, frame);
+        input.buttons[0] = input.buttons[1] = 0;
+        auto result = make_result();
+        check(fly_runtime_step_frame(runtime, &input, &result) == FLY_RESULT_OK,
+              "multiplayer ROM advances after rollback capture");
+        if (result.pcm_published)
+        {
+            const auto count = static_cast<std::uint32_t>(
+                result.audio_last_sample_sequence - result.audio_first_sample_sequence + 1);
+            std::vector<std::int16_t> samples(count);
+            fly_pcm_block_v1 block{};
+            block.struct_size = FLY_PCM_BLOCK_V1_SIZE;
+            block.version = FLY_PCM_BLOCK_VERSION_1;
+            check(fly_runtime_pull_pcm(runtime, samples.data(), count, &block) == FLY_RESULT_OK &&
+                  block.sample_count == count, "multiplayer ROM drains the frame PCM");
+        }
+    }
+    check(fly_runtime_restore_rollback(runtime, 0) == FLY_RESULT_OK,
+          "multiplayer ROM restores the first predicted frame");
+    for (std::uint64_t frame = 0; frame < 8; ++frame)
+    {
+        check(fly_runtime_capture_rollback(runtime, static_cast<std::uint32_t>(frame)) == FLY_RESULT_OK,
+              "multiplayer ROM captures rollback during replay");
+        auto input = make_input(1, frame);
+        input.buttons[0] = frame == 0 ? 0x80u : 0u;
+        input.buttons[1] = 0;
+        auto result = make_result();
+        check(fly_runtime_step_frame(runtime, &input, &result) == FLY_RESULT_OK,
+              "multiplayer ROM replays the captured frame");
+    }
     fly_runtime_destroy(runtime);
 }
 
@@ -1477,6 +1573,8 @@ int main()
     test_pcm_pull();
     test_copy_latest_frame();
     test_rollback_and_checkpoint();
+    test_rollback_capture_accepts_reserialized_lengths();
+    test_multiplayer_rom_rollback_capture_after_replay();
     test_clear_input_ports();
     test_checkpoint_epoch_guard();
     test_checkpoint_payload_length_before_allocation();

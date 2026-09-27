@@ -18,6 +18,10 @@ struct FlyNESApp: App {
                     NavigationStack {
                         NearbyLobbyView()
                     }
+                } else if ProcessInfo.processInfo.arguments.contains("-flynes.test.nearby_host_lobby_route") {
+                    CatalogLibraryView(testStartInHostLobby: true)
+                } else if ProcessInfo.processInfo.arguments.contains("-flynes.test.nearby_role_connected") {
+                    CatalogLibraryView(testStartInNearbyEntry: true)
                 } else {
                     CatalogLibraryView()
                 }

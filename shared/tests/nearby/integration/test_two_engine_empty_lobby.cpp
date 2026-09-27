@@ -943,6 +943,12 @@ struct EngineFixture final
             ++static_cast<Quic*>(context)->cancels;
             return FLY_SESSION_V2_OK;
         }
+
+        static fly_session_result_v2 close(
+            void*, const fly_session_op_token_v2*,
+            fly_session_resource_handle_v2, std::uint32_t,
+            fly_session_inbox_v2_t*)
+        { return FLY_SESSION_V2_OK; }
     } quic;
 
     struct SecureStore final
@@ -1235,7 +1241,7 @@ struct EngineFixture final
         quic_port.send_datagram = unavailable_quic_datagram;
         quic_port.payload_budget = unavailable_quic_query;
         quic_port.stats = unavailable_quic_query;
-        quic_port.close = unavailable_quic_close;
+        quic_port.close = Quic::close;
         quic_port.cancel = Quic::cancel;
         ports.struct_size = FLY_SESSION_PORTS_V2_SIZE;
         ports.abi_version = FLY_SESSION_ABI_VERSION_2;

@@ -25,11 +25,18 @@ static NSString *installedDataContainer(void)
     return found;
 }
 
+static XCUIApplication *offlineAudioApp(void)
+{
+    XCUIApplication *app = [[XCUIApplication alloc] initWithBundleIdentifier:@"com.flynes.app"];
+    app.launchEnvironment = @{@"FLYNES_TEST_OFFLINE_AUDIO": @"1"};
+    return app;
+}
+
 @implementation ProductUITests
 - (void)testControlsResetRestoresDistinctButtons {
     self.continueAfterFailure = NO;
     XCUIDevice.sharedDevice.orientation = UIDeviceOrientationLandscapeLeft;
-    XCUIApplication *app = [[XCUIApplication alloc] initWithBundleIdentifier:@"com.flynes.app"];
+    XCUIApplication *app = offlineAudioApp();
     app.launchArguments = @[@"-AppleLanguages", @"(en)", @"-AppleLocale", @"en_US"];
     [app launch];
     XCTAssertTrue([app.buttons[@"open_settings"] waitForExistenceWithTimeout:15]);
@@ -40,7 +47,14 @@ static NSString *installedDataContainer(void)
     XCTAssertTrue(distinct.enabled);
     if ([distinct.value isEqual:@"1"]) [[distinct coordinateWithNormalizedOffset:CGVectorMake(0.93, 0.5)] tap];
     XCTAssertEqualObjects(distinct.value, @"0", @"Reset precondition: A/B distinction was turned off");
-    [app.buttons[@"Reset to recommended"] tap];
+    XCUIElement *reset = app.buttons[@"settings_controls_reset"];
+    for (NSUInteger attempt = 0; attempt < 4 && !reset.isHittable; attempt++) {
+        XCUICoordinate *start = [app coordinateWithNormalizedOffset:CGVectorMake(0.75, 0.78)];
+        XCUICoordinate *end = [app coordinateWithNormalizedOffset:CGVectorMake(0.75, 0.28)];
+        [start pressForDuration:0.05 thenDragToCoordinate:end];
+    }
+    XCTAssertTrue(reset.isHittable, @"the controls reset must be reachable in the settings form");
+    [reset tap];
     XCTAssertEqualObjects(distinct.value, @"1", @"Android controls reset includes haptics preferences");
     [app.buttons[@"settings_done"] tap];
 }
@@ -55,7 +69,7 @@ static NSString *installedDataContainer(void)
 - (void)testAndroidGameCenterSelectionStaysBesideGrid {
     self.continueAfterFailure = NO;
     XCUIDevice.sharedDevice.orientation = UIDeviceOrientationLandscapeLeft;
-    XCUIApplication *app = [[XCUIApplication alloc] initWithBundleIdentifier:@"com.flynes.app"];
+    XCUIApplication *app = offlineAudioApp();
     app.launchArguments = @[@"-AppleLanguages", @"(en)", @"-AppleLocale", @"en_US"];
     [app launch];
     [self ensureMultiplayerFilterShowsSinglePlayerLibrary:app];
@@ -151,7 +165,7 @@ static NSString *installedDataContainer(void)
 - (void)testAndroidBilingualTitlesAndAutomaticCoverCapture {
     self.continueAfterFailure = NO;
     XCUIDevice.sharedDevice.orientation = UIDeviceOrientationLandscapeLeft;
-    XCUIApplication *app = [[XCUIApplication alloc] initWithBundleIdentifier:@"com.flynes.app"];
+    XCUIApplication *app = offlineAudioApp();
     app.launchArguments = @[@"-AppleLanguages", @"(en)", @"-AppleLocale", @"en_US"];
     [app launch];
     [self ensureMultiplayerFilterShowsSinglePlayerLibrary:app];
@@ -213,7 +227,7 @@ static NSString *installedDataContainer(void)
 - (void)testSettingsPersistAcrossRestartAndFollowInterfaceLanguage {
     self.continueAfterFailure = NO;
     XCUIDevice.sharedDevice.orientation = UIDeviceOrientationLandscapeLeft;
-    XCUIApplication *app = [[XCUIApplication alloc] initWithBundleIdentifier:@"com.flynes.app"];
+    XCUIApplication *app = offlineAudioApp();
     app.launchArguments = @[@"-AppleLanguages", @"(en)", @"-AppleLocale", @"en_US"];
     [app launch];
     XCTAssertTrue([app.buttons[@"open_settings"] waitForExistenceWithTimeout:15]);
@@ -260,7 +274,7 @@ static NSString *installedDataContainer(void)
 - (void)testLibraryLaunchPauseSettingsResumeAndReturn {
     self.continueAfterFailure = NO;
     XCUIDevice.sharedDevice.orientation = UIDeviceOrientationLandscapeLeft;
-    XCUIApplication *app = [[XCUIApplication alloc] initWithBundleIdentifier:@"com.flynes.app"];
+    XCUIApplication *app = offlineAudioApp();
     app.launchArguments = @[@"-AppleLanguages", @"(en)", @"-AppleLocale", @"en_US"];
     [app launch];
     [self ensureMultiplayerFilterShowsSinglePlayerLibrary:app];
@@ -298,7 +312,7 @@ static NSString *installedDataContainer(void)
 - (void)testEveryBundledGameLaunchesAndAcceptsControls {
     self.continueAfterFailure = NO;
     XCUIDevice.sharedDevice.orientation = UIDeviceOrientationLandscapeLeft;
-    XCUIApplication *app = [[XCUIApplication alloc] initWithBundleIdentifier:@"com.flynes.app"];
+    XCUIApplication *app = offlineAudioApp();
     app.launchArguments = @[@"-AppleLanguages", @"(en)", @"-AppleLocale", @"en_US"];
     [app launch];
     [self ensureMultiplayerFilterShowsSinglePlayerLibrary:app];
@@ -372,7 +386,7 @@ static BOOL revealElement(XCUIApplication *app, XCUIElement *element, int swipes
 static XCUIApplication *launchGameCenter(void)
 {
     XCUIDevice.sharedDevice.orientation = UIDeviceOrientationLandscapeLeft;
-    XCUIApplication *app = [[XCUIApplication alloc] initWithBundleIdentifier:@"com.flynes.app"];
+    XCUIApplication *app = offlineAudioApp();
     app.launchArguments = @[@"-AppleLanguages", @"(en)", @"-AppleLocale", @"en_US"];
     [app launch];
     XCTAssertTrue([app.buttons[@"open_nearby"] waitForExistenceWithTimeout:15],
@@ -397,8 +411,8 @@ static XCUIApplication *launchGameCenter(void)
     [self addAttachment:shot];
 }
 
-/// An iOS host sees the real missing bridge state, never a fabricated code or QR.
-- (void)testCreateInviteShowsHonestUnavailableState {
+/// An iOS host publishes the single QR invitation path.
+- (void)testCreateInvitePublishesScannableQr {
     self.continueAfterFailure = NO;
     XCUIApplication *app = launchGameCenter();
     [app.buttons[@"open_nearby"] tap];
@@ -406,7 +420,7 @@ static XCUIApplication *launchGameCenter(void)
     XCUIElement *create = identified(app, @"nearby_action_create");
     XCTAssertTrue([create waitForExistenceWithTimeout:5]);
     [create tap];
-    XCTAssertTrue([identified(app, @"nearby_invite_unavailable") waitForExistenceWithTimeout:5]);
+    XCTAssertTrue([identified(app, @"nearby_invite_qr") waitForExistenceWithTimeout:10]);
     XCTAssertTrue(identified(app, @"nearby_pairing_status").exists);
     XCTAssertFalse(identified(app, @"nearby_invite_code_value").exists);
 }
@@ -448,7 +462,7 @@ static XCUIApplication *launchGameCenter(void)
 - (void)testSettingsHasNoFriendsManagementRow {
     self.continueAfterFailure = NO;
     XCUIDevice.sharedDevice.orientation = UIDeviceOrientationLandscapeLeft;
-    XCUIApplication *app = [[XCUIApplication alloc] initWithBundleIdentifier:@"com.flynes.app"];
+    XCUIApplication *app = offlineAudioApp();
     app.launchArguments = @[@"-AppleLanguages", @"(en)", @"-AppleLocale", @"en_US"];
     [app launch];
     XCTAssertTrue([app.buttons[@"open_settings"] waitForExistenceWithTimeout:15]);

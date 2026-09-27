@@ -4,6 +4,7 @@ import SwiftUI
 struct RunGameView: UIViewControllerRepresentable {
     let canonicalId: String
     let romData: Data
+    var nearbySession = false
     var gameTitle: String = ""
     var onPauseCommand: (String) -> Void = { _ in }
     var overlayReloadGeneration: Int = 0
@@ -16,6 +17,7 @@ struct RunGameView: UIViewControllerRepresentable {
         let controller = RunSurfaceViewController()
         controller.canonicalId = canonicalId
         controller.romData = romData
+        controller.nearbySession = nearbySession
         controller.gameTitle = gameTitle
         controller.onPauseCommand = { command in
             context.coordinator.onPauseCommand(command)
@@ -25,6 +27,7 @@ struct RunGameView: UIViewControllerRepresentable {
 
     func updateUIViewController(_ uiViewController: RunSurfaceViewController, context: Context) {
         uiViewController.canonicalId = canonicalId
+        uiViewController.nearbySession = nearbySession
         uiViewController.gameTitle = gameTitle
         context.coordinator.onPauseCommand = onPauseCommand
         uiViewController.onPauseCommand = { command in
@@ -42,6 +45,25 @@ struct RunGameView: UIViewControllerRepresentable {
         init(onPauseCommand: @escaping (String) -> Void) {
             self.onPauseCommand = onPauseCommand
         }
+    }
+}
+
+struct NearbyRunGameContainer: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        RunGameView(canonicalId: FlyNesNearbyBridge.sharedInstance.canonicalId,
+                    romData: Data(), nearbySession: true,
+                    gameTitle: FlyNesNearbyBridge.sharedInstance.gameTitle,
+                    onPauseCommand: { command in
+            if command == "game_center" {
+                _ = FlyNesNearbyBridge.sharedInstance.returnLobby()
+                dismiss()
+            }
+        })
+        .ignoresSafeArea()
+        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
     }
 }
 

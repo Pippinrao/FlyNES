@@ -17,7 +17,7 @@ import com.google.android.material.button.MaterialButton;
 
 /**
  * Fixed landscape game / host / seat summary.
- * The existing session owner retains the pending-configuration confirmation guard.
+ * The host chooses a game from the game center after pairing.
  */
 public final class NearbyLobbyActivity extends AppCompatActivity {
 
@@ -26,7 +26,8 @@ public final class NearbyLobbyActivity extends AppCompatActivity {
     private NearbyMvpOwner mvpOwner;
     private NearbyMvpSession mvpSession;
     private boolean playStarted;
-    private MaterialButton confirm;
+    private boolean gameError;
+    private final NearbyPeerGameAttempt peerGameAttempt = new NearbyPeerGameAttempt();
     private TextView confirmReason;
     private NearbySessionOwner.Snapshot displayedSnapshot;
     private final Handler refreshHandler = new Handler(Looper.getMainLooper());
@@ -78,46 +79,18 @@ public final class NearbyLobbyActivity extends AppCompatActivity {
             parent.addView(buildRow(field, parent));
         }
 
-        confirm = findViewById(R.id.nearby_lobby_confirm);
         confirmReason = findViewById(R.id.nearby_lobby_confirm_reason);
-        confirm.setOnClickListener(view -> {
-            if (mvpSession != null) {
-                if (!mvpSession.confirm()) {
-                    android.widget.Toast.makeText(this, R.string.nearby_not_supported,
-                            android.widget.Toast.LENGTH_SHORT).show();
-                }
-                bindSnapshot();
-                return;
-            }
-            NearbySessionOwner.Snapshot displayed = displayedSnapshot;
-            if (owner == null || displayed == null || !displayed.canConfirmGameConfig()) {
-                android.widget.Toast.makeText(this, R.string.nearby_not_supported,
-                        android.widget.Toast.LENGTH_SHORT).show();
-                return;
-            }
-            owner.confirmGameConfig(displayed.pendingConfigId(), displayed.pendingConfigRevision);
-            bindSnapshot();
-        });
         FlyNesApplication app = (FlyNesApplication) getApplication();
         mvpOwner = app.nearbyMvpOwner();
         if (mvpOwner != null && mvpOwner.active()) {
             mvpSession = mvpOwner.session();
-            findViewById(R.id.nearby_lobby_row_rom_identity).setOnClickListener(view -> {
-                if (mvpSession.returnLobby()) startActivity(new Intent(this, HomeActivity.class)
+            int[] snapshot = mvpSession.snapshot();
+            boolean host = snapshot[4] == NearbyMvpSession.HOST_P1;
+            if (host) findViewById(R.id.nearby_lobby_row_rom_identity).setOnClickListener(view -> {
+                if ((mvpSession.snapshot()[0] == NearbyMvpSession.LOBBY || mvpSession.returnLobby())
+                        && !isFinishing()) startActivity(new Intent(this, HomeActivity.class)
                         .putExtra("nearby_choose_game", true));
             });
-            try {
-                if (mvpOwner.gameTitle().isEmpty() && mvpSession.snapshot()[0] == NearbyMvpSession.LOBBY) {
-                NearbyMvpGame.Selection selection = NearbyMvpGame.load(this);
-                if (!mvpSession.selectGame(selection.rom, selection.entry.canonicalId)) throw new IOException("ROM rejected");
-                mvpOwner.gameTitle(java.util.Locale.getDefault().getLanguage().equals("zh")
-                                    ? selection.entry.titleZhHans : selection.entry.titleEn);
-                }
-            } catch (IOException failure) {
-                confirm.setEnabled(false);
-                confirmReason.setText(R.string.nearby_blocked_rom_transfer);
-                confirmReason.setVisibility(View.VISIBLE);
-            }
             bindSnapshot();
             return;
         }
@@ -125,14 +98,12 @@ public final class NearbyLobbyActivity extends AppCompatActivity {
         owner = app.nearbySessionOwner();
         if (!nearby.ready() || owner == null) {
             boundLinkState = NearbySessionOwner.LINK_UNAVAILABLE;
-            confirm.setEnabled(true);
             if (nearby.reasonKey() != null) {
                 int reasonId = getResources().getIdentifier(
                         nearby.reasonKey(), "string", getPackageName());
                 if (reasonId != 0) confirmReason.setText(reasonId);
             }
             owner = null;
-            confirm.setContentDescription(confirm.getText() + ", " + confirmReason.getText());
             return;
         }
         bindSnapshot();
@@ -153,32 +124,59 @@ public final class NearbyLobbyActivity extends AppCompatActivity {
         if (mvpSession != null) {
             int[] snapshot = mvpSession.snapshot();
             if (snapshot == null || snapshot.length < 9) return;
+            if (snapshot[0] == NearbyMvpSession.LOBBY || snapshot[0] == NearbyMvpSession.RETURNING) {
+                mvpOwner.gameTitle("");
+                gameError = false;
+            }
+            peerGameAttempt.shouldAttempt(snapshot[0], 1, "", "");
+            if (snapshot[4] == NearbyMvpSession.GUEST_P2 &&
+                    snapshot[0] == NearbyMvpSession.CONFIGURING) {
+                String peerGameKey = mvpSession.peerGameKey();
+                int configured = snapshot[1] == 7 || snapshot[1] == 8 ? 0 : snapshot[5];
+                if (peerGameAttempt.shouldAttempt(snapshot[0], configured, peerGameKey,
+                        mvpSession.peerConfigToken())) {
+                    try {
+                        NearbyMvpGame.Selection selection = NearbyMvpGame.load(this, peerGameKey);
+                        if (!mvpSession.selectRom(selection.rom) || !mvpSession.confirm())
+                            throw new IOException("ROM mismatch");
+                        setGameTitle(selection);
+                        gameError = false;
+                    } catch (IOException failure) {
+                        gameError = true;
+                    }
+                    snapshot = mvpSession.snapshot();
+                }
+            }
             boundLinkState = snapshot[0];
             LinearLayout gameRow = findViewById(R.id.nearby_lobby_row_rom_identity);
-            ((TextView) gameRow.getChildAt(1)).setText(mvpOwner.gameTitle() + " · " + getString(R.string.nearby_choose_game));
-            gameRow.setContentDescription(getString(R.string.nearby_choose_game));
+            boolean host = snapshot[4] == NearbyMvpSession.HOST_P1;
+            String title = mvpOwner.gameTitle();
+            ((TextView) gameRow.getChildAt(1)).setText(host
+                    ? title.isEmpty() ? getString(R.string.nearby_choose_game)
+                    : title + " · " + getString(R.string.nearby_choose_game)
+                    : title.isEmpty() ? getString(R.string.nearby_wait_host_game) : title);
+            gameRow.setContentDescription(host ? getString(R.string.nearby_choose_game)
+                    : title.isEmpty() ? getString(R.string.nearby_wait_host_game) : title);
             LinearLayout hostRow = findViewById(R.id.nearby_lobby_row_network_owner);
             ((TextView) hostRow.getChildAt(1)).setText(R.string.nearby_role_host);
             LinearLayout seatRow = findViewById(R.id.nearby_lobby_row_seat);
-            ((TextView) seatRow.getChildAt(1)).setText("P1 ↔ P2");
-            confirm.setEnabled(snapshot[0] == NearbyMvpSession.CONFIGURING && snapshot[5] != 0 && snapshot[6] != 0 && snapshot[7] == 0);
-            confirm.setText(snapshot[7] != 0
-                    ? R.string.nearby_config_confirmed : R.string.nearby_lobby_confirm);
+            ((TextView) seatRow.getChildAt(1)).setText(host ? "P1" : "P2");
             if (snapshot[0] == NearbyMvpSession.ENDED) {
                 confirmReason.setText(R.string.nearby_mvp_connection_failed);
                 mvpOwner.close();
                 ((FlyNesApplication) getApplication()).nearbyUiHotspot().close();
                 returnToEntry();
                 return;
-            } else if (snapshot[7] != 0 && snapshot[8] == 0) {
-                confirmReason.setText(R.string.nearby_config_waitingConfirm);
-            } else if (snapshot[5] != 0 && snapshot[6] != 0) {
-                confirmReason.setText(R.string.nearby_config_waitingConfirm);
+            } else if (gameError) {
+                confirmReason.setText(R.string.nearby_local_game_missing);
+            } else if (snapshot[0] == NearbyMvpSession.LOBBY) {
+                confirmReason.setText(host ? R.string.nearby_choose_game : R.string.nearby_wait_host_game);
+            } else if (snapshot[0] == NearbyMvpSession.CONFIGURING) {
+                confirmReason.setText(R.string.nearby_game_preparing);
             } else {
                 confirmReason.setText(R.string.nearby_screen_connecting);
             }
             confirmReason.setVisibility(View.VISIBLE);
-            confirm.setContentDescription(confirm.getText() + ", " + confirmReason.getText());
             if (snapshot[0] == NearbyMvpSession.RUNNING && !playStarted) {
                 playStarted = true;
                 startActivity(new Intent(this, MainActivity.class).putExtra("nearby_mvp", true));
@@ -190,7 +188,6 @@ public final class NearbyLobbyActivity extends AppCompatActivity {
         try {
             displayedSnapshot = owner.snapshot();
             boundLinkState = displayedSnapshot.linkState;
-            confirm.setEnabled(displayedSnapshot.pendingConfigLocalConfirmed == 0);
             String reasonKey = displayedSnapshot.primaryReasonKey;
             int reasonId = reasonKey.isEmpty() ? 0 : getResources().getIdentifier(
                     reasonKey.replace('.', '_'), "string", getPackageName());
@@ -204,16 +201,16 @@ public final class NearbyLobbyActivity extends AppCompatActivity {
             boolean hasStatus = displayedSnapshot.canConfirmGameConfig()
                     || displayedSnapshot.pendingConfigLocalConfirmed != 0 || !reasonKey.isEmpty();
             confirmReason.setVisibility(hasStatus ? View.VISIBLE : View.GONE);
-            confirm.setText(displayedSnapshot.pendingConfigLocalConfirmed != 0
-                    ? R.string.nearby_config_confirmed : R.string.nearby_lobby_confirm);
         } catch (IllegalStateException unavailable) {
             displayedSnapshot = null;
             boundLinkState = NearbySessionOwner.LINK_UNAVAILABLE;
-            confirm.setEnabled(true);
             confirmReason.setText(R.string.nearby_blocked_session_read);
             confirmReason.setVisibility(View.VISIBLE);
         }
-        confirm.setContentDescription(confirm.getText() + ", " + confirmReason.getText());
+    }
+
+    private void setGameTitle(NearbyMvpGame.Selection selection) {
+        mvpOwner.gameTitle(selection.title);
     }
 
     private void returnToEntry() {

@@ -17,11 +17,16 @@ public:
         for (unsigned index = 0; index < 4; ++index)
             if (buttons & (1u << index)) until_[index] = std::max(until_[index],upTime+remaining);
     }
-    std::uint32_t sample(double now = monotonicTime()) {
+    std::uint32_t peek(double now = monotonicTime()) const {
         auto value = held_ | pending_;
-        pending_ = 0;
         for (unsigned index = 0; index < 4; ++index)
             if (now < until_[index]) value |= 1u << index;
+        return value;
+    }
+    void commit() { pending_ = 0; }
+    std::uint32_t sample(double now = monotonicTime()) {
+        const auto value = peek(now);
+        commit();
         return value;
     }
     void clear() { held_ = pending_ = 0; until_.fill(0); }

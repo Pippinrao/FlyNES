@@ -3,6 +3,7 @@
 
 #import "FlyNesAppBridge.h"
 #import "FlyNesRuntimeBridge.h"
+#import "FlyNesNearbyBridge.h"
 #import "GamepadOverlayView.h"
 #import "FlyNesMetalRenderer.h"
 #import "FlyNesDisplayLinkPacer.h"
@@ -22,6 +23,7 @@
 
 #include "flynes/product/pause_actions.hpp"
 #include "PlaybackClock.hpp"
+#include "NearbyPlaybackState.hpp"
 #include "FrameInputLatch.hpp"
 
 namespace {
@@ -108,6 +110,7 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
     BOOL checkpointFailed_;
     BOOL romReady_;
     BOOL videoFailureShown_;
+    BOOL backgroundPauseOwned_;
 }
 
 @synthesize gameTitle = _gameTitle;
@@ -194,20 +197,25 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
         [pauseButton_.heightAnchor constraintEqualToConstant:48.0],
     ]];
 
-    runtime_ = [[FlyNesRuntimeBridge alloc] init];
-    [runtime_ createRuntime:nil];
-    NSData *rom = self.romData;
-    if (rom.length == 0)
-        rom = [self bundledRomForCanonicalId:self.canonicalId];
-    self.romData = rom;
-    NSError *romError = nil;
-    if (rom.length > 0)
-        romReady_ = [runtime_ loadRom:rom error:&romError];
-    if (romReady_) {
-        [FlyNesAppBridge.sharedInstance markPlayedCanonicalID:self.canonicalId error:nil];
-        [self restoreAutosave];
-    } else
-        [self surfaceRomOpenFailure];
+    if (self.nearbySession) {
+        NSDictionary *session = FlyNesNearbyBridge.sharedInstance.snapshot;
+        romReady_ = [session[@"state"] unsignedIntValue] == 6;
+    } else {
+        runtime_ = [[FlyNesRuntimeBridge alloc] init];
+        [runtime_ createRuntime:nil];
+        NSData *rom = self.romData;
+        if (rom.length == 0)
+            rom = [self bundledRomForCanonicalId:self.canonicalId];
+        self.romData = rom;
+        NSError *romError = nil;
+        if (rom.length > 0)
+            romReady_ = [runtime_ loadRom:rom error:&romError];
+        if (romReady_) {
+            [FlyNesAppBridge.sharedInstance markPlayedCanonicalID:self.canonicalId error:nil];
+            [self restoreAutosave];
+        } else
+            [self surfaceRomOpenFailure];
+    }
     [self reloadProductSettings];
     NSNotificationCenter *notifications = NSNotificationCenter.defaultCenter;
     [notifications addObserver:self selector:@selector(applicationWillResignActive:)
@@ -234,6 +242,7 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
     visible_ = YES;
     [self drawFrame];
     foreground_ = UIApplication.sharedApplication.applicationState == UIApplicationStateActive;
+    [self releaseBackgroundPauseIfReady];
     [self updatePlayback];
 }
 
@@ -241,6 +250,7 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
 {
     [super viewWillDisappear:animated];
     visible_ = NO;
+    if (self.nearbySession) [FlyNesNearbyBridge.sharedInstance setPaused:YES];
     [self stopPlayback];
     [self saveAutosaveIfEnabled];
 }
@@ -395,7 +405,8 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
 // start answering on their own.
 - (BOOL)nearbySessionActive
 {
-    return NO;
+    const unsigned state = [FlyNesNearbyBridge.sharedInstance.snapshot[@"state"] unsignedIntValue];
+    return self.nearbySession && state >= 3 && state <= 7;
 }
 
 // The states that demand user action — 冻结, 重连倒计时 and the
@@ -541,6 +552,7 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
         return;
     paused_ = YES;
     drawerOpen_ = YES;
+    if (self.nearbySession) [FlyNesNearbyBridge.sharedInstance setPaused:YES];
     [self stopPlayback];
     overlay_.hidden = YES;
     pauseButton_.hidden = YES;
@@ -666,6 +678,10 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
     audioInterrupted_ = NO;
     paused_ = NO;
     checkpointFailed_ = NO;
+    if (self.nearbySession) {
+        [FlyNesNearbyBridge.sharedInstance setPaused:NO];
+        backgroundPauseOwned_ = NO;
+    }
     [self dismissPauseLayerKeepingPaused:NO];
     [self reloadProductSettings];
     [self updatePlayback];
@@ -686,6 +702,53 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
 {
     NSAssert(NSThread.isMainThread, @"Playback is owned by the main run loop");
     if (!running_ || ![self isPlaybackAllowed] || !clock_.beginTick(timestamp)) return;
+    if (self.nearbySession) {
+        BOOL produced = NO;
+        FlyNesNearbyBridge *bridge = FlyNesNearbyBridge.sharedInstance;
+        auto playbackAction = [&] {
+            NSDictionary *snapshot = bridge.snapshot;
+            return flynes::ios::nearbyPlaybackAction(
+                [snapshot[@"state"] unsignedIntValue], [snapshot[@"paused"] boolValue]);
+        };
+        auto leaveEndedSession = [&] {
+            paused_ = YES;
+            [self stopPlayback];
+            if (self.onPauseCommand) self.onPauseCommand(@"game_center");
+        };
+        while (clock_.frameDue()) {
+            const auto action = playbackAction();
+            if (action == flynes::ios::NearbyPlaybackAction::Exit) {
+                leaveEndedSession();
+                return;
+            }
+            if (action == flynes::ios::NearbyPlaybackAction::Hold) {
+                clock_.reset();
+                [self drawFrame];
+                return;
+            }
+            const auto buttons = input_.peek(NSProcessInfo.processInfo.systemUptime);
+            if (![bridge stepWithButtons:buttons]) {
+                if (playbackAction() == flynes::ios::NearbyPlaybackAction::Exit)
+                    leaveEndedSession();
+                else {
+                    clock_.reset();
+                    [self drawFrame];
+                }
+                return;
+            }
+            input_.commit();
+            clock_.didProduceDuration(bridge.sourceFrameDuration);
+            NSData *pcm = [bridge pullPCM];
+            if (!audioInterrupted_) [audio_ enqueuePCM:pcm];
+            produced = YES;
+        }
+        if (produced) {
+            NSData *pixels = [FlyNesNearbyBridge.sharedInstance copyLatestRgb565Frame];
+            if (pixels.length) [renderer_ uploadRgb565:pixels width:256 height:240];
+        }
+        [self drawFrame];
+        return;
+    }
     BOOL produced = NO;
     while (clock_.frameDue()) {
         NSError *error = nil;
@@ -792,13 +855,16 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
     clock_.reset();
     buttons_ = 0; input_.clear();
     [overlay_ releaseAllButtons];
-    [runtime_ clearInput];
-    [runtime_ discardAudio];
+    if (!self.nearbySession) {
+        [runtime_ clearInput];
+        [runtime_ discardAudio];
+    }
     [audio_ pause];
 }
 
 - (void)saveAutosaveIfEnabled
 {
+    if (self.nearbySession) return;
     if (!romReady_) return;
     NSNumber *enabled = FlyNesAppBridge.sharedInstance.settingsGet[@"autosave_enabled"];
     if (enabled != nil && !enabled.boolValue) { checkpointFailed_ = NO; return; }
@@ -808,6 +874,7 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
 
 - (BOOL)restoreCheckpoint:(NSData *)checkpoint error:(NSError **)error
 {
+    if (self.nearbySession) return NO;
     NSAssert(NSThread.isMainThread, @"Playback checkpoints are main-thread owned");
     [self stopPlayback];
     const BOOL restored = [runtime_ loadCheckpoint:checkpoint error:error];
@@ -822,6 +889,7 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
 
 - (BOOL)resetGame:(NSError **)error
 {
+    if (self.nearbySession) return NO;
     NSAssert(NSThread.isMainThread, @"Playback reset is main-thread owned");
     [self stopPlayback];
     romReady_ = self.romData.length > 0 && [runtime_ loadRom:self.romData error:error];
@@ -835,14 +903,28 @@ void add_nearby_status_row(UIStackView *stack, NSString *labelKey, NSString *rea
 {
     (void)notification;
     foreground_ = NO;
+    if (self.nearbySession && visible_ && !paused_ && !drawerOpen_) {
+        FlyNesNearbyBridge *bridge = FlyNesNearbyBridge.sharedInstance;
+        NSDictionary *snapshot = bridge.snapshot;
+        if ([snapshot[@"state"] unsignedIntValue] == 6 && ![snapshot[@"paused"] boolValue])
+            backgroundPauseOwned_ = [bridge setPaused:YES];
+    }
     [self stopPlayback];
     [self saveAutosaveIfEnabled];
+}
+
+- (void)releaseBackgroundPauseIfReady
+{
+    if (!backgroundPauseOwned_ || !self.nearbySession || !foreground_ || !visible_ ||
+        paused_ || drawerOpen_) return;
+    if ([FlyNesNearbyBridge.sharedInstance setPaused:NO]) backgroundPauseOwned_ = NO;
 }
 
 - (void)applicationDidBecomeActive:(NSNotification *)notification
 {
     (void)notification;
     foreground_ = YES;
+    [self releaseBackgroundPauseIfReady];
     [self reloadProductSettings];
 }
 

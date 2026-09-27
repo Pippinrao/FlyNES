@@ -541,8 +541,14 @@ public final class HomeActivity extends android.app.Activity {
             navigation.select(null);
         }
         GameCenterStartupTrace.event("LIST_SUBMIT", "count=" + visible.size());
-        gameAdapter.submit(visible, navigation.selectedCanonicalId(), () -> {
-            RecyclerView grid = findViewById(R.id.game_grid);
+        RecyclerView grid = findViewById(R.id.game_grid);
+        GameCardAdapter submittedAdapter = gameAdapter;
+        if (grid == null || grid.getAdapter() != submittedAdapter) return;
+        submittedAdapter.submit(visible, navigation.selectedCanonicalId(), () -> {
+            // AsyncListDiffer may commit after an Activity/locale rebuild has
+            // replaced this view tree. Only the attached owner may publish it.
+            if (isDestroyed() || gameAdapter != submittedAdapter ||
+                    !ViewCompat.isAttachedToWindow(grid)) return;
             grid.getViewTreeObserver().addOnPreDrawListener(
                     GameCenterStartupTrace.visibleOnNextPreDraw(
                             grid, visible.size(), displayedCacheStatus));
@@ -658,7 +664,7 @@ public final class HomeActivity extends android.app.Activity {
                     var bundled = AndroidBuiltinCatalogAdapter.SOURCE.id().equals(variant.sourceId())
                             ? app.catalogRuntime().builtinGames().byAssetFilename(variant.originalFilename()) : null;
                     String gameKey = bundled == null ? variant.canonicalGameId() : bundled.canonicalId;
-                    if (lan == null || !lan.selectGame(content.bytes(), gameKey))
+                    if (lan == null || !lan.selectGame(content.bytes(), gameKey) || !lan.confirm())
                         throw new java.io.IOException("Game selection failed");
                     app.nearbyMvpOwner().gameTitle(displayTitle(entry));
                     runOnUiThread(this::finish);

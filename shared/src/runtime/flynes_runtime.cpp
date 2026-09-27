@@ -2,6 +2,8 @@
 
 #include <nes/nes.h>
 
+#include "serialized_state_capture.hpp"
+
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
@@ -404,23 +406,12 @@ struct fly_runtime_handle
         }
         if (rom_loaded)
         {
-            std::size_t written = 0;
-            std::size_t needed = 0;
-            const int query = nes_save_state(nes.get(), nullptr, 0, &written, &needed);
-            if (query != NES_ERR_BUFFER_TOO_SMALL || needed == 0)
-            {
-                return FLY_RESULT_INTERNAL_ERROR;
-            }
-            snapshot.core.resize(needed);
-            written = 0;
-            needed = 0;
-            const int saved =
-                nes_save_state(nes.get(), snapshot.core.data(), snapshot.core.size(),
-                               &written, &needed);
-            if (saved < 0 || written != snapshot.core.size())
-            {
-                return FLY_RESULT_INTERNAL_ERROR;
-            }
+            const auto saved = flynes::runtime_detail::capture_serialized_state(
+                snapshot.core, [this](std::uint8_t* out, std::size_t capacity,
+                                      std::size_t* written, std::size_t* needed) {
+                    return nes_save_state(nes.get(), out, capacity, written, needed);
+                });
+            if (saved != FLY_RESULT_OK) return saved;
         }
         snapshot.valid = true;
         return FLY_RESULT_OK;

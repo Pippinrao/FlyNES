@@ -57,7 +57,36 @@
     [[self elementWithIdentifier:@"nearby_action_scan_qr" inApp:app] tap];
     XCTAssertTrue([[self elementWithIdentifier:@"nearby_camera_preview" inApp:app]
         waitForExistenceWithTimeout:10]);
+    XCTAssertTrue([app.staticTexts[@"Camera unavailable. Check permission and try again."]
+        waitForExistenceWithTimeout:10]);
     XCTAssertFalse([self elementWithIdentifier:@"nearby_scan_switch_to_code" inApp:app].exists);
+}
+
+- (void)testCreateSessionPublishesScannableQr {
+    XCUIDevice.sharedDevice.orientation = UIDeviceOrientationLandscapeLeft;
+    XCUIApplication *app = [self launchApp];
+    [self openNearby:app];
+    [[self elementWithIdentifier:@"nearby_action_create" inApp:app] tap];
+    XCUIElement *qr = [self elementWithIdentifier:@"nearby_invite_qr" inApp:app];
+    XCTAssertTrue([qr waitForExistenceWithTimeout:10],
+                  @"the shared host invitation must reach the approved QR page; status=%@",
+                  [self elementWithIdentifier:@"nearby_pairing_status" inApp:app].label);
+}
+
+- (void)testInviteExposesRegenerateAndExplicitDisconnect {
+    XCUIDevice.sharedDevice.orientation = UIDeviceOrientationLandscapeLeft;
+    XCUIApplication *app = [self launchApp];
+    [self openNearby:app];
+    [[self elementWithIdentifier:@"nearby_action_create" inApp:app] tap];
+    XCTAssertTrue([[self elementWithIdentifier:@"nearby_invite_regenerate" inApp:app]
+        waitForExistenceWithTimeout:10]);
+    XCTAssertTrue([self elementWithIdentifier:@"nearby_invite_disconnect" inApp:app].isHittable);
+    [[self elementWithIdentifier:@"nearby_invite_regenerate" inApp:app] tap];
+    XCTAssertTrue([[self elementWithIdentifier:@"nearby_invite_qr" inApp:app]
+        waitForExistenceWithTimeout:10]);
+    [[self elementWithIdentifier:@"nearby_invite_disconnect" inApp:app] tap];
+    XCTAssertTrue([[self elementWithIdentifier:@"nearby_action_create" inApp:app]
+        waitForExistenceWithTimeout:10]);
 }
 
 - (void)testLobbyFitsWithoutScrollOrDiagnosticPaging {
@@ -66,12 +95,11 @@
     app.launchArguments = @[@"-flynes.test.nearby_lobby", @"-AppleLanguages", @"(en)"];
     [app launch];
     XCUIElement *game = [self elementWithIdentifier:@"nearby_lobby_row_rom_identity" inApp:app];
-    XCUIElement *confirm = [self elementWithIdentifier:@"nearby_lobby_confirm" inApp:app];
     XCTAssertTrue([game waitForExistenceWithTimeout:10]);
-    XCTAssertTrue(confirm.exists);
+    XCTAssertFalse([self elementWithIdentifier:@"nearby_lobby_confirm" inApp:app].exists);
     XCTAssertEqual(app.scrollViews.count, 0);
     XCTAssertFalse([self elementWithIdentifier:@"nearby_lobby_details" inApp:app].exists);
-    XCTAssertTrue(CGRectContainsRect(app.windows.firstMatch.frame, confirm.frame));
+    XCTAssertTrue(CGRectContainsRect(app.windows.firstMatch.frame, game.frame));
 }
 
 - (void)testTYPO_I_roles_and_scaling {

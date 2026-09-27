@@ -110,6 +110,17 @@ Java_com_flynes_emu_NearbyMvpSession_nativePeerGameKey(JNIEnv* env, jclass, jlon
     return env->NewStringUTF(snapshot.peer_game_key);
 }
 
+extern "C" JNIEXPORT jbyteArray JNICALL
+Java_com_flynes_emu_NearbyMvpSession_nativePeerConfigHash(JNIEnv* env, jclass, jlong handle) {
+    std::uint8_t hash[32]{};
+    if (handle == 0 || !fly_lan_mvp_copy_peer_config_hash_v1(session_from(handle), hash))
+        return nullptr;
+    jbyteArray result = env->NewByteArray(32);
+    if (result != nullptr)
+        env->SetByteArrayRegion(result, 0, 32, reinterpret_cast<const jbyte*>(hash));
+    return result;
+}
+
 extern "C" JNIEXPORT jboolean JNICALL
 Java_com_flynes_emu_NearbyMvpSession_nativeSelectRom(
         JNIEnv* env, jclass, jlong handle, jbyteArray rom) {
@@ -165,6 +176,17 @@ Java_com_flynes_emu_NearbyMvpSession_nativeCompletedFrames(JNIEnv*, jclass, jlon
 }
 
 extern "C" JNIEXPORT jlong JNICALL
+Java_com_flynes_emu_NearbyMvpSession_nativeSourceFramePeriodNs(JNIEnv*, jclass, jlong handle) {
+    fly_runtime_source_timing_v1 timing{};
+    timing.struct_size = FLY_RUNTIME_SOURCE_TIMING_V1_SIZE;
+    timing.version = FLY_RUNTIME_SOURCE_TIMING_VERSION_1;
+    if (handle == 0 || fly_lan_mvp_source_timing(session_from(handle), &timing) != 1 ||
+        timing.frame_rate_numerator == 0) return 16'639'267;
+    return static_cast<jlong>(1'000'000'000ull * timing.frame_rate_denominator /
+                              timing.frame_rate_numerator);
+}
+
+extern "C" JNIEXPORT jlong JNICALL
 Java_com_flynes_emu_NearbyMvpSession_nativeCopyLatestFrame(
         JNIEnv* env, jclass, jlong handle, jbyteArray output) {
     if (handle == 0 || output == nullptr ||
@@ -177,7 +199,7 @@ Java_com_flynes_emu_NearbyMvpSession_nativeCopyLatestFrame(
     const int copied = fly_lan_mvp_copy_latest_frame(session_from(handle), bytes,
         FLY_RUNTIME_RGB565_BYTES, &meta);
     env->ReleaseByteArrayElements(output, bytes, copied == 1 ? 0 : JNI_ABORT);
-    return copied == 1 ? static_cast<jlong>(meta.frame_index) : -1;
+    return copied == 1 ? static_cast<jlong>(meta.frame_sequence) : -1;
 }
 
 extern "C" JNIEXPORT jint JNICALL

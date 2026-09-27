@@ -198,6 +198,7 @@ export const nearbyInviteSnapshot: () => NearbyInviteSnapshotDto;
 export interface NearbyMvpSnapshotDto {
   paused: boolean;
   peerGameKey: string;
+  peerConfigToken: string;
   state: number;
   reason: number;
   transportResult: number;

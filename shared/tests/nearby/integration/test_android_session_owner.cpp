@@ -238,11 +238,11 @@ void test_discovery_scan_requires_a_real_provider()
 {
     std::unique_ptr<SessionOwner> owner(SessionOwner::create());
     check(owner->submit_action(FLY_SESSION_ACTION_START_DISCOVERY_V2, nullptr, 0)
-              == FLY_SESSION_V2_ACCEPTED,
-          "start discovery is accepted only when the owner has a scanning provider");
+              == FLY_SESSION_V2_INVALID_STATE,
+          "start discovery is rejected without a scanning provider");
     OwnerSnapshot snapshot{};
-    check(owner->read_snapshot(&snapshot) && snapshot.link_state == FLY_SESSION_LINK_DISCOVERING_V2,
-          "an accepted scan publishes DISCOVERING, not a local invite");
+    check(owner->read_snapshot(&snapshot) && snapshot.link_state == FLY_SESSION_LINK_IDLE_V2,
+          "a rejected scan leaves the connection idle");
 }
 
 void test_shutdown_waiter_lifetime()

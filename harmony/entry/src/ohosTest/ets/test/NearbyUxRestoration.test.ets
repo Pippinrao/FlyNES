@@ -50,8 +50,27 @@ export default function nearbyUxRestorationTest() {
       const driver: Driver = await openPage('nearby_friends', '1');
       await assertFits(driver, 'nearby_action_create');
       await assertFits(driver, 'nearby_action_scanQr');
+      await assertFits(driver, 'nearby_card_cta_create');
+      await assertFits(driver, 'nearby_card_cta_scan');
       const oldCode = await driver.waitForComponent(ON.id('nearby_action_enterCode'), 500);
       expect(oldCode === null || oldCode === undefined).assertTrue();
+    });
+    it('invite_places_a_large_square_qr_left_of_the_explanation', 0, async () => {
+      const driver: Driver = await openPage('nearby_pairing', '1');
+      const page = await (await control(driver, 'nearby_page')).getBounds();
+      const qr = await (await control(driver, 'nearby_invite_qr')).getBounds();
+      const title = await (await control(driver, 'nearby_invite_headline')).getBounds();
+      expect(qr.right - qr.left >= (page.right - page.left) * 0.28).assertTrue();
+      expect(Math.abs((qr.right - qr.left) - (qr.bottom - qr.top)) <= 2).assertTrue();
+      expect(title.left > qr.right).assertTrue();
+      await assertFits(driver, 'nearby_invite_regenerate');
+      await assertFits(driver, 'nearby_scan_disconnect');
+    });
+    it('invite_actions_fit_at_double_font_scale', 0, async () => {
+      const driver: Driver = await openPage('nearby_pairing', '2');
+      await assertFits(driver, 'nearby_invite_qr', false);
+      await assertFits(driver, 'nearby_invite_regenerate');
+      await assertFits(driver, 'nearby_scan_disconnect');
     });
     for (const scale of ['1', '1.3', '2']) {
       it(`single_screen_landscape_${scale}`, 0, async () => {
@@ -68,12 +87,13 @@ export default function nearbyUxRestorationTest() {
     }
 
     for (const scale of ['1', '1.3', '2']) {
-    it(`lobby_has_core_fields_and_inline_action_${scale}`, 0, async () => {
+    it(`unconnected_lobby_has_core_fields_without_host_action_${scale}`, 0, async () => {
       const driver: Driver = await openPage('nearby_lobby', scale);
       for (const id of ['nearby_lobby_rom_identity', 'nearby_lobby_network_owner', 'nearby_lobby_seat']) {
         await assertFits(driver, id, false);
       }
-      await assertFits(driver, 'nearby_lobby_confirm');
+      const hostAction = await driver.waitForComponent(ON.id('nearby_lobby_choose_game'), 200);
+      expect(hostAction === null || hostAction === undefined).assertTrue();
       await capture(driver, `lobby-${scale}`);
       const details = await driver.waitForComponent(ON.id('nearby_lobby_details'), 200);
       expect(details === null || details === undefined).assertTrue();

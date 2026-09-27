@@ -1,14 +1,15 @@
 #include "flynes/flynes_nearby_mvp.h"
 
 #include "lan_mvp/invite.hpp"
-#include "lan_mvp/lockstep.hpp"
 #include "lan_mvp/wire.hpp"
 #include "wire/sha256.hpp"
 #include "flynes_quic_provider.h"
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <cstdint>
 #include <cstring>
 #include <deque>
@@ -17,12 +18,12 @@
 #include <mutex>
 #include <new>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 using flynes::session::lan_mvp::Invite;
-namespace lockstep = flynes::session::lan_mvp::lockstep;
 namespace wire = flynes::session::lan_mvp::wire;
 
 namespace {
@@ -33,9 +34,14 @@ enum class Operation : std::uint32_t {
 enum class Role { None, Host, Guest };
 constexpr std::chrono::seconds kInviteLife{120};
 constexpr std::chrono::seconds kProgressTimeout{2};
-constexpr std::size_t kInputDelay = 2;
-constexpr std::size_t kInputWindow = 256;
+constexpr std::uint64_t kPredictionDepth = 10;
+constexpr std::uint64_t kRollbackSlots = 12;
 constexpr std::uint64_t kDigestInterval = 60;
+
+std::uint64_t monotonic_ns() {
+    return static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count());
+}
 
 std::string endpoint(const Invite& invite) {
     std::string result;
@@ -79,7 +85,7 @@ bool same_bytes(const std::uint8_t* a, const std::uint8_t* b, std::size_t size) 
 std::array<std::uint8_t, 32> make_config_hash(
         const std::array<std::uint8_t, 32>& rom_hash,
         const fly_runtime_source_timing_v1& timing) {
-    static constexpr char kCompatibility[] = "flynes-lan-mvp-nestopia-v1";
+    static constexpr char kCompatibility[] = "flynes-lan-mvp-prediction-v3";
     std::vector<std::uint8_t> bytes(rom_hash.begin(), rom_hash.end());
     bytes.insert(bytes.end(), kCompatibility, kCompatibility + sizeof(kCompatibility) - 1);
     append_u32(&bytes, timing.source_region);
@@ -97,9 +103,22 @@ struct Event {
     std::vector<std::uint8_t> bytes;
 };
 
+struct SimulatedFrame {
+    std::uint32_t local = 0;
+    std::uint32_t remote = 0;
+    std::uint64_t local_sequence = 0;
+    std::uint64_t local_capture_time_ns = 0;
+    std::uint64_t audio_first = 0;
+    std::array<std::uint8_t, 32> state_hash{};
+};
+
 struct fly_lan_mvp_session {
     std::atomic<unsigned> references{1};
     std::mutex mutex;
+    std::condition_variable wake;
+    std::thread worker;
+    bool worker_stop = false;
+    bool input_dirty = false;
     fly_lan_mvp_diagnostic_sink diagnostic_sink = nullptr;
     void* diagnostic_context = nullptr;
     const std::chrono::steady_clock::time_point created = std::chrono::steady_clock::now();
@@ -135,12 +154,31 @@ struct fly_lan_mvp_session {
     bool peer_configured = false;
     bool local_ready = false;
     bool peer_ready = false;
-    std::unique_ptr<lockstep::Buffer> inputs;
-    std::uint64_t next_submit_frame = kInputDelay;
+    bool local_paused = false;
+    bool peer_paused = false;
+    std::map<std::uint64_t, std::uint32_t> local_inputs;
+    std::map<std::uint64_t, std::uint32_t> remote_inputs;
+    std::map<std::uint64_t, SimulatedFrame> history;
+    std::uint64_t confirmed_frames = 0;
+    std::uint32_t current_local_buttons = 0;
+    std::uint64_t current_local_sequence = 0;
+    std::uint64_t current_local_capture_time_ns = 0;
+    std::uint64_t next_local_sequence = 0;
+    bool has_input_state = false;
+    std::chrono::nanoseconds frame_period{16'639'267};
+    std::chrono::steady_clock::time_point next_frame_due{};
     std::uint32_t last_submitted_buttons = 0;
     std::array<std::uint32_t, 2> last_applied_buttons{};
     std::uint64_t lobby_generation = 0;
     std::uint64_t pcm_produced = 0, pcm_consumed = 0;
+    std::uint32_t sample_rate = FLY_RUNTIME_DEFAULT_SAMPLE_RATE;
+    std::deque<std::int16_t> pcm_queue;
+    std::vector<std::uint8_t> published_frame;
+    fly_latest_frame_v1 published_meta{};
+    std::uint64_t publication_sequence = 0;
+    std::uint64_t last_read_publication_sequence = 0;
+    bool has_published_frame = false;
+    fly_lan_mvp_stats_v1 stats{};
     std::map<std::uint64_t, std::array<std::uint8_t, 32>> local_digests;
     std::map<std::uint64_t, std::array<std::uint8_t, 32>> remote_digests;
 
@@ -175,7 +213,9 @@ struct fly_lan_mvp_session {
     }
 
     void stop_runtime() {
-        inputs.reset();
+        local_inputs.clear();
+        remote_inputs.clear();
+        history.clear();
         if (runtime != nullptr) {
             fly_runtime_destroy(runtime);
             runtime = nullptr;
@@ -276,15 +316,12 @@ struct fly_lan_mvp_session {
 
     void publish_digest(std::uint64_t frame) {
         if ((frame + 1) % 300 == 0) trace("progress");
-        fly_runtime_frame_digest_v1 digest{};
-        digest.struct_size = FLY_RUNTIME_FRAME_DIGEST_V1_SIZE;
-        digest.version = FLY_RUNTIME_FRAME_DIGEST_VERSION_1;
-        if (fly_runtime_copy_frame_digest(runtime, 1, frame, &digest) != FLY_RESULT_OK) {
+        const auto found = history.find(frame);
+        if (found == history.end()) {
             end(FLY_LAN_MVP_REASON_CONFIG_MISMATCH);
             return;
         }
-        std::array<std::uint8_t, 32> state{};
-        std::memcpy(state.data(), digest.state_sha256, state.size());
+        const auto& state = found->second.state_hash;
         local_digests[frame] = state;
         view.last_digest_frame = frame;
         std::memcpy(view.last_state_digest, state.data(), state.size());
@@ -296,47 +333,211 @@ struct fly_lan_mvp_session {
         compare_digest(frame);
     }
 
-    void advance() {
-        if (view.state != FLY_LAN_MVP_RUNNING || view.paused || inputs == nullptr || runtime == nullptr) return;
-        lockstep::Frame frame{};
-        while (view.state == FLY_LAN_MVP_RUNNING && inputs->pop_ready(&frame)) {
-            fly_frame_input_v1 input{};
-            input.struct_size = FLY_FRAME_INPUT_V1_SIZE;
-            input.version = FLY_FRAME_INPUT_VERSION_1;
-            input.timeline_epoch = 1;
-            input.frame_index = frame.index;
-            if (role == Role::Host) {
-                input.buttons[0] = frame.local_mask;
-                input.buttons[1] = frame.remote_mask;
-            } else {
-                input.buttons[0] = frame.remote_mask;
-                input.buttons[1] = frame.local_mask;
-            }
-            input.input_sequence[0] = frame.index + 1;
-            input.input_sequence[1] = frame.index + 1;
-            input.batch_sequence = frame.index + 1;
-            if (input.buttons[0] != last_applied_buttons[0] ||
-                input.buttons[1] != last_applied_buttons[1]) {
-                trace("input_apply", "input_frame=" + std::to_string(frame.index) +
-                    " p1=" + std::to_string(input.buttons[0]) +
-                    " p2=" + std::to_string(input.buttons[1]));
-                last_applied_buttons = {input.buttons[0], input.buttons[1]};
-            }
-            fly_frame_result_v1 result{};
-            result.struct_size = FLY_FRAME_RESULT_V1_SIZE;
-            result.version = FLY_FRAME_RESULT_VERSION_1;
-            if (fly_runtime_step_frame(runtime, &input, &result) != FLY_RESULT_OK) {
-                end(FLY_LAN_MVP_REASON_CONFIG_MISMATCH);
-                return;
-            }
-            view.completed_frames = frame.index + 1;
-            if (result.pcm_published) pcm_produced = result.audio_last_sample_sequence + 1;
-            view.applied_buttons[0] = input.buttons[0];
-            view.applied_buttons[1] = input.buttons[1];
-            last_progress = std::chrono::steady_clock::now();
-            if (view.completed_frames % kDigestInterval == 0)
-                publish_digest(frame.index);
+    std::uint32_t predicted_remote(std::uint64_t frame) const {
+        auto found = remote_inputs.lower_bound(frame);
+        if (found == remote_inputs.begin()) return 0;
+        return (--found)->second;
+    }
+
+    void trim_unplayed_pcm(std::uint64_t first_sample) {
+        const auto retained = first_sample > pcm_consumed ? first_sample - pcm_consumed : 0;
+        while (pcm_queue.size() > retained) pcm_queue.pop_back();
+        pcm_produced = pcm_consumed + pcm_queue.size();
+    }
+
+    bool collect_pcm(const fly_frame_result_v1& result) {
+        if (!result.pcm_published) return true;
+        const auto count = static_cast<std::uint32_t>(
+            result.audio_last_sample_sequence - result.audio_first_sample_sequence + 1);
+        std::vector<std::int16_t> samples(count);
+        fly_pcm_block_v1 block{};
+        block.struct_size = FLY_PCM_BLOCK_V1_SIZE;
+        block.version = FLY_PCM_BLOCK_VERSION_1;
+        const auto pulled = fly_runtime_pull_pcm(runtime, samples.data(), count, &block);
+        if (pulled != FLY_RESULT_OK ||
+            block.sample_count != count ||
+            block.first_sample_sequence != result.audio_first_sample_sequence) {
+            trace("runtime_error", "stage=pcm_pull result=" + std::to_string(pulled) +
+                " expected_count=" + std::to_string(count) +
+                " actual_count=" + std::to_string(block.sample_count) +
+                " expected_first=" + std::to_string(result.audio_first_sample_sequence) +
+                " actual_first=" + std::to_string(block.first_sample_sequence));
+            end(FLY_LAN_MVP_REASON_CONFIG_MISMATCH);
+            return false;
         }
+        for (std::uint32_t index = 0; index < count; ++index) {
+            const auto sequence = block.first_sample_sequence + index;
+            if (sequence >= pcm_consumed + pcm_queue.size()) pcm_queue.push_back(samples[index]);
+        }
+        constexpr std::size_t kPcmBudgetSamples = 8192;
+        while (pcm_queue.size() > kPcmBudgetSamples) {
+            pcm_queue.pop_front();
+            ++pcm_consumed;
+            ++stats.pcm_dropped_samples;
+        }
+        stats.pcm_generated_samples += count;
+        stats.pcm_queue_high_samples = std::max<std::uint64_t>(
+            stats.pcm_queue_high_samples, pcm_queue.size());
+        pcm_produced = pcm_consumed + pcm_queue.size();
+        return true;
+    }
+
+    bool publish_frame() {
+        published_frame.resize(FLY_RUNTIME_RGB565_BYTES);
+        fly_latest_frame_v1 meta{};
+        meta.struct_size = FLY_LATEST_FRAME_V1_SIZE;
+        meta.version = FLY_LATEST_FRAME_VERSION_1;
+        if (fly_runtime_copy_latest_frame(runtime, published_frame.data(),
+                                          published_frame.size(), &meta) != FLY_RESULT_OK) {
+            trace("runtime_error", "stage=frame_copy");
+            end(FLY_LAN_MVP_REASON_CONFIG_MISMATCH);
+            return false;
+        }
+        meta.frame_sequence = ++publication_sequence;
+        ++stats.published_frames;
+        published_meta = meta;
+        has_published_frame = true;
+        return true;
+    }
+
+    bool step_frame(std::uint64_t frame, std::uint32_t local, std::uint32_t remote,
+                    std::uint64_t local_sequence, std::uint64_t local_capture_time_ns,
+                    bool publish = true) {
+        const auto captured = fly_runtime_capture_rollback(runtime,
+                static_cast<std::uint32_t>(frame % kRollbackSlots));
+        if (captured != FLY_RESULT_OK) {
+            trace("runtime_error", "stage=rollback_capture frame=" + std::to_string(frame) +
+                " result=" + std::to_string(captured));
+            end(FLY_LAN_MVP_REASON_CONFIG_MISMATCH);
+            return false;
+        }
+        fly_frame_input_v1 input{};
+        input.struct_size = FLY_FRAME_INPUT_V1_SIZE;
+        input.version = FLY_FRAME_INPUT_VERSION_1;
+        input.timeline_epoch = 1;
+        input.frame_index = frame;
+        input.capture_time_ns = local_capture_time_ns;
+        input.predicted_port_mask = remote_inputs.count(frame) == 0
+            ? (role == Role::Host ? 2u : 1u) : 0u;
+        if (role == Role::Host) {
+            input.buttons[0] = local;
+            input.buttons[1] = remote;
+        } else {
+            input.buttons[0] = remote;
+            input.buttons[1] = local;
+        }
+        input.input_sequence[0] = role == Role::Host ? local_sequence : frame + 1;
+        input.input_sequence[1] = role == Role::Host ? frame + 1 : local_sequence;
+        input.batch_sequence = frame + 1;
+        fly_frame_result_v1 result{};
+        result.struct_size = FLY_FRAME_RESULT_V1_SIZE;
+        result.version = FLY_FRAME_RESULT_VERSION_1;
+        const auto stepped = fly_runtime_step_frame(runtime, &input, &result);
+        if (stepped != FLY_RESULT_OK) {
+            trace("runtime_error", "stage=frame_step frame=" + std::to_string(frame) +
+                " result=" + std::to_string(stepped));
+            end(FLY_LAN_MVP_REASON_CONFIG_MISMATCH);
+            return false;
+        }
+        stats.last_core_step_ns = monotonic_ns();
+        SimulatedFrame used{};
+        used.local = local;
+        used.remote = remote;
+        used.local_sequence = local_sequence;
+        used.local_capture_time_ns = local_capture_time_ns;
+        used.audio_first = result.audio_first_sample_sequence;
+        if (!collect_pcm(result)) return false;
+        if ((frame + 1) % kDigestInterval == 0) {
+            fly_runtime_frame_digest_v1 digest{};
+            digest.struct_size = FLY_RUNTIME_FRAME_DIGEST_V1_SIZE;
+            digest.version = FLY_RUNTIME_FRAME_DIGEST_VERSION_1;
+            if (fly_runtime_copy_frame_digest(runtime, 1, frame, &digest) != FLY_RESULT_OK) {
+                trace("runtime_error", "stage=frame_digest frame=" + std::to_string(frame));
+                end(FLY_LAN_MVP_REASON_CONFIG_MISMATCH);
+                return false;
+            }
+            std::memcpy(used.state_hash.data(), digest.state_sha256, used.state_hash.size());
+        }
+        history[frame] = used;
+        if (input.buttons[0] != last_applied_buttons[0] ||
+            input.buttons[1] != last_applied_buttons[1]) {
+            trace("input_apply", "input_frame=" + std::to_string(frame) +
+                " p1=" + std::to_string(input.buttons[0]) +
+                " p2=" + std::to_string(input.buttons[1]));
+            last_applied_buttons = {input.buttons[0], input.buttons[1]};
+        }
+        view.applied_buttons[0] = input.buttons[0];
+        view.applied_buttons[1] = input.buttons[1];
+        return !publish || publish_frame();
+    }
+
+    void confirm_history() {
+        while (confirmed_frames < view.completed_frames) {
+            const auto actual = remote_inputs.find(confirmed_frames);
+            const auto used = history.find(confirmed_frames);
+            if (actual == remote_inputs.end() || used == history.end() ||
+                actual->second != used->second.remote) break;
+            const auto confirmed = confirmed_frames++;
+            if ((confirmed + 1) % kDigestInterval == 0) publish_digest(confirmed);
+        }
+        while (!history.empty() && history.begin()->first + kRollbackSlots < confirmed_frames)
+            history.erase(history.begin());
+        while (!remote_inputs.empty() && remote_inputs.begin()->first + kRollbackSlots < confirmed_frames)
+            remote_inputs.erase(remote_inputs.begin());
+        while (!local_inputs.empty() && local_inputs.begin()->first + kRollbackSlots < confirmed_frames)
+            local_inputs.erase(local_inputs.begin());
+    }
+
+    void replay_from(std::uint64_t first) {
+        trace("rollback_start", "first=" + std::to_string(first));
+        if (first < confirmed_frames || first + kRollbackSlots < view.completed_frames ||
+            fly_runtime_restore_rollback(runtime,
+                static_cast<std::uint32_t>(first % kRollbackSlots)) != FLY_RESULT_OK) {
+            end(FLY_LAN_MVP_REASON_DESYNC);
+            return;
+        }
+        const auto earliest = history.find(first);
+        if (earliest == history.end()) { end(FLY_LAN_MVP_REASON_DESYNC); return; }
+        trim_unplayed_pcm(earliest->second.audio_first);
+        ++stats.rollback_count;
+        for (std::uint64_t frame = first; frame < view.completed_frames; ++frame) {
+            const auto used = history.find(frame);
+            if (used == history.end()) { end(FLY_LAN_MVP_REASON_DESYNC); return; }
+            const auto actual = remote_inputs.find(frame);
+            const std::uint32_t remote = actual == remote_inputs.end()
+                ? predicted_remote(frame) : actual->second;
+            if (!step_frame(frame, used->second.local, remote,
+                    used->second.local_sequence, used->second.local_capture_time_ns, false)) return;
+            ++stats.replayed_frames;
+        }
+        if (!publish_frame()) return;
+        trace("rollback", "first=" + std::to_string(first));
+        confirm_history();
+    }
+
+    void advance() {
+        if (view.state != FLY_LAN_MVP_RUNNING || view.paused || runtime == nullptr) return;
+        const auto now = std::chrono::steady_clock::now();
+        if (!has_input_state || now < next_frame_due ||
+            view.completed_frames - confirmed_frames >= kPredictionDepth) return;
+        const auto frame = view.completed_frames;
+        std::vector<std::uint8_t> payload;
+        payload.reserve(12);
+        append_u64(&payload, frame);
+        append_u32(&payload, current_local_buttons);
+        if (!queue_message(wire::Kind::Input, payload)) return;
+        local_inputs[frame] = current_local_buttons;
+        const auto actual = remote_inputs.find(frame);
+        const auto remote = actual == remote_inputs.end() ? predicted_remote(frame) : actual->second;
+        if (!step_frame(frame, current_local_buttons, remote,
+                current_local_sequence, current_local_capture_time_ns)) return;
+        ++stats.simulated_frames;
+        if (actual == remote_inputs.end()) ++stats.predicted_frames;
+        view.completed_frames = frame + 1;
+        last_progress = now;
+        confirm_history();
+        next_frame_due += frame_period;
+        if (next_frame_due < now) next_frame_due = now + frame_period;
     }
 
     void enter_running() {
@@ -346,18 +547,29 @@ struct fly_lan_mvp_session {
         view.reason = FLY_LAN_MVP_REASON_NONE;
         view.completed_frames = 0;
         pcm_produced = pcm_consumed = 0;
+        pcm_queue.clear();
+        has_published_frame = false;
         view.last_digest_frame = 0;
         std::memset(view.last_state_digest, 0, sizeof(view.last_state_digest));
-        inputs = std::make_unique<lockstep::Buffer>(kInputDelay, kInputWindow);
-        next_submit_frame = kInputDelay;
+        local_inputs.clear();
+        remote_inputs.clear();
+        history.clear();
+        confirmed_frames = 0;
+        current_local_buttons = 0;
+        current_local_sequence = current_local_capture_time_ns = next_local_sequence = 0;
+        has_input_state = false;
         local_digests.clear();
         remote_digests.clear();
-        for (std::uint64_t frame = 0; frame < kInputDelay; ++frame) {
-            (void)inputs->put_local(frame, 0);
-            (void)inputs->put_remote(frame, 0);
-        }
+        fly_runtime_source_timing_v1 timing{};
+        timing.struct_size = FLY_RUNTIME_SOURCE_TIMING_V1_SIZE;
+        timing.version = FLY_RUNTIME_SOURCE_TIMING_VERSION_1;
+        if (fly_runtime_get_source_timing(runtime, &timing) != FLY_RESULT_OK ||
+            timing.frame_rate_numerator == 0) { end(FLY_LAN_MVP_REASON_CONFIG_MISMATCH); return; }
+        frame_period = std::chrono::nanoseconds(1'000'000'000ull *
+            timing.frame_rate_denominator / timing.frame_rate_numerator);
+        sample_rate = timing.sample_rate;
+        next_frame_due = std::chrono::steady_clock::now();
         last_progress = std::chrono::steady_clock::now();
-        advance();
     }
 
     void maybe_start_host() {
@@ -374,14 +586,21 @@ struct fly_lan_mvp_session {
         local_rom_hash = {}; remote_rom_hash = {};
         local_config_hash = {}; remote_config_hash = {};
         local_digests.clear(); remote_digests.clear();
+        confirmed_frames = 0;
         view.completed_frames = view.last_digest_frame = 0;
         pcm_produced = pcm_consumed = 0;
+        pcm_queue.clear();
+        has_published_frame = false;
+        local_paused = peer_paused = false;
         view.paused = 0;
         std::memset(view.peer_game_key, 0, sizeof(view.peer_game_key));
         view.applied_buttons[0] = view.applied_buttons[1] = 0;
         std::memset(view.config_hash, 0, sizeof(view.config_hash));
         std::memset(view.last_state_digest, 0, sizeof(view.last_state_digest));
         view.reason = FLY_LAN_MVP_REASON_NONE;
+        current_local_buttons = 0;
+        current_local_sequence = current_local_capture_time_ns = next_local_sequence = 0;
+        has_input_state = false;
         last_submitted_buttons = 0; last_applied_buttons = {};
     }
 
@@ -426,9 +645,12 @@ struct fly_lan_mvp_session {
         if (view.state == FLY_LAN_MVP_RETURNING) return;
         if (message.kind == wire::Kind::Pause && message.payload.size() == 1) {
             if (view.state != FLY_LAN_MVP_RUNNING) return;
-            view.paused = message.payload[0] != 0;
+            peer_paused = message.payload[0] != 0;
+            view.paused = local_paused || peer_paused;
             last_progress = std::chrono::steady_clock::now();
-            if (role == Role::Host) (void)queue_message(wire::Kind::Pause, message.payload);
+            if (role == Role::Host)
+                (void)queue_message(wire::Kind::Pause,
+                    {static_cast<std::uint8_t>(view.paused != 0)});
             if (!view.paused) advance();
             return;
         }
@@ -521,18 +743,32 @@ struct fly_lan_mvp_session {
             return;
         }
         if (message.kind == wire::Kind::Input) {
-            if (view.state != FLY_LAN_MVP_RUNNING || message.payload.size() != 12 ||
-                inputs == nullptr) {
+            if (view.state != FLY_LAN_MVP_RUNNING || message.payload.size() != 12) {
                 end(FLY_LAN_MVP_REASON_REJECTED);
                 return;
             }
-            const auto result = inputs->put_remote(big_endian_u64(message.payload.data()),
-                                                   big_endian_u32(message.payload.data() + 8));
-            if (result == lockstep::Put::Conflict || result == lockstep::Put::OutOfWindow) {
+            const auto frame = big_endian_u64(message.payload.data());
+            const auto buttons = big_endian_u32(message.payload.data() + 8);
+            stats.last_remote_receive_ns = monotonic_ns();
+            if (frame < confirmed_frames || frame > view.completed_frames + 256 ||
+                frame + kRollbackSlots < view.completed_frames) {
                 end(FLY_LAN_MVP_REASON_REJECTED);
                 return;
             }
-            advance();
+            const auto [found, inserted] = remote_inputs.emplace(frame, buttons);
+            if (!inserted && found->second != buttons) {
+                end(FLY_LAN_MVP_REASON_REJECTED);
+                return;
+            }
+            if (frame < view.completed_frames) {
+                const auto used = history.find(frame);
+                if (used == history.end()) {
+                    end(FLY_LAN_MVP_REASON_DESYNC);
+                    return;
+                }
+                if (used->second.remote != buttons) replay_from(frame);
+                else confirm_history();
+            }
             return;
         }
         if (message.kind == wire::Kind::Digest) {
@@ -688,6 +924,23 @@ struct fly_lan_mvp_session {
             trace("state");
         }
     }
+
+    void run() {
+        std::unique_lock<std::mutex> lock(mutex);
+        while (!worker_stop) {
+            pump();
+            advance();
+            input_dirty = false;
+            auto due = std::chrono::steady_clock::now() + std::chrono::milliseconds(5);
+            if (view.state == FLY_LAN_MVP_RUNNING && !view.paused &&
+                view.completed_frames - confirmed_frames < kPredictionDepth &&
+                has_input_state && next_frame_due < due)
+                due = next_frame_due;
+            wake.wait_until(lock, due, [this] {
+                return worker_stop || input_dirty || !events.empty();
+            });
+        }
+    }
 };
 
 namespace {
@@ -710,6 +963,7 @@ void completion(void* context, std::uint64_t operation, std::int32_t result,
     if (bytes != nullptr && size != 0) event.bytes.assign(bytes, bytes + size);
     std::lock_guard<std::mutex> lock(session->mutex);
     session->events.push_back(std::move(event));
+    session->wake.notify_one();
     if (session->view.state != FLY_LAN_MVP_RUNNING || result != FLYNES_QUIC_OK)
         session->trace("callback", "id=" + std::to_string(operation) + " result=" + std::to_string(result));
 }
@@ -727,6 +981,13 @@ extern "C" fly_lan_mvp_session* fly_lan_mvp_create(void) {
     callbacks.completion = completion;
     session->provider = flynes_quic_provider_create(&callbacks);
     if (session->provider == nullptr) { release(session); return nullptr; }
+    try {
+        session->worker = std::thread([session] { session->run(); });
+    } catch (...) {
+        flynes_quic_provider_release(session->provider);
+        release(session);
+        return nullptr;
+    }
     return session;
 }
 
@@ -788,7 +1049,6 @@ extern "C" std::size_t fly_lan_mvp_copy_invite(fly_lan_mvp_session* session, cha
                                                   std::size_t capacity) {
     if (session == nullptr) return 0;
     std::lock_guard<std::mutex> lock(session->mutex);
-    session->pump();
     if (session->qr.empty() || session->view.state != FLY_LAN_MVP_INVITING) return 0;
     const auto needed = session->qr.size() + 1;
     if (out != nullptr && capacity >= needed) std::memcpy(out, session->qr.c_str(), needed);
@@ -799,9 +1059,37 @@ extern "C" int fly_lan_mvp_snapshot_read(fly_lan_mvp_session* session,
                                             fly_lan_mvp_snapshot* out) {
     if (session == nullptr || out == nullptr) return 0;
     std::lock_guard<std::mutex> lock(session->mutex);
-    session->pump();
     *out = session->view;
     return 1;
+}
+
+extern "C" int fly_lan_mvp_copy_peer_config_hash_v1(fly_lan_mvp_session* session,
+                                                       std::uint8_t out[32]) {
+    if (session == nullptr || out == nullptr) return 0;
+    std::lock_guard<std::mutex> lock(session->mutex);
+    if (!session->peer_configured) return 0;
+    std::memcpy(out, session->remote_config_hash.data(), 32);
+    return 1;
+}
+
+extern "C" int fly_lan_mvp_stats_read(fly_lan_mvp_session* session,
+                                        fly_lan_mvp_stats_v1* out) {
+    if (session == nullptr || out == nullptr ||
+        out->struct_size < FLY_LAN_MVP_STATS_V1_SIZE ||
+        out->version != FLY_LAN_MVP_STATS_VERSION_1) return 0;
+    std::lock_guard<std::mutex> lock(session->mutex);
+    *out = session->stats;
+    out->struct_size = FLY_LAN_MVP_STATS_V1_SIZE;
+    out->version = FLY_LAN_MVP_STATS_VERSION_1;
+    return 1;
+}
+
+extern "C" int fly_lan_mvp_source_timing(fly_lan_mvp_session* session,
+                                            fly_runtime_source_timing_v1* out) {
+    if (session == nullptr || out == nullptr) return 0;
+    std::lock_guard<std::mutex> lock(session->mutex);
+    return session->runtime != nullptr &&
+           fly_runtime_get_source_timing(session->runtime, out) == FLY_RESULT_OK ? 1 : 0;
 }
 
 extern "C" int fly_lan_mvp_select_rom(fly_lan_mvp_session* session,
@@ -814,7 +1102,6 @@ extern "C" int fly_lan_mvp_select_game(fly_lan_mvp_session* session,
     if (session == nullptr || bytes == nullptr || size == 0) return 0;
     if (!game_key || std::strlen(game_key) >= sizeof(session->view.peer_game_key)) return 0;
     std::lock_guard<std::mutex> lock(session->mutex);
-    session->pump();
     if (session->view.state != FLY_LAN_MVP_LOBBY &&
         session->view.state != FLY_LAN_MVP_CONFIGURING) return 0;
     fly_runtime_config config{};
@@ -856,7 +1143,8 @@ extern "C" int fly_lan_mvp_select_game(fly_lan_mvp_session* session,
     session->local_config_hash = config_hash;
     session->local_configured = true;
     session->local_ready = false;
-    session->peer_ready = false;
+    // A matching peer may have sent READY before this device finished loading its ROM.
+    // Its confirmation remains valid for the same config hash.
     session->view.reason = FLY_LAN_MVP_REASON_NONE;
     session->view.state = FLY_LAN_MVP_CONFIGURING;
     std::vector<std::uint8_t> payload(rom_hash.begin(), rom_hash.end());
@@ -869,7 +1157,6 @@ extern "C" int fly_lan_mvp_select_game(fly_lan_mvp_session* session,
 extern "C" int fly_lan_mvp_confirm(fly_lan_mvp_session* session) {
     if (session == nullptr) return 0;
     std::lock_guard<std::mutex> lock(session->mutex);
-    session->pump();
     if (session->view.state != FLY_LAN_MVP_CONFIGURING ||
         !session->local_configured || session->runtime == nullptr) return 0;
     if (session->local_ready) return 1;
@@ -882,61 +1169,82 @@ extern "C" int fly_lan_mvp_confirm(fly_lan_mvp_session* session) {
     return sent ? 1 : 0;
 }
 
+extern "C" int fly_lan_mvp_submit_input_v1(fly_lan_mvp_session* session,
+                                             const fly_lan_mvp_input_v1* input) {
+    if (session == nullptr || input == nullptr ||
+        input->struct_size < FLY_LAN_MVP_INPUT_V1_SIZE ||
+        input->version != FLY_LAN_MVP_INPUT_VERSION_1 || input->reserved != 0) return 0;
+    std::lock_guard<std::mutex> lock(session->mutex);
+    if (session->view.state != FLY_LAN_MVP_RUNNING || session->view.paused) return 0;
+    const auto submitted_ns = monotonic_ns();
+    session->current_local_buttons = input->buttons;
+    session->current_local_capture_time_ns = input->capture_time_ns == 0
+        ? submitted_ns : input->capture_time_ns;
+    session->current_local_sequence = input->sequence == 0
+        ? ++session->next_local_sequence : input->sequence;
+    session->next_local_sequence = std::max(session->next_local_sequence,
+                                             session->current_local_sequence);
+    session->has_input_state = true;
+    session->stats.last_input_submit_ns = submitted_ns;
+    if (input->buttons != session->last_submitted_buttons) {
+        session->trace("input_submit", "input_frame=" +
+            std::to_string(session->view.completed_frames) +
+            " buttons=" + std::to_string(input->buttons));
+        session->last_submitted_buttons = input->buttons;
+    }
+    session->input_dirty = true;
+    session->wake.notify_one();
+    return 1;
+}
+
 extern "C" int fly_lan_mvp_submit_input(fly_lan_mvp_session* session,
                                           std::uint32_t buttons) {
-    if (session == nullptr) return 0;
-    std::lock_guard<std::mutex> lock(session->mutex);
-    session->pump();
-    if (session->view.state != FLY_LAN_MVP_RUNNING || session->view.paused || session->inputs == nullptr) return 0;
-    const auto frame = session->next_submit_frame;
-    // Network reordering capacity is not input latency. A fast producer must
-    // wait at the agreed delay instead of filling the entire 256-frame window.
-    if (frame >= session->view.completed_frames + kInputDelay) return 0;
-    if (session->inputs->put_local(frame, buttons) != lockstep::Put::Accepted) return 0;
-    std::vector<std::uint8_t> payload;
-    payload.reserve(12);
-    append_u64(&payload, frame);
-    append_u32(&payload, buttons);
-    if (!session->queue_message(wire::Kind::Input, payload)) return 0;
-    ++session->next_submit_frame;
-    if (buttons != session->last_submitted_buttons) {
-        session->trace("input_submit", "input_frame=" + std::to_string(frame) +
-            " buttons=" + std::to_string(buttons));
-        session->last_submitted_buttons = buttons;
-    }
-    session->advance();
-    return 1;
+    fly_lan_mvp_input_v1 input{};
+    input.struct_size = FLY_LAN_MVP_INPUT_V1_SIZE;
+    input.version = FLY_LAN_MVP_INPUT_VERSION_1;
+    input.buttons = buttons;
+    return fly_lan_mvp_submit_input_v1(session, &input);
 }
 
 extern "C" int fly_lan_mvp_set_paused(fly_lan_mvp_session* session, int paused) {
     if (!session) return 0;
     std::lock_guard<std::mutex> lock(session->mutex);
-    session->pump();
     if (session->view.state != FLY_LAN_MVP_RUNNING) return 0;
-    if (session->role == Role::Host) {
-        session->view.paused = paused != 0;
-        session->last_progress = std::chrono::steady_clock::now();
-        if (!paused) session->advance();
+    const bool was_local_paused = session->local_paused;
+    session->local_paused = paused != 0;
+    session->view.paused = session->local_paused || session->peer_paused;
+    const auto outgoing = session->role == Role::Host
+        ? session->view.paused : static_cast<std::uint32_t>(session->local_paused);
+    if (!session->queue_message(wire::Kind::Pause,
+            {static_cast<std::uint8_t>(outgoing != 0)})) {
+        session->local_paused = was_local_paused;
+        session->view.paused = session->local_paused || session->peer_paused;
+        return 0;
     }
-    return session->queue_message(wire::Kind::Pause,
-        {static_cast<std::uint8_t>(paused != 0)}) ? 1 : 0;
+    session->last_progress = std::chrono::steady_clock::now();
+    if (!session->view.paused) session->wake.notify_one();
+    return 1;
 }
 extern "C" int fly_lan_mvp_return_lobby(fly_lan_mvp_session* session) {
     if (!session) return 0;
     std::lock_guard<std::mutex> lock(session->mutex);
-    session->pump();
     return session->return_lobby() ? 1 : 0;
 }
 
 extern "C" int fly_lan_mvp_copy_latest_frame(fly_lan_mvp_session* session,
                                                 void* rgb565_out, std::size_t capacity,
                                                 fly_latest_frame_v1* meta_out) {
-    if (session == nullptr || rgb565_out == nullptr || meta_out == nullptr) return 0;
+    if (session == nullptr || rgb565_out == nullptr || meta_out == nullptr ||
+        capacity < FLY_RUNTIME_RGB565_BYTES || meta_out->struct_size < FLY_LATEST_FRAME_V1_SIZE ||
+        meta_out->version != FLY_LATEST_FRAME_VERSION_1) return 0;
     std::lock_guard<std::mutex> lock(session->mutex);
-    session->pump();
-    return session->runtime != nullptr &&
-           fly_runtime_copy_latest_frame(session->runtime, rgb565_out, capacity, meta_out) ==
-               FLY_RESULT_OK ? 1 : 0;
+    if (!session->has_published_frame) return 0;
+    if (session->last_read_publication_sequence == session->publication_sequence)
+        ++session->stats.repeated_frame_reads;
+    session->last_read_publication_sequence = session->publication_sequence;
+    std::memcpy(rgb565_out, session->published_frame.data(), FLY_RUNTIME_RGB565_BYTES);
+    std::memcpy(meta_out, &session->published_meta, sizeof(session->published_meta));
+    return 1;
 }
 
 extern "C" int fly_lan_mvp_pull_pcm(fly_lan_mvp_session* session,
@@ -946,21 +1254,24 @@ extern "C" int fly_lan_mvp_pull_pcm(fly_lan_mvp_session* session,
     if (session == nullptr || samples_out == nullptr || block_out == nullptr || sample_capacity == 0 ||
         block_out->struct_size < FLY_PCM_BLOCK_V1_SIZE || block_out->version != FLY_PCM_BLOCK_VERSION_1) return 0;
     std::lock_guard<std::mutex> lock(session->mutex);
-    session->pump();
     if (session->runtime == nullptr) return 0;
-    // The runtime's device-consumer API pads an empty read with silence. A polled
-    // game loop must enqueue only newly produced samples, otherwise every wait
-    // for a peer adds an entire silent block and grows playback latency.
-    const auto available = session->pcm_produced - session->pcm_consumed;
-    if (available == 0) {
+    if (session->pcm_queue.empty()) {
         block_out->sample_count = 0;
         block_out->first_sample_sequence = session->pcm_consumed;
         block_out->media_time_ns = 0;
         return 1;
     }
-    const auto capacity = static_cast<std::uint32_t>(std::min<std::uint64_t>(available, sample_capacity));
-    if (fly_runtime_pull_pcm(session->runtime, samples_out, capacity, block_out) != FLY_RESULT_OK) return 0;
-    session->pcm_consumed = block_out->first_sample_sequence + block_out->sample_count;
+    const auto count = std::min<std::size_t>(session->pcm_queue.size(), sample_capacity);
+    block_out->first_sample_sequence = session->pcm_consumed;
+    block_out->sample_count = static_cast<std::uint32_t>(count);
+    block_out->media_time_ns = session->sample_rate == 0 ? 0 :
+        session->pcm_consumed * 1'000'000'000ull / session->sample_rate;
+    for (std::size_t index = 0; index < count; ++index) {
+        samples_out[index] = session->pcm_queue.front();
+        session->pcm_queue.pop_front();
+    }
+    session->pcm_consumed += count;
+    session->stats.pcm_delivered_samples += count;
     return 1;
 }
 
@@ -973,6 +1284,12 @@ extern "C" void fly_lan_mvp_cancel(fly_lan_mvp_session* session) {
 extern "C" void fly_lan_mvp_destroy(fly_lan_mvp_session* session) {
     if (session == nullptr) return;
     fly_lan_mvp_cancel(session);
+    {
+        std::lock_guard<std::mutex> lock(session->mutex);
+        session->worker_stop = true;
+        session->wake.notify_one();
+    }
+    if (session->worker.joinable()) session->worker.join();
     flynes_quic_provider_release(session->provider);
     release(session);
 }

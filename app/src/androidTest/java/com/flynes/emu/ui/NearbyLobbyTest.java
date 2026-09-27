@@ -17,9 +17,12 @@ import com.flynes.emu.R;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/** Fixed landscape lobby: session summary beside game and guarded confirmation. */
+/** Fixed landscape lobby: session summary beside the host's game choice. */
 @RunWith(AndroidJUnit4.class)
 public final class NearbyLobbyTest {
+    @org.junit.Before public void resetMvpSession() {
+        ((FlyNesApplication) ApplicationProvider.getApplicationContext()).nearbyMvpOwner().close();
+    }
     @Test public void coreFieldsFitInTwoPaneLobby() {
         try (ActivityScenario<NearbyLobbyActivity> scenario =
                      ActivityScenario.launch(NearbyLobbyActivity.class)) {
@@ -33,7 +36,8 @@ public final class NearbyLobbyTest {
                     R.id.nearby_lobby_row_network_owner, R.id.nearby_lobby_row_seat}) {
                 onView(withId(id)).check(matches(isDisplayed()));
             }
-            onView(withId(R.id.nearby_lobby_confirm)).check(matches(isDisplayed()));
+            scenario.onActivity(activity -> assertEquals(0, activity.getResources()
+                    .getIdentifier("nearby_lobby_confirm", "id", activity.getPackageName())));
         }
     }
 
@@ -47,10 +51,11 @@ public final class NearbyLobbyTest {
         }
     }
 
-    @Test public void unsupportedConfirmDoesNotConfirmOrStartGame() {
+    @Test public void emptyLobbyDoesNotConfirmOrStartGame() {
         try (ActivityScenario<NearbyLobbyActivity> scenario =
                      ActivityScenario.launch(NearbyLobbyActivity.class)) {
-            onView(withId(R.id.nearby_lobby_confirm)).check(matches(isDisplayed())).perform(click());
+            scenario.onActivity(activity -> assertEquals(0, activity.getResources()
+                    .getIdentifier("nearby_lobby_confirm", "id", activity.getPackageName())));
             scenario.onActivity(activity -> {
                 NearbySessionOwner.Snapshot snap = ((FlyNesApplication) activity.getApplication())
                         .nearbySessionOwner().snapshot();

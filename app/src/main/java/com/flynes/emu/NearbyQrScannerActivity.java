@@ -2,6 +2,9 @@ package com.flynes.emu;
 
 import android.hardware.Camera;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.content.Intent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -17,7 +20,7 @@ import com.google.zxing.NotFoundException;
 import com.google.zxing.PlanarYUVLuminanceSource;
 import com.google.zxing.common.HybridBinarizer;
 
-/** Opens the camera immediately from the nearby entry; the guest bridge is not yet wired. */
+/** Opens the camera immediately and gives a valid invitation to the LAN join owner. */
 @SuppressWarnings("deprecation")
 public final class NearbyQrScannerActivity extends AppCompatActivity implements SurfaceHolder.Callback {
     private Camera camera;
@@ -25,10 +28,14 @@ public final class NearbyQrScannerActivity extends AppCompatActivity implements 
     private View retry;
     private boolean scanned;
     private boolean decoding;
+    private boolean joined;
+    private NearbyScanJoinService joinService;
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
         setContentView(R.layout.activity_nearby_qr_scanner);
+        joinService = new NearbyScanJoinService(this, new Handler(Looper.getMainLooper()),
+                ((FlyNesApplication) getApplication()).nearbyMvpOwner());
         ((MaterialToolbar) findViewById(R.id.nearby_scanner_toolbar))
                 .setNavigationOnClickListener(view -> finish());
         status = findViewById(R.id.nearby_scanner_status);
@@ -72,11 +79,7 @@ public final class NearbyQrScannerActivity extends AppCompatActivity implements 
             String decoded = new MultiFormatReader().decodeWithState(
                     new BinaryBitmap(new HybridBinarizer(luminance))).getText();
             if (decoded != null && !decoded.isEmpty()) {
-                scanned = true;
-                runOnUiThread(() -> {
-                    status.setText(R.string.nearby_scanner_join_unavailable);
-                    retry.setVisibility(View.VISIBLE);
-                });
+                runOnUiThread(() -> acceptScannedText(decoded));
             }
         } catch (NotFoundException ignored) {
             // Most preview frames have no code; keep scanning.
@@ -86,6 +89,26 @@ public final class NearbyQrScannerActivity extends AppCompatActivity implements 
             decoding = false;
             if (!scanned && camera != null) camera.setOneShotPreviewCallback(this::decodeFrame);
         }
+    }
+
+    void acceptScannedText(String text) {
+        if (scanned || joined) return;
+        scanned = true;
+        status.setText(R.string.nearby_screen_connecting);
+        boolean accepted = joinService.joinScannedText(text, () -> {
+            if (isFinishing() || isDestroyed()) return;
+            joined = true;
+            startActivity(new Intent(this, NearbyLobbyActivity.class));
+            finish();
+        }, () -> {
+            if (!isFinishing() && !isDestroyed()) showJoinFailure();
+        });
+        if (!accepted) showJoinFailure();
+    }
+
+    private void showJoinFailure() {
+        status.setText(R.string.nearby_scanner_join_unavailable);
+        retry.setVisibility(View.VISIBLE);
     }
 
     private void closeCamera() {
@@ -101,6 +124,11 @@ public final class NearbyQrScannerActivity extends AppCompatActivity implements 
     @Override protected void onPause() {
         closeCamera();
         super.onPause();
+    }
+
+    @Override protected void onDestroy() {
+        if (!joined && isFinishing() && joinService != null) joinService.close();
+        super.onDestroy();
     }
 
     @Override protected void onResume() {
