@@ -19,10 +19,11 @@ $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 Set-Location $repo
 
-$adb = 'C:/Users/<USER>/AppData/Local/Android/Sdk/platform-tools/adb.exe'
+$androidSdk = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } elseif ($env:ANDROID_SDK_ROOT) { $env:ANDROID_SDK_ROOT } else { Join-Path $env:LOCALAPPDATA 'Android/Sdk' }
+$adb = Join-Path $androidSdk 'platform-tools/adb.exe'
 $hdc = 'D:/soft/DevEco Studio/sdk/default/openharmony/toolchains/hdc.exe'
-$cmake = 'C:/Users/<USER>/AppData/Local/Android/Sdk/cmake/3.22.1/bin/cmake.exe'
-$ctest = 'C:/Users/<USER>/AppData/Local/Android/Sdk/cmake/3.22.1/bin/ctest.exe'
+$cmake = Join-Path $androidSdk 'cmake/3.22.1/bin/cmake.exe'
+$ctest = Join-Path $androidSdk 'cmake/3.22.1/bin/ctest.exe'
 $node = 'D:/soft/DevEco Studio/tools/node/node.exe'
 $hvigor = 'D:/soft/DevEco Studio/tools/hvigor/bin/hvigorw.js'
 $cargo = (Get-Command cargo -ErrorAction Stop).Source

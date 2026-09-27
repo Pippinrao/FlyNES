@@ -1,12 +1,12 @@
 # FlyNES: 挑选热度前 N 的【不同】游戏，重命名为 ASCII 安全名，供推送到手机
-# 用法: powershell -ExecutionPolicy Bypass -File scripts/prepare-top100-for-phone.ps1 [-Source <PRIVATE_ROM_DIRECTORY>
+# 用法: powershell -File scripts/prepare-top100-for-phone.ps1 -Source <ROM_DIRECTORY> [-Count 100] [-OutDir <OUTPUT_DIRECTORY>]
 # 说明: 只处理你自己设备上的文件（个人使用传输）。App 不内置任何商业 ROM。
 # 为什么重命名: vivo 等手机 FUSE 存储会截断中文文件名；ASCII 名可完整落地，且 App 热度榜含英文关键词。
 
 param(
-    [string]$Source = "<PRIVATE_ROM_DIRECTORY>",
+    [Parameter(Mandatory = $true)][string]$Source,
     [int]$Count = 100,
-    [string]$OutDir = "<PRIVATE_ROM_DIRECTORY>"
+    [string]$OutDir = (Join-Path $PSScriptRoot '../out/rom-selection-phone')
 )
 
 # --- 热度榜: 关键词 -> (分数, 英文slug)。slug 用于重命名（ASCII 安全）---

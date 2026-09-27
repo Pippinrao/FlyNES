@@ -1,10 +1,10 @@
 # FlyNES: 从 FC ROM 合集挑选热度前 N 的游戏（复制到手机用）
-# 用法: powershell -ExecutionPolicy Bypass -File scripts/select-top100.ps1 [-Source <PRIVATE_ROM_DIRECTORY>
+# 用法: powershell -File scripts/select-top100.ps1 -Source <ROM_DIRECTORY> [-Count 100] [-OutDir <OUTPUT_DIRECTORY>]
 # 说明: 只处理你自己设备上的文件（个人使用传输）。App 不内置任何商业 ROM。
 param(
-    [string]$Source = "<PRIVATE_ROM_DIRECTORY>",
+    [Parameter(Mandatory = $true)][string]$Source,
     [int]$Count = 100,
-    [string]$OutDir = "<PRIVATE_ROM_DIRECTORY>"
+    [string]$OutDir = (Join-Path $PSScriptRoot '../out/rom-selection')
 )
 
 # --- 热度榜（关键词 -> 分数；与 app/src/main/java/com/flynes/emu/Popularity.java 同源，子串匹配）---

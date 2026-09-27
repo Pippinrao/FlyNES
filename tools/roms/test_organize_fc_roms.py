@@ -1,4 +1,5 @@
 import hashlib
+import os
 import sys
 import tempfile
 import unittest
@@ -11,7 +12,10 @@ from organize_fc_roms import chinese_title, organize, verify
 
 class OrganizeFcRomsTest(unittest.TestCase):
     def test_every_english_collection_name_has_a_chinese_title(self):
-        source = Path(r"<PRIVATE_ROM_DIRECTORY>")
+        configured = os.environ.get("FLYNES_LOCAL_ROM_SOURCE")
+        if not configured:
+            self.skipTest("FLYNES_LOCAL_ROM_SOURCE is not configured")
+        source = Path(configured)
         if not source.is_dir():
             self.skipTest("local FC collection is unavailable")
         with self.subTest("all playable packages"):

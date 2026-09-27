@@ -58,3 +58,16 @@ cmake_install.cmake
 # OS
 .DS_Store
 Thumbs.db
+
+# Local signing credentials and environment secrets
+*.p12
+*.pfx
+*.mobileprovision
+*.keystore
+*.jks
+*.key
+.env
+.env.*
+!.env.example
+*.ipa
+*.hap
