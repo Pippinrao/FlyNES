@@ -6,6 +6,20 @@ export function nativePerformanceEnabled(optIn: string | undefined, entry: strin
   return true;
 }
 
+export function performanceRoute(entry: string | undefined, candidateApproved: string | undefined): string {
+  if (entry === undefined || entry === 'native') return 'native';
+  if (entry !== 'flutter') throw new Error('Unknown performance route');
+  if (candidateApproved !== 'true') throw new Error('Flutter candidate requires explicit budget approval');
+  return entry;
+}
+
+export function performanceBuildMode(requested: string | undefined, actualDebug: boolean): string {
+  const mode = requested ?? 'debug';
+  if (mode !== 'debug' && mode !== 'release') throw new Error('Unknown performance build mode');
+  if ((mode === 'debug') !== actualDebug) throw new Error('Performance build mode/application debug mismatch');
+  return mode;
+}
+
 /** Mirrors the product history clock: count frames from a previously running interval. */
 export class EmulatedProgress {
   playedMs: number = 0;

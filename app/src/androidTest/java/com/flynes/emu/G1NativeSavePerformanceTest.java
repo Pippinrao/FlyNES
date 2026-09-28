@@ -31,6 +31,10 @@ public class G1NativeSavePerformanceTest {
                 "true".equals(InstrumentationRegistry.getArguments().getString("g1NativePerformance")));
         Context context = ApplicationProvider.getApplicationContext();
         boolean throughFlutter = "flutter".equals(InstrumentationRegistry.getArguments().getString("g1Entry"));
+        String canonicalId = InstrumentationRegistry.getArguments().getString("g1CanonicalId", "");
+        int targetApplicationFlags = context.getApplicationInfo().flags;
+        boolean targetDebuggable = (targetApplicationFlags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        String targetMode = targetDebuggable ? "debug" : "release";
         var repository = com.flynes.emu.settings.SettingsAccess.repository(context);
         var settings = repository.load();
         var preferences = context.getSharedPreferences("save_history", Context.MODE_PRIVATE);
@@ -38,13 +42,23 @@ public class G1NativeSavePerformanceTest {
         long oldInterval = preferences.getLong("interval_ms", 60000);
         List<long[]> frames = java.util.Collections.synchronizedList(new ArrayList<>());
         JSONArray memory = new JSONArray();
-        JSONObject report = new JSONObject().put("mode", throughFlutter
-                ? "flutter-to-native-game-debug-simulator" : "native-game-debug-simulator")
+        JSONObject report = new JSONObject().put("mode", (throughFlutter
+                ? "flutter-to-native-game-" : "native-game-") + targetMode + "-simulator")
                 .put("intervalMs", 60000).put("processId", android.os.Process.myPid())
+                .put("requestedCanonicalId", canonicalId)
+                .put("targetPackage", context.getPackageName())
+                .put("targetApplicationFlags", targetApplicationFlags).put("targetDebuggable", targetDebuggable)
                 .put("physicalLatencyCertified", false);
         try {
             assertTrue(repository.save(settings.toBuilder().autosaveEnabled(true).audioEnabled(true).build()));
             assertTrue(preferences.edit().putLong("interval_ms", 60000).commit());
+            if (!throughFlutter && !canonicalId.isEmpty()) {
+                var launched = new java.util.concurrent.CompletableFuture<com.flynes.emu.launch.LaunchResult>();
+                ((FlyNesApplication) context).gameLaunchService().launchCanonical(canonicalId, launched::complete);
+                var result = launched.get(30, java.util.concurrent.TimeUnit.SECONDS);
+                assertTrue("Exact selected content must be staged: " + result.message(), result.isSuccess());
+                assertEquals(canonicalId, result.request().orElseThrow().canonicalGameId());
+            }
             AtomicReference<MainActivity> owner = new AtomicReference<>();
             var intent = new android.content.Intent(context,
                     throughFlutter ? FlutterFoundationActivity.class : MainActivity.class);

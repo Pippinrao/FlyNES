@@ -36,3 +36,20 @@ test('progress counts real source frames rather than wall time and ignores reset
   progress.sample(120, 0, true);
   assert.equal(progress.playedMs, 66000);
 });
+test('candidate measurements require independent explicit approval and startup accepts only known routes', () => {
+  const { performanceRoute } = helpers();
+  assert.equal(performanceRoute('native', undefined), 'native');
+  assert.equal(performanceRoute(undefined, undefined), 'native');
+  assert.throws(() => performanceRoute('flutter', 'false'), /approval/);
+  assert.equal(performanceRoute('flutter', 'true'), 'flutter');
+  assert.throws(() => performanceRoute('unknown', 'true'), /route/);
+});
+
+test('release observation requires explicit mode and matching actual application debug state', () => {
+  const { performanceBuildMode } = helpers();
+  assert.equal(performanceBuildMode(undefined, true), 'debug');
+  assert.equal(performanceBuildMode('release', false), 'release');
+  assert.throws(() => performanceBuildMode('release', true), /mismatch/);
+  assert.throws(() => performanceBuildMode(undefined, false), /mismatch/);
+  assert.throws(() => performanceBuildMode('profile', false), /mode/);
+});

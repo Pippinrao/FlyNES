@@ -35,3 +35,15 @@
 后续修改只写这里的权威正文，不同步维护多份副本。
 
 - [Android ↔ Harmony 模拟器联机闭环](verification/2026-09-29-nearby-simulators.md)
+
+- [受控 Android 原生性能基线](verification/2026-09-29-android-native-performance.md)
+- [Android 3.0.5 同入口、同 ROM 配对基线](verification/2026-09-29-android-native-paired-baseline.md)
+- [Harmony 3.0.5 原生启动和自动保存基线](verification/2026-09-29-ohos-native-performance.md)
+- [Harmony 往返内存采集协议](verification/2026-09-29-ohos-memory-protocol.md)
+- [同修订双端 Release 构建](verification/2026-09-29-matched-release-builds.md)
+
+- [全目录选择保留修复](verification/2026-09-29-android-selection-retention.md)
+- [本轮固定模拟器性能预算](verification/2026-09-29-performance-budget.md)
+- [Android Flutter 候选性能](verification/2026-09-29-android-flutter-candidate-performance.md)
+- [Android Release 内存对照](verification/2026-09-29-android-release-pss.md)
+- [Harmony Flutter 候选性能](verification/2026-09-29-ohos-flutter-candidate-performance.md)

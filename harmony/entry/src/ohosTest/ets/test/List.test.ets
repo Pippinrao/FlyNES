@@ -1,5 +1,7 @@
 import saveHistoryPlayTest from './SaveHistoryPlay.test';
 import g1NativeSavePerformanceTest from './G1NativeSavePerformance.test';
+import g1StartupObservationTest from './G1StartupObservation.test';
+import g1MemoryRoundTripsTest from './G1MemoryRoundTrips.test';
 import saveHistoryUpgradeTest from './SaveHistoryUpgrade.test';
 import flutterFoundationTest from './FlutterFoundation.test';
 import flutterTextureProbeTest from './FlutterTextureProbe.test';
@@ -28,6 +30,14 @@ import builtinPlaySmokeTest from './BuiltinPlaySmoke.test';
 import builtinGameplayAcceptanceTest from './BuiltinGameplayAcceptance.test';
 
 export default function testsuite() {
+  if (abilityDelegatorRegistry.getArguments().parameters['-s memoryRoundTripsOnly'] === 'true') {
+    g1MemoryRoundTripsTest();
+    return;
+  }
+  if (abilityDelegatorRegistry.getArguments().parameters['-s g1StartupObservation'] === 'true') {
+    g1StartupObservationTest();
+    return;
+  }
   if (abilityDelegatorRegistry.getArguments().parameters['-s g1NativePerformance'] === 'true') {
     g1NativeSavePerformanceTest();
     return;

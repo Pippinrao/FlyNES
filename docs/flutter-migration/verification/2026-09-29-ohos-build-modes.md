@@ -1,6 +1,50 @@
 # OH profile/release 构建模式验证
 
-范围：REQ-004 / REQ-007，Windows 主机，固定 `Flutter-OH 3.41.10-ohos-1.0.0`、提交 `244a0e8abb3085e8675589b13e219af8c41cb7aa`、Dart 3.11.5，DevEco API20。仅验证构建/工件模式；本记录不证明安装、真实运行或性能预算。
+范围：REQ-004 / REQ-007，Windows主机，固定`Flutter-OH 3.41.10-ohos-1.0.0`、提交`244a0e8abb3085e8675589b13e219af8c41cb7aa`、Dart3.11.5、DevEco API20。早期章节仅验证构建；最新Release实际运行结果如下，不能将构建成功当作运行证据。
+
+## 最新：同模式Release真实PSS诊断
+
+用户继续完成模拟器可测项后，标准`Build-Ohos.ps1 -Mode release`再次通过，run
+`.artifacts/oh/09a2462a/`。随后独立公开hvigor命令`--mode module -p product=default
+-p module=entry@ohosTest -p buildMode=release assembleHap --no-daemon`通过。
+未放宽Build-Ohos的debug测试默认守卫，未改生产debug Want gate或SDK。
+
+冻结证据`.artifacts/flutter-g0/candidate-eaafd7d0/release-paired/`：
+
+- main SHA256 `32C907FC28AC61D75FD11B4045D290D717BFC1C24D3984422A5BE99D4D81D9B5`。
+- test SHA256 `4DCEBAF5D483B960BAF92B12FF293562403B66A28191378CB0B168E8E882BE12`。
+- 测试HAP两ABI的libapp/libflutter共4份库与Release主逐字节匹配；它不包含另一份libentry。
+- 测试HAP自身app.debug固定true，但Release主false；同批install-r之后真实bundle及
+  EntryAbility的applicationInfo.debug仍false，两路JSON均记录release/false。
+- 同包原生/Flutter各一次真实65秒Hypium1/1通过，PSS P95 135379→181753 KiB，
+  增量46374 KiB≤事先确定的128MiB。详细范围见[候选结果](2026-09-29-ohos-flutter-candidate-performance.md)。
+
+这是独立Release内存补充诊断，不覆盖Debug PSS失败，不扩充原G1媒体性能放行预算。
+结束时5557保留上述Release主/测试3.0.5，app已force-stop、PID为空、fport为空；
+**当前HAR staging是release**。下一次默认debug测试必须显式恢复模式并选择冻结包，不能
+用此处当前生成包替代已测C2B45 Debug主。以下“未安装/未运行/恢复debug”均为先前阶段历史。
+
+## 同修订 3.0.5 Release 再验证
+
+产品修订 `eaafd7d0a38d3a60ffe7d2db8aad8f04857d6370` / 3.0.5，运行 `pwsh -NoProfile -File tools/flutter/Build-Ohos.ps1 -Mode release` 完整通过，run `.artifacts/oh/535d3f60/`：双 ABI HAR 28.9 s、主 HAP 15.145 s，阶段 exitCode 均为 0。构建前后 OH 生产源码、共享 Dart、core/shared 与该修订 diff 为空；固定 SDK 工作目录 clean。仅测试侧/文档的并行工作不进入生产包。
+
+独立冻结 `.artifacts/flutter-g0/release-eaafd7d0/entry-default-release-unsigned.hap`，SHA-256 **`5C266B5FE41A2C9B2F75CDE5B02066A1F167CA402EF9D806EF03DFC86CA68CA8`**。`package-content-abi.json` / `verify-package.py` / `package-verification.log` 验证：
+
+- HAP 内实际 metadata 为 com.flynes.emu / 3.0.5 / 3000005、buildMode=release、debug=false、target API20、compileSdkVersion=6.0.0.47，宿主原 min API12 保持不变。
+- arm64-v8a 和 x86_64 均有 ELF64 `libentry.so`、`libflutter.so`、`libapp.so` 与 libc++，machine 分别 183/62；两份 libapp 含 AOT isolate snapshot data/instructions 符号。
+- HAP 的两份 libflutter 与该次 release 架构 HAR 内引擎逐字节一致；包内没有 debug kernel_blob。
+- 单一清单逐字节一致，7 个 ROM SHA-256 与清单匹配，7 份许可文本与 source-of-truth 一致，退役游戏缺席。
+
+本轮**没有安装 Release 包，没有计算原生/Flutter 包体差值，没有运行候选性能**。以前冻结的 3.0.5 debug 主包 C2B45… 与测试包 9874… 哈希复查不变。Release 证据与构建输出独立保留。下方较早 profile/release 数字是历史构建记录，不是本轮候选预算比较。
+
+随后测试侧 ready/ack 握手 ETS 稳定，执行 `Build-Ohos.ps1 -Mode debug -BuildTests` 恢复默认模式，独立 run **`.artifacts/oh/a55c850c/`**。HAR、主 HAP、测试 HAP exit 0，主包 9.433 s / 测试包 6.814 s；当前 staging manifest 确认为 debug 与原固定 SDK。包含最新 `G1MemoryRoundTrips` ready/ack 夹具，但**仅编译，未安装、未执行候选**。新包独立存于该 run 的 packages：
+
+- 主包 SHA-256 `A58E3E9DEBB4F6F3639C59492121492F0A1524ED6D5EB3B263C9A116972E03CB`。
+- 测试包 SHA-256 `B71B3C5FE18F315BD90C6DA97D70F217520B0DA5A77386C8BA5BC0815964072C`。
+
+生产源码 diff 再次为空；之前冻结的性能基线主/测试和 Release 包哈希均未改变。外层恢复日志 `.artifacts/flutter-g0/release-eaafd7d0/restore-debug-build.log`，所有阶段日志/exit 文件与新包哈希在上述独立 run 中。
+
+**Debug候选的配对约束**：A58E…是重新生成的主包，哈希与已测主包不同且未安装。后续已获继续验证授权的Debug候选保留冻结主包**C2B45…**，仅按真实夹具修复覆盖测试包；不得默默用A58E…替换原生对照所用生产包。上述独立Release配对拥有另一组明确身份，不能混作该Debug对照。
 
 ## 固定 SDK 的实际契约
 

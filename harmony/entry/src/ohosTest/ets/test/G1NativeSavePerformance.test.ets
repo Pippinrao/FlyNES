@@ -4,13 +4,15 @@ import { common } from '@kit.AbilityKit';
 import { display, window } from '@kit.ArkUI';
 import { preferences } from '@kit.ArkData';
 import { fileIo } from '@kit.CoreFileKit';
-import { Driver, ON } from '@ohos.UiTest';
+import { Driver, MatchPattern, ON } from '@ohos.UiTest';
+import { i18n } from '@kit.LocalizationKit';
 import hidebug from '@ohos.hidebug';
 import systemDateTime from '@ohos.systemDateTime';
 import nativePlay, { HistoryRow, PlayRuntimeStatusDto, RenderStatusDto } from 'libentry.so';
 import { BuiltinGames } from '../../../main/ets/service/BuiltinGames';
 import { PlayService, RomLaunchLocator } from '../../../main/ets/service/PlayService';
-import { EmulatedProgress, nativePerformanceEnabled } from './G1PerformanceObservations';
+import { localizedGameTitle } from '../../../main/ets/service/CatalogProductService';
+import { EmulatedProgress, performanceRoute, performanceBuildMode } from './G1PerformanceObservations';
 
 function now(): number { return systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, false); }
 async function wait(ms: number): Promise<void> { await new Promise<void>((resolve) => setTimeout(resolve, ms)); }
@@ -44,6 +46,8 @@ class InputSample {
 class PerformanceReport {
   schemaVersion: number = 1;
   entry: string = 'native';
+  buildMode: string = '';
+  actualApplicationDebug: boolean = false;
   canonicalId: string = '';
   contentKey: string = '';
   epochStartMs: number = 0;
@@ -122,7 +126,8 @@ async function inputSample(driver: Driver, win: window.Window, start: number): P
 
 export default function g1NativeSavePerformanceTest() {
   const args = abilityDelegatorRegistry.getArguments().parameters;
-  if (!nativePerformanceEnabled(args['-s g1NativePerformance'], args['-s g1Entry'])) return;
+  if (args['-s g1NativePerformance'] !== 'true') return;
+  const route = performanceRoute(args['-s g1Entry'], args['-s g1CandidateApproved']);
   describe('G1NativeSavePerformance', () => {
     it('native_autosave_65_seconds_records_real_progress_and_observations', 0, async () => {
       const delegator = abilityDelegatorRegistry.getAbilityDelegator();
@@ -138,9 +143,12 @@ export default function g1NativeSavePerformanceTest() {
       const hadInterval = options.hasSync('intervalMs');
       const oldInterval = options.getSync('intervalMs', 60000);
       const report = new PerformanceReport();
+      report.entry = route;
+      report.actualApplicationDebug = context.applicationInfo.debug;
       const progress = new EmulatedProgress();
       let observer = -1;
       try {
+        report.buildMode = performanceBuildMode(args['-s g1BuildMode'], report.actualApplicationDebug);
         const settings = nativePlay.settingsGet();
         settings.audioEnabled = 1;
         settings.autosaveEnabled = 1;
@@ -158,8 +166,39 @@ export default function g1NativeSavePerformanceTest() {
         const db = `${context.filesDir}/save-history.db`;
         report.beforeHead = nativePlay.historyHead(db, report.contentKey);
         report.beforeRows = nativePlay.historyList(db, report.contentKey);
-        await nav.replaceUrl({ url: 'pages/RunGame', params: { canonicalId: game.canonicalId } });
         const driver = Driver.create();
+        if (route === 'native') {
+          await nav.replaceUrl({ url: 'pages/RunGame', params: { canonicalId: game.canonicalId } });
+        } else {
+          // Candidate must traverse the real shared directory and existing bridge.
+          // Directly opening RunGame here would omit the retained Flutter engine.
+          if (report.buildMode === 'release') {
+            // Only this opt-in test router enters the existing real page. The
+            // production Release Want gate remains disabled and unchanged.
+            await nav.replaceUrl({ url: 'pages/FlutterFoundation' });
+          } else {
+            await delegator.startAbility({ bundleName: 'com.flynes.emu', abilityName: 'EntryAbility',
+              parameters: { 'flynes.test.page': 'flutter_foundation' } });
+          }
+          await driver.waitForComponent(ON.id('flutter_foundation_host'), 15000);
+          const title = localizedGameTitle(game.titleEn, game.titleZhHans, game.canonicalId,
+            'system', i18n.System.getSystemLanguage());
+          await (await driver.waitForComponent(ON.type('Button').text(title, MatchPattern.STARTS_WITH), 15000)).click();
+          let launched = false;
+          const chinese = i18n.System.getSystemLanguage().startsWith('zh');
+          for (let attempt = 0; attempt < 100 && !launched; attempt++) {
+            try {
+              const resume = await driver.findComponent(ON.text(chinese ? '继续' : 'Continue').type('Button'));
+              const button = resume ?? await driver.findComponent(ON.text(chinese ? '开始' : 'Start').type('Button'));
+              if (button !== null && await button.isEnabled()) { await button.click(); launched = true; }
+            } catch (error) {
+              const message = (error as Error).message;
+              if (message.indexOf('NoCandidates') < 0) throw new Error(message);
+            }
+            if (!launched) await wait(100);
+          }
+          expect(launched).assertTrue();
+        }
         expect(await driver.waitForComponent(ON.text('II'), 5000) !== null).assertTrue();
         report.epochStartMs = Date.now();
         report.uptimeStartMs = now();
@@ -215,12 +254,22 @@ export default function g1NativeSavePerformanceTest() {
         if (observer !== -1) clearInterval(observer);
         report.emulatedMs = progress.playedMs;
         if (report.uptimeEndMs === 0) report.uptimeEndMs = now();
-        try { await nav.replaceUrl({ url: 'pages/GameCenter' }); await wait(300); }
+        try {
+          // A debug Want replaces WindowStage content for the Flutter route.
+          // Its previous UIContext router is invalid after that replacement.
+          const current = (await delegator.getCurrentTopAbility()).context;
+          const currentNav = (await window.getLastWindow(current)).getUIContext().getRouter();
+          await currentNav.replaceUrl({ url: 'pages/GameCenter' }); await wait(300);
+        } catch (error) {
+          report.complete = false;
+          report.failure += ` cleanup: ${error}`;
+          throw new Error(report.failure);
+        }
         finally {
           nativePlay.settingsApply(original);
           if (hadInterval) options.putSync('intervalMs', oldInterval); else options.deleteSync('intervalMs');
           await options.flush();
-          const path = `${context.filesDir}/g1-native-save-performance.json`;
+          const path = `${context.filesDir}/g1-${route}-save-performance.json`;
           const file = fileIo.openSync(path, fileIo.OpenMode.CREATE | fileIo.OpenMode.WRITE_ONLY | fileIo.OpenMode.TRUNC);
           try { fileIo.writeSync(file.fd, JSON.stringify(report)); fileIo.fsyncSync(file.fd); }
           finally { fileIo.closeSync(file); }
