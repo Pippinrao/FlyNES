@@ -1,5 +1,6 @@
 import { common } from '@kit.AbilityKit';
 import { display, router, window } from '@kit.ArkUI';
+import { SaveHistoryPanel } from './SaveHistoryPanel';
 import { image } from '@kit.ImageKit';
 import { i18n } from '@kit.LocalizationKit';
 import { localizedGameTitle } from '../service/CatalogProductService';
@@ -30,6 +31,11 @@ const COVER_SAMPLE_OFFSETS: number[] = [120, 240, 360, 480];
 @Component
 struct RunGame {
   private readonly play: PlayService = new PlayService();
+  @State private historyOpen: boolean = false;
+  @State private historyAction: string = '';
+  @State private historySaved: boolean = false;
+  private launchMode: string = '';
+  private backgroundHandler: () => void = () => { if (this.started && !this.nearby) this.openPause(); };
   private timerId: number = -1;
   private started: boolean = false;
   private nearby: boolean = false;
@@ -78,6 +84,7 @@ struct RunGame {
   aboutToAppear(): void {
     const params = router.getParams() as Record<string, Object>;
     this.nearby = params !== undefined && params['nearby'] === true;
+    this.launchMode = params !== undefined && typeof params['launchMode'] === 'string' ? params['launchMode'] as string : '';
     this.gameTitle = parsePauseTitle(params, 'Game paused');
     this.titleEn = params !== undefined && typeof params['titleEn'] === 'string' ? params['titleEn'] as string : '';
     this.titleZhHans = params !== undefined && typeof params['titleZhHans'] === 'string' ? params['titleZhHans'] as string : '';
@@ -107,6 +114,7 @@ struct RunGame {
       return;
     }
     const context = hostContext as common.UIAbilityContext;
+    context.eventHub.on('save-background', this.backgroundHandler);
     this.ensureApp(context);
     this.loadPersistedLayout();
     this.requestLandscape(context);
@@ -131,6 +139,7 @@ struct RunGame {
   }
 
   onPageHide(): void {
+    if (this.started && !this.nearby && !this.paused) this.openPause();
     if (this.nearby && this.started && !this.returningToLobby &&
       nativePlay.nearbyMvpSnapshot().state === 6) {
       this.play.setButtons(0);
@@ -141,6 +150,8 @@ struct RunGame {
   }
 
   aboutToDisappear(): void {
+    if (this.started && !this.nearby && !this.paused) this.openPause();
+    this.getUIContext().getHostContext()?.eventHub.off('save-background', this.backgroundHandler);
     this.stopLoop();
     this.play.close();
     this.frame?.release();
@@ -149,7 +160,7 @@ struct RunGame {
   }
 
   onBackPress(): boolean {
-    if (!this.nearby) return false;
+    if (this.historyOpen) { this.historyOpen = false; this.loadPersistedLayout(); return true; }
     this.openPause();
     return true;
   }
@@ -247,6 +258,16 @@ struct RunGame {
       if (this.drawerOpen) {
         this.pauseDrawer()
       }
+      if (this.checkpointFailed && this.started && !this.drawerOpen) {
+        Text($r('app.string.history_failed')).fontSize(14).fontColor('#FF9B8C')
+          .padding(12).backgroundColor('#CC1B1D22').width('70%').hitTestBehavior(HitTestMode.None)
+      }
+      if (this.historyOpen) {
+        SaveHistoryPanel({ history: this.play.history, initialAction: this.historyAction,
+          onClose: () => { this.historyOpen = false; this.loadPersistedLayout(); },
+          onRestored: () => { this.play.historyWarning = false; this.checkpointFailed = false; },
+          onRestarted: () => { this.play.historyWarning = false; this.historyOpen = false; this.resumePlay(); } })
+      }
     }
     .width('100%')
     .height('100%')
@@ -264,6 +285,7 @@ struct RunGame {
         .onClick(() => {
           this.resumePlay();
         })
+      Scroll() {
       Column({ space: 12 }) {
         Text($r('app.string.pause_eyebrow'))
           .fontSize(14)
@@ -280,6 +302,18 @@ struct RunGame {
             .fontSize(14)
             .fontColor('#FF6B5E')
             .width('100%')
+        }
+        if (!this.nearby) {
+          if (this.historySaved) { Text($r('app.string.history_saved')).fontColor('#C5CCD6') }
+          Button($r('app.string.history_manual')).id('history-manual-save').width('100%').height(48)
+            .onClick(() => {
+              try { this.play.history?.save(1); this.play.historyWarning = false; this.historySaved = true; this.checkpointFailed = false; }
+              catch (_) { this.checkpointFailed = true; }
+            })
+          Button($r('app.string.history_title')).id('history-open').width('100%').height(48)
+            .onClick(() => { this.historyAction = ''; this.historyOpen = true; })
+          Button($r('app.string.history_restart')).id('history-restart').width('100%').height(48)
+            .onClick(() => { this.historyAction = 'restart'; this.historyOpen = true; })
         }
         ForEach(this.pauseIds, (id: string) => {
           Button(this.pauseLabel(id))
@@ -300,16 +334,15 @@ struct RunGame {
           this.nearbyStatusBlock()
         }
       }
-      .width(320)
-      .height('100%')
+      .width('100%')
       .padding({
         left: 24,
         right: 24 + this.getUIContext().px2vp(this.insetR),
         top: 24,
         bottom: 24
       })
-      .justifyContent(FlexAlign.Center)
       .backgroundColor('#1B1D22')
+      }.width(360).height('100%').backgroundColor('#1B1D22')
       .transition(TransitionEffect.translate({ x: 320 }).animation({ duration: 220, curve: Curve.EaseOut }))
       .onClick(() => {
       })
@@ -428,8 +461,13 @@ struct RunGame {
   private async start(context: common.UIAbilityContext): Promise<void> {
     try {
       if (this.nearby) this.play.openNearby();
-      else await this.play.open(context, this.locator, this.autosaveEnabled);
+      else await this.play.open(context, this.locator, true);
       this.started = true;
+      if (!this.nearby && this.play.history !== undefined) {
+        if (!this.autosaveEnabled) this.play.history.intervalMs = 0;
+        const boundary = nativePlay.playRuntimeStatus();
+        this.play.history.advance(boundary.sourceFrames, boundary.sourceFps, !boundary.paused);
+      }
       // onPageShow can run before the asynchronous ROM open completes. Clear
       // any pause retained by an earlier surface only after this session owns
       // a running core, so its first source frame can reach the GPU mailbox.
@@ -437,6 +475,12 @@ struct RunGame {
       this.status = '';
       this.markPlayedOnce();
       this.startLoop();
+      if (!this.nearby && (this.play.historyWarning || this.launchMode.length > 0)) {
+        this.openPause();
+        this.checkpointFailed = this.play.historyWarning;
+        this.historyAction = this.launchMode === 'fresh' ? 'restart' : '';
+        this.historyOpen = !this.play.historyWarning || this.launchMode.length > 0;
+      }
     } catch (error) {
       this.status = error instanceof Error ? error.message : 'Failed to start play session';
       if (this.nearby) console.error(`FlyNesNearby event=play_open_error reason=${this.status}`);
@@ -497,6 +541,9 @@ struct RunGame {
       }
       const renderStatus: RenderStatusDto = nativePlay.renderStatus();
       const playStatus: PlayRuntimeStatusDto = nativePlay.playRuntimeStatus();
+      if (!this.nearby && this.play.history !== undefined) {
+        if (!this.play.advanceHistory(playStatus.sourceFrames, playStatus.sourceFps, !playStatus.paused)) this.checkpointFailed = true;
+      }
       this.renderEvidenceFrames += 1;
       if (this.renderEvidenceFrames % 120 === 0) {
         console.info(`FlyNES render evidence ${JSON.stringify(renderStatus)}`);
@@ -595,11 +642,13 @@ struct RunGame {
       this.pressedBits = 0;
       this.stopLoop();
       this.play.pauseOutput();
+      const boundary = nativePlay.playRuntimeStatus();
+      if (!this.play.advanceHistory(boundary.sourceFrames, boundary.sourceFps, false)) this.checkpointFailed = true;
       nativePlay.renderSetPaused(true);
       console.info(`FlyNES pause evidence ${JSON.stringify(nativePlay.playRuntimeStatus())}`);
       this.checkpointFailed = false;
       // Settings parity: general.autosave=0 skips writing the resume checkpoint.
-      if (this.autosaveEnabled) {
+      if (this.autosaveEnabled && !this.play.historyWarning) {
         try {
           this.play.saveCheckpoint();
         } catch (error) {
@@ -614,12 +663,15 @@ struct RunGame {
 
   private resumePlay(): void {
     this.drawerOpen = false;
+    this.historySaved = false;
     if (this.nearby) { nativePlay.nearbyMvpResumeGame(); return; }
     if (!this.paused) {
       return;
     }
     this.paused = false;
     this.checkpointFailed = false;
+    const boundary = nativePlay.playRuntimeStatus();
+    this.play.history?.advance(boundary.sourceFrames, boundary.sourceFps, true);
     this.play.resumeOutput();
     nativePlay.renderSetPaused(false);
     console.info(`FlyNES resume evidence ${JSON.stringify(nativePlay.playRuntimeStatus())}`);
@@ -679,6 +731,10 @@ struct RunGame {
       this.aspectMode = settings.aspectMode;
       this.audioEnabled = settings.audioEnabled === 1;
       this.autosaveEnabled = settings.autosaveEnabled === 1;
+      if (this.play.history !== undefined) {
+        if (!this.autosaveEnabled) this.play.history.intervalMs = 0;
+        else if (this.play.history.intervalMs === 0) this.play.history.intervalMs = 60000;
+      }
       this.hapticLevel = Math.max(1, Math.min(4, settings.hapticLevel));
       this.distinctAbHaptics = settings.distinctAbHaptics === 1;
       const refresh: number = settings.videoQualityPreset === 4 ? settings.customRefreshPolicy : 3;

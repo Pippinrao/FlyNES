@@ -23,6 +23,7 @@ struct GameCenter {
   @State private compactHeader: boolean = false;
   @State private fontScale: number = 1.0;
   @State private openFailed: boolean = false;
+  @State private selectedHasResume: boolean = false;
   @State private selectedFavorite: boolean = false;
   @State private detailCover: image.PixelMap | undefined = undefined;
   @State private cardCovers: Map<string, image.PixelMap> = new Map();
@@ -395,7 +396,7 @@ struct GameCenter {
           .width('100%')
       }
       Blank()
-      Button(this.selectedIsRecent() ? $r('app.string.game_center_continue') :
+      Button(this.selectedHasResume ? $r('app.string.game_center_continue') :
         $r('app.string.game_center_launch'))
         .width('100%')
         .height(this.catalog.launchButtonHeightVp(this.fontScale))
@@ -777,7 +778,29 @@ struct GameCenter {
     return row.builtin ? '' : row.originalFilename;
   }
 
+  private async refreshResume(): Promise<void> {
+    this.selectedHasResume = false;
+    const row = this.selectedRow();
+    const host = this.getUIContext().getHostContext() as common.UIAbilityContext;
+    if (row === undefined || host === undefined || this.nearbyChooseGame) return;
+    const locator = new RomLaunchLocator();
+    locator.canonicalId = row.canonicalId;
+    locator.sourceUuidHex = row.sourceUuidHex;
+    locator.sourceRelativePath = row.sourceRelativePath;
+    locator.packageFormat = row.packageFormat;
+    locator.zipEntryName = row.originalFilename;
+    try {
+      const rom = await new PlayService().readRom(host, locator);
+      const key = nativeProduct.historyContentKey(rom);
+      const path = `${host.filesDir}/save-history.db`;
+      const head = nativeProduct.historyHead(path, key);
+      const available = head > 0 && nativeProduct.historyRead(path, key, head, false).byteLength > 0;
+      if (this.selectedCanonicalId === row.canonicalId) this.selectedHasResume = available;
+    } catch (_) { if (this.selectedCanonicalId === row.canonicalId) this.selectedHasResume = false; }
+  }
+
   private refreshDetailExtras(): void {
+    void this.refreshResume();
     const row: GameCenterRow | undefined = this.selectedRow();
     this.selectedFavorite = row !== undefined && row.favorite;
     this.detailCover = undefined;
@@ -839,7 +862,7 @@ struct GameCenter {
 
   private launchAccessibilityText(): string {
     const title = this.selectedTitle();
-    const action = this.selectedIsRecent() ? 'Continue game' : 'Start game';
+    const action = this.selectedHasResume ? 'Continue game' : 'Start game';
     if (title.length === 0) {
       return action;
     }

@@ -51,7 +51,8 @@ public:
     bool destroy_surface(std::uint64_t generation);
     bool submit(std::uint64_t generation, std::uint64_t frame_index,
                 std::uint32_t width, std::uint32_t height,
-                const std::vector<std::uint8_t>& rgb565);
+                const std::vector<std::uint8_t>& rgb565,
+                bool discontinuity = false);
     MotionDecision next_slot(std::uint64_t generation, bool motion_qualified);
     void complete(const MotionDecision& decision, bool synthesized, bool presented);
     void set_paused(bool paused);

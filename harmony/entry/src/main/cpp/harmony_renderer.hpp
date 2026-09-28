@@ -48,7 +48,8 @@ public:
     bool submit_frame(std::uint64_t frame_index,
                       std::uint32_t width,
                       std::uint32_t height,
-                      const std::vector<std::uint8_t>& rgb565);
+                      const std::vector<std::uint8_t>& rgb565,
+                      bool discontinuity = false);
     void configure(std::int32_t refresh_policy,
                    std::int32_t temporal_mode,
                    std::int32_t spatial,

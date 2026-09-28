@@ -25,3 +25,5 @@ harmony/entry/src/main/resources/rawfile/*.nes binary
 shared/schema/golden/**/*.json text eol=lf
 # The game title check compares bytes against LF generator output.
 shared/data/game_titles.inc text eol=lf
+# Keep pinned SQLite amalgamation byte-for-byte, including upstream whitespace.
+libs/save_history/vendor/sqlite/sqlite3.[ch] text eol=lf whitespace=-trailing-space

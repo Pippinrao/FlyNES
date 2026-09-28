@@ -1,0 +1,6 @@
+@PACKAGE_INIT@
+include(CMakeFindDependencyMacro)
+if(UNIX)
+  find_dependency(Threads)
+endif()
+include("${CMAKE_CURRENT_LIST_DIR}/save_historyTargets.cmake")

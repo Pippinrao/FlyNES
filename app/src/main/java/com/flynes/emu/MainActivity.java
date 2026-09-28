@@ -152,6 +152,27 @@ public class MainActivity extends AppCompatActivity {
     private FrameLayout pauseLayer;
     private AudioThread audio;
     private SaveRepository saves;
+    private com.flynes.emu.save.HistoryStore historyStore;
+    private com.flynes.emu.save.HistorySession historySession;
+    private final com.flynes.emu.save.HistoryClock historyClock = new com.flynes.emu.save.HistoryClock();
+    private boolean historyInitialized;
+    private boolean historyLaunchHandled;
+    private final Runnable historyTimer = new Runnable() {
+        @Override public void run() {
+            if (nearbyPlay == null && rendering && pauseLayer == null
+                    && session.state() == SessionState.RUNNING && historyClock.due(historyInterval())) {
+                if (stopAudioThread()) {
+                    try { saveHistoryAutomatic(); }
+                    finally {
+                        if (!isFinishing() && pauseLayer == null && session.state() == SessionState.RUNNING) {
+                            audio = createAudioThread(); audio.start();
+                        }
+                    }
+                }
+            }
+            if (!isFinishing()) statusHandler.postDelayed(this, 1000);
+        }
+    };
     private SettingsRepository settings;
     private AppSettings appSettings;
     private FrameLayout root;
@@ -599,22 +620,20 @@ public class MainActivity extends AppCompatActivity {
         // Only start fresh when the previous thread is confirmed dead.
         if (!core.isCreated() || (audio != null && audio.isAlive())) return;
 
-        if (session.state() == SessionState.PAUSED) {
-            session.resume();
-        }
-
-        // Restore only from the active ROM's core-backed SHA-1 directory.
-        if (appSettings.autosaveEnabled() && currentRomIdentity != null) {
-            try {
-                SaveRecord record = saves.readAutosave(currentRomIdentity).orElse(null);
-                if (record != null && record.state().length > 0) {
-                    int rc = core.loadState(record.state());
-                    Log.i(TAG, "autosave restore rc=" + rc + " rom=" + currentRomIdentity.sha1());
-                }
-            } catch (IOException e) {
-                Log.e(TAG, "read per-ROM autosave failed", e);
+        if (!initializeHistory()) { showPauseMenu(); return; }
+        if (!historyLaunchHandled) {
+            historyLaunchHandled = true;
+            String action = getIntent().getStringExtra("save_history_action");
+            if ("history".equals(action) || "restart".equals(action)) {
+                showPauseMenu();
+                if ("history".equals(action)) showHistory(); else confirmHistoryRestart();
+                return;
             }
         }
+        if (pauseLayer != null) return;
+        if (session.state() == SessionState.PAUSED) session.resume();
+        statusHandler.removeCallbacks(historyTimer);
+        statusHandler.postDelayed(historyTimer, 1000);
 
         audio = createAudioThread();
         audio.start();
@@ -631,6 +650,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         unregisterDisplayListener();
+        statusHandler.removeCallbacks(historyTimer);
         if (session.state() == SessionState.RUNNING) session.pause();
         stopRendering();
         gamepad.reset();
@@ -664,16 +684,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        byte[] state = appSettings.autosaveEnabled() ? core.saveState() : null;
-        if (state != null && state.length > 0 && currentRomIdentity != null) {
-            try {
-                saves.writeAutosave(currentRomIdentity, state, System.currentTimeMillis());
-                Log.i(TAG, "per-ROM autosave written: " + state.length
-                        + " bytes rom=" + currentRomIdentity.sha1());
-            } catch (IOException e) {
-                Log.e(TAG, "write per-ROM autosave failed", e);
-            }
-        }
+        saveHistoryAutomatic();
     }
 
     @Override
@@ -681,6 +692,8 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         unregisterDisplayListener();
         statusHandler.removeCallbacks(publishVideoStatus);
+        statusHandler.removeCallbacks(historyTimer);
+        if (historyStore != null) { historyStore.close(); historyStore = null; }
         if (displayMonitor != null) displayMonitor.close();
         if (frameDispatch != null) frameDispatch.close();
         if (motionFrameDispatch != null) motionFrameDispatch.close();
@@ -770,7 +783,7 @@ public class MainActivity extends AppCompatActivity {
         if (session.state() == SessionState.RUNNING) session.pause();
         stopRendering();
         if (nearbyPlay != null) nearbyPlay.pause(true);
-        else stopAudioForPauseAsync();
+        else if (quiesceHistory()) saveHistoryAutomatic();
         gamepad.setVisibility(View.INVISIBLE);
         pauseButton.setVisibility(View.INVISIBLE);
         pauseLayer = createPauseDrawer();
@@ -799,7 +812,7 @@ public class MainActivity extends AppCompatActivity {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         LinearLayout drawer = new LinearLayout(this);
-        drawer.setId(R.id.pause_drawer);
+
         drawer.setOrientation(LinearLayout.VERTICAL);
         drawer.setGravity(Gravity.CENTER_VERTICAL);
         android.view.WindowInsets currentInsets = root.getRootWindowInsets();
@@ -838,6 +851,14 @@ public class MainActivity extends AppCompatActivity {
         Button resume = drawerButton(R.id.pause_continue, R.string.continue_game, true);
         resume.setOnClickListener(v -> resumeFromPauseMenu());
         drawer.addView(resume, matchHeight(dp(52), dp(12)));
+        if (nearbyPlay == null) {
+            addHistoryButton(drawer, R.id.pause_history, R.string.history_title, this::showHistory);
+            addHistoryButton(drawer, R.id.pause_save, R.string.history_save_current, () -> {
+                if (quiesceHistory() && historyAvailable()) historyDialogs().save();
+            });
+            addHistoryButton(drawer, R.id.pause_restart, R.string.history_restart, this::confirmHistoryRestart);
+            addHistoryButton(drawer, R.id.pause_save_interval, R.string.history_interval, this::chooseHistoryInterval);
+        }
         Button center = drawerButton(R.id.pause_game_center, R.string.game_center_title, false);
         if (nearbyPlay != null) center.setText(R.string.nearby_lobby_title);
         center.setOnClickListener(v -> {
@@ -857,7 +878,12 @@ public class MainActivity extends AppCompatActivity {
         int drawerWidth = Math.min(dp(360), Math.max(dp(280), Math.round(screenWidth * .38f)));
         FrameLayout.LayoutParams drawerParams = new FrameLayout.LayoutParams(
                 drawerWidth, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.END);
-        layer.addView(drawer, drawerParams);
+        android.widget.ScrollView scroll = new android.widget.ScrollView(this);
+        scroll.setId(R.id.pause_drawer);
+        scroll.setFillViewport(true);
+        scroll.addView(drawer, new android.widget.ScrollView.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        layer.addView(scroll, drawerParams);
         drawer.requestApplyInsets();
         return layer;
     }
@@ -922,6 +948,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void resumeFromPauseMenu() {
         if (isFinishing()) return;
+        if (nearbyPlay == null && (!initializeHistory() || !quiesceHistory())) return;
         removePauseLayer();
         inputRouter.cancelAll();
         gamepad.setVisibility(View.VISIBLE);
@@ -934,6 +961,8 @@ public class MainActivity extends AppCompatActivity {
         }
         startRendering();
         scheduleDisplayReapplyAfterPause();
+        statusHandler.removeCallbacks(historyTimer);
+        statusHandler.postDelayed(historyTimer, 1000);
     }
 
     // ------------------------------------------------------------------
@@ -966,6 +995,8 @@ public class MainActivity extends AppCompatActivity {
             return -1;
         }
         currentRomIdentity = info.identity();
+        historyInitialized = false;
+        historyLaunchHandled = false;
         runtimeSourceTiming = info.ntsc() ? SourceTiming.NTSC_60_0988 : SourceTiming.PAL_50;
         framePublisher.reset();
         view.resetSequence();
@@ -997,7 +1028,8 @@ public class MainActivity extends AppCompatActivity {
     private AudioThread createAudioThread() {
         return new AudioThread(core, appSettings.audioEnabled(), frameAvailable,
                 temporalAudioDelay, avSyncMonitor,
-                sequence -> view == null ? -1L : view.actualRealPresentationNs(sequence));
+                sequence -> view == null ? -1L : view.actualRealPresentationNs(sequence),
+                historyClock::advance);
     }
 
     private boolean stopAudioThread() {
@@ -1614,45 +1646,23 @@ public class MainActivity extends AppCompatActivity {
         return effective;
     }
 
-    /** Stops the audio master without delaying the first drawer frame. */
-    private void stopAudioForPauseAsync() {
-        AudioThread stopping = audio;
-        if (stopping == null) return;
-        stopping.stopLoop();
-        Thread joiner = new Thread(() -> {
-            boolean dead = false;
-            try {
-                stopping.join(5000L);
-                dead = !stopping.isAlive();
-            } catch (InterruptedException interrupted) {
-                Thread.currentThread().interrupt();
+    /** Complete the same motion teardown once the pause/save boundary owns the core. */
+    private void finishHistoryAudioPause() {
+        if (motionRuntimeActive || motionShadowActive) {
+            motionCaptureActive = false;
+            displayLeaseWatchdog.clear();
+            long exitId = view.exitMotion(true);
+            if (exitId >= 0L && awaitTransition(exitId,
+                    NativePresenterStats.TEMPORAL_IMMEDIATE_NATIVE, 2_000L)) {
+                motionRuntimeActive = false;
+                motionShadowActive = false;
+                requestedRuntimeTemporalState = RuntimeTemporalState.IMMEDIATE_NATIVE;
+                if (temporalAudioDelay.removeOneFrameDelay() == 0) {
+                    temporalAudioDelay.flush();
+                    temporalAudioDelay.disableImmediately();
+                }
             }
-            final boolean stopped = dead;
-            runOnUiThread(() -> {
-                if (audio != stopping || !stopped) return;
-                audio = null;
-                if (motionRuntimeActive || motionShadowActive) {
-                    motionCaptureActive = false;
-                    displayLeaseWatchdog.clear();
-                    long exitId = view.exitMotion(true);
-                    if (exitId >= 0L && awaitTransition(exitId,
-                            NativePresenterStats.TEMPORAL_IMMEDIATE_NATIVE, 2_000L)) {
-                        motionRuntimeActive = false;
-                        motionShadowActive = false;
-                        requestedRuntimeTemporalState = RuntimeTemporalState.IMMEDIATE_NATIVE;
-                        if (temporalAudioDelay.removeOneFrameDelay() == 0) {
-                            temporalAudioDelay.flush();
-                            temporalAudioDelay.disableImmediately();
-                        }
-                    }
-                }
-                if (!isFinishing() && session.state() == SessionState.RUNNING) {
-                    audio = createAudioThread();
-                    audio.start();
-                }
-            });
-        }, "FlyNES-pause-audio-stop");
-        joiner.start();
+        }
     }
 
     private void updateViewport(int insetLeft, int insetRight) {
@@ -1773,6 +1783,101 @@ public class MainActivity extends AppCompatActivity {
         Thread thread = new Thread(runnable, name);
         thread.setDaemon(true);
         return thread;
+    }
+
+    private long historyInterval() {
+        return appSettings != null && appSettings.autosaveEnabled()
+                ? getSharedPreferences("save_history", MODE_PRIVATE).getLong("interval_ms", 60000) : 0;
+    }
+
+    private boolean initializeHistory() {
+        if (historyInitialized) return true;
+        if (currentRomIdentity == null || !core.isCreated()) return false;
+        try {
+            if (historyStore == null) historyStore = new com.flynes.emu.save.HistoryStore(
+                    new java.io.File(getFilesDir(), "save-history.sqlite"));
+            historySession = new com.flynes.emu.save.HistorySession(core, historyStore,
+                    currentRomIdentity.sha1(), currentRom, historyClock,
+                    () -> com.flynes.emu.save.HistoryThumbnail.capture(core));
+            historySession.initialize(saves.readAutosave(currentRomIdentity).orElse(null));
+            historyInitialized = true;
+            resetHistoryPresentation();
+            return true;
+        } catch (Exception failure) { historyFailure(failure); return false; }
+    }
+
+    private boolean quiesceHistory() {
+        if (nearbyPlay != null) return false;
+        inputRouter.cancelAll(); gamepad.reset();
+        try {
+            if (session.state() == SessionState.RUNNING) session.pause().get();
+        } catch (Exception failure) { historyFailure(failure); return false; }
+        if (!stopAudioThread()) {
+            Toast.makeText(this, R.string.history_wait, Toast.LENGTH_LONG).show(); return false;
+        }
+        finishHistoryAudioPause();
+        core.setInput(0); temporalAudioDelay.flush();
+        return true;
+    }
+
+    private void saveHistoryAutomatic() {
+        if (historyInterval() == 0 || !historyInitialized || !historyClock.changed()) return;
+        try { historySession.save(com.flynes.emu.save.HistoryStore.AUTO, ""); }
+        catch (Exception failure) { historyFailure(failure); }
+    }
+
+    private void historyFailure(Exception failure) {
+        Log.e(TAG, "save history failed", failure);
+        Toast.makeText(this, getString(R.string.history_failure, failure.getMessage()), Toast.LENGTH_LONG).show();
+    }
+
+    private void resetHistoryPresentation() {
+        core.setInput(0); temporalAudioDelay.flush(); framePublisher.reset(); view.resetSequence();
+    }
+
+    private void addHistoryButton(LinearLayout drawer, int id, int text, Runnable action) {
+        Button button = drawerButton(id, text, false);
+        button.setOnClickListener(v -> action.run());
+        drawer.addView(button, matchHeight(dp(48), dp(8)));
+    }
+
+    private com.flynes.emu.save.HistoryDialogs historyDialogs() {
+        return new com.flynes.emu.save.HistoryDialogs(this, historyStore, currentRomIdentity.sha1(),
+                new com.flynes.emu.save.HistoryDialogs.Actions() {
+                    public void save(String label) { historySession.save(com.flynes.emu.save.HistoryStore.MANUAL, label); historyInitialized = true; }
+                    public void restore(long id) { historySession.restore(id); historyInitialized = true; resetHistoryPresentation(); }
+                    public void restart() { historySession.restart(); historyInitialized = true; resetHistoryPresentation(); }
+                });
+    }
+
+    private boolean historyAvailable() {
+        return historySession != null || initializeHistory();
+    }
+
+    private void showHistory() {
+        if (quiesceHistory() && historyAvailable()) historyDialogs().show();
+    }
+
+    private void confirmHistoryRestart() {
+        if (quiesceHistory() && historyAvailable()) historyDialogs().restart();
+    }
+
+    private void chooseHistoryInterval() {
+        String[] options = {"30 s", "1 min", "2 min", "5 min", getString(R.string.history_off)};
+        long[] values = {30000, 60000, 120000, 300000, 0};
+        long selected = historyInterval(); int checked = 1;
+        for (int i=0;i<values.length;i++) if (values[i]==selected) checked=i;
+        new androidx.appcompat.app.AlertDialog.Builder(this).setTitle(R.string.history_interval)
+                .setSingleChoiceItems(options, checked, (dialog, which) -> {
+                    AppSettings updated = appSettings.toBuilder().autosaveEnabled(values[which] > 0).build();
+                    if (!settings.save(updated) || !getSharedPreferences("save_history", MODE_PRIVATE)
+                            .edit().putLong("interval_ms", values[which]).commit()) {
+                        historyFailure(new IllegalStateException("Could not save the interval setting"));
+                        return;
+                    }
+                    appSettings = updated;
+                    dialog.dismiss();
+                }).setNegativeButton(R.string.history_cancel, null).show();
     }
 
     // ------------------------------------------------------------------

@@ -65,7 +65,7 @@ export default class EntryAbility extends UIAbility {
 
   onForeground(): void { hilog.info(0, 'FlyNesNearby', 'event=ability_foreground'); }
 
-  onBackground(): void { hilog.info(0, 'FlyNesNearby', 'event=ability_background'); }
+  onBackground(): void { this.context.eventHub.emit('save-background'); hilog.info(0, 'FlyNesNearby', 'event=ability_background'); }
 
   onWindowStageDestroy(): void {
     this.stage = undefined;

@@ -46,6 +46,7 @@ public:
     PlayStepResult copy_latest_frame();
     std::vector<std::uint8_t> save_checkpoint();
     void load_checkpoint(const std::uint8_t* bytes, std::size_t size);
+    void restart();
 
 private:
     PlaySession();

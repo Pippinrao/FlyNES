@@ -1,4 +1,5 @@
 #include "catalog_smoke.hpp"
+#include "save_history_napi.hpp"
 #include "harmony_renderer.hpp"
 #include "play_package.hpp"
 #include "play_session.hpp"
@@ -1284,6 +1285,26 @@ napi_value PlayLoadCheckpoint(napi_env env, napi_callback_info info)
     catch (const std::exception& error)
     {
         return report_error(env, error.what(), false);
+    }
+}
+
+napi_value PlayRestart(napi_env env, napi_callback_info info)
+{
+    try
+    {
+        (void)info;
+        require_play().restart();
+        napi_value undefined = nullptr;
+        require_napi(napi_get_undefined(env, &undefined), "playRestart undefined");
+        return undefined;
+    }
+    catch (const std::exception& error)
+    {
+        return report_error(env, error.what(), false);
+    }
+    catch (...)
+    {
+        return report_error(env, "playRestart failed: unknown native error", false);
     }
 }
 
@@ -3275,12 +3296,14 @@ napi_value Init(napi_env env, napi_value exports)
              nullptr},
             {"playSaveCheckpoint", nullptr, PlaySaveCheckpoint, nullptr, nullptr, nullptr, napi_default, nullptr},
             {"playLoadCheckpoint", nullptr, PlayLoadCheckpoint, nullptr, nullptr, nullptr, napi_default, nullptr},
+            {"playRestart", nullptr, PlayRestart, nullptr, nullptr, nullptr, napi_default, nullptr},
             {"playClose", nullptr, PlayClose, nullptr, nullptr, nullptr, napi_default, nullptr},
         };
         require_napi(napi_define_properties(
                          env, exports, sizeof(descriptors) / sizeof(descriptors[0]), descriptors),
                      "define entry exports");
         flynes::harmony::harmony_renderer().bind_component(env, exports);
+        register_save_history(env, exports);
         return exports;
     }
     catch (const std::exception& error)

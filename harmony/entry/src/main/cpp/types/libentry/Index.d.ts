@@ -276,3 +276,24 @@ export const renderStatus: () => RenderStatusDto;
 export const playSaveCheckpoint: () => ArrayBuffer;
 export const playLoadCheckpoint: (checkpoint: Uint8Array | ArrayBuffer) => void;
 export const playClose: () => void;
+/** Cold restart preserving the cartridge's current battery-backed RAM. */
+export const playRestart: () => void;
+
+export interface HistoryInput {
+  playedMs: number; kind: number; label: string; session: string; parent: number;
+  state: ArrayBuffer; thumbnail: ArrayBuffer; makeHead: boolean;
+}
+export interface HistoryRow {
+  id: number; createdMs: number; playedMs: number; kind: number; label: string;
+  session: string; parent: number; pinned: boolean; isHead: boolean;
+}
+export interface HistoryOperation { operation: number; backup: number; }
+export const historySave: (path: string, key: string, input: HistoryInput) => number;
+export const historyHead: (path: string, key: string) => number;
+export const historyList: (path: string, key: string) => HistoryRow[];
+export const historyRead: (path: string, key: string, id: number, thumbnail: boolean) => ArrayBuffer;
+export const historyEdit: (path: string, id: number, label: string, pinned: boolean, remove: boolean) => void;
+export const historyPrepare: (path: string, key: string, target: number, input: HistoryInput) => HistoryOperation;
+export const historyFinish: (path: string, operation: number, success: boolean) => void;
+export const historyContentKey: (rom: Uint8Array | ArrayBuffer) => string;
+export const historyRecover: (path: string, key: string) => number;

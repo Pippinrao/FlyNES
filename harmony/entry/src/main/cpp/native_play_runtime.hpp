@@ -65,11 +65,13 @@ public:
     NativePlayRuntime& operator=(const NativePlayRuntime&) = delete;
 
     void set_buttons(std::uint32_t buttons) noexcept;
+    // Pausing waits for in-flight state, video and PCM publication to finish.
     void set_paused(bool paused);
     void set_muted(bool muted) noexcept;
     PlayStepResult copy_latest_frame() const;
     std::vector<std::uint8_t> save_checkpoint();
     void load_checkpoint(const std::uint8_t* bytes, std::size_t size);
+    void restart();
     NativePlayStatus status() const;
     void close();
 
