@@ -35,6 +35,7 @@ public class AudioThread extends Thread {
     private static final int MAX_IDLE_ITERATIONS = 60;
 
     private final NesCore core;
+    private final java.util.function.LongConsumer progressed;
     private final boolean audible;
     private final FrameAvailableSignal frameAvailable;
     private final TemporalAudioDelay temporalAudioDelay;
@@ -68,7 +69,16 @@ public class AudioThread extends Thread {
     public AudioThread(NesCore core, boolean audible, FrameAvailableSignal frameAvailable,
                        TemporalAudioDelay temporalAudioDelay, AvSyncMonitor avSyncMonitor,
                        LongUnaryOperator videoPresentationBySequence) {
+        this(core, audible, frameAvailable, temporalAudioDelay, avSyncMonitor,
+                videoPresentationBySequence, micros -> { });
+    }
+
+    public AudioThread(NesCore core, boolean audible, FrameAvailableSignal frameAvailable,
+                       TemporalAudioDelay temporalAudioDelay, AvSyncMonitor avSyncMonitor,
+                       LongUnaryOperator videoPresentationBySequence,
+                       java.util.function.LongConsumer progressed) {
         super("FlyNES-Audio");
+        this.progressed = progressed;
         this.core = core;
         this.audible = audible;
         this.frameAvailable = frameAvailable;
@@ -152,6 +162,7 @@ public class AudioThread extends Thread {
             long blockStartFramePosition = writtenAudioFrames;
             FrameStepResult step = pump.pumpOnce();
             if (!step.failed() && step.audioSamples() > 0) {
+                progressed.accept(step.audioSamples() * 1_000_000L / SAMPLE_RATE);
                 writtenAudioFrames += step.audioSamples();
                 List<TemporalAudioDelay.OutputSpan> spans = temporalAudioDelay == null
                         ? Collections.singletonList(new TemporalAudioDelay.OutputSpan(

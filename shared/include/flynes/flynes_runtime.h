@@ -235,6 +235,13 @@ FLYNES_API fly_result fly_runtime_load_rom_fresh(fly_runtime_t* runtime,
                                                  size_t size,
                                                  const uint8_t* expected_sha256);
 
+/* Cold-resets the loaded cartridge while preserving its battery-backed RAM.
+ * Clears input, frame, PCM and rollback observations; the next input starts at
+ * frame zero. Missing ROM returns INVALID_STATE. Reset failure leaves the
+ * runtime unloaded rather than exposing observations from the previous round.
+ */
+FLYNES_API fly_result fly_runtime_restart(fly_runtime_t* runtime);
+
 FLYNES_API fly_result fly_runtime_step_frame(fly_runtime_t* runtime,
                                              const fly_frame_input_v1* input,
                                              fly_frame_result_v1* result);

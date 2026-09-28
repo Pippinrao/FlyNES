@@ -1,4 +1,5 @@
 #include "play_session.hpp"
+#include "../../shared/tests/fixtures/battery_counter_rom.hpp"
 
 #include <nes/nes.h>
 
@@ -171,6 +172,42 @@ void test_checkpoint_restores_pixels_after_later_frames()
     expect(continued.frame_index == 30, "resume after load must keep the saved timeline");
 }
 
+void test_restart_preserves_battery_progress()
+{
+    const auto rom = battery_counter_rom();
+    auto session = flynes::harmony::PlaySession::open(rom.data(), rom.size());
+    flynes::harmony::PlayStepResult first;
+    std::vector<std::uint32_t> first_counts;
+    for (int frame = 0; frame < 20; ++frame) {
+        first = session->step();
+        if (frame > 0) first_counts.push_back(first.pcm_sample_count);
+    }
+    session->set_port0_buttons(NES_BTN_START);
+    session->restart();
+    const auto restarted = session->copy_latest_frame();
+    expect(restarted.frame_index == 0, "cold restart publishes first frame on a new core timeline");
+    expect(restarted.applied_buttons == 0, "cold restart clears held input");
+    const auto second_frame = session->step();
+    std::vector<std::uint32_t> restarted_counts{second_frame.pcm_sample_count};
+    flynes::harmony::PlayStepResult second = restarted;
+    for (int frame = 2; frame < 20; ++frame) {
+        second = session->step();
+        restarted_counts.push_back(second.pcm_sample_count);
+    }
+    expect(restarted_counts == first_counts,
+           "cold restart replays the startup PCM cadence without an old fractional phase");
+    expect(second.rgb565 != first.rgb565,
+           "cold restart retains battery counter and increments it, instead of rewinding SRAM");
+    auto fresh = flynes::harmony::PlaySession::open(rom.data(), rom.size());
+    flynes::harmony::PlayStepResult clean;
+    (void)fresh->step();
+    const auto fresh_second = fresh->step();
+    expect(second_frame.pcm_sample_count == fresh_second.pcm_sample_count,
+           "cold restart resets fractional audio cadence to the startup clock");
+    for (int frame = 2; frame < 20; ++frame) clean = fresh->step();
+    expect(clean.rgb565 == first.rgb565, "battery fixture has a deterministic fresh cartridge baseline");
+}
+
 } // namespace
 
 int main()
@@ -194,6 +231,7 @@ int main()
     test_empty_rom_is_rejected();
     test_step_publishes_complete_frame_pcm_and_port0_buttons();
     test_checkpoint_restores_pixels_after_later_frames();
+    test_restart_preserves_battery_progress();
 
     if (failures != 0)
     {

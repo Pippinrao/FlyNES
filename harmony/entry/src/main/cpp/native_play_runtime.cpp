@@ -32,6 +32,18 @@ namespace {
 std::atomic<bool> audio_creation_disabled{false};
 std::atomic<AudioHandleRecord*> quarantined_audio_handles{nullptr};
 
+// The surface outlives individual games and checkpoints can rewind the core.
+// Serialize submissions and use a presentation sequence independent of either.
+std::mutex presentation_mutex;
+std::uint64_t next_presentation_frame = 0;
+
+void present_frame(const PlayStepResult& frame, bool discontinuity = false)
+{
+    std::lock_guard lock(presentation_mutex);
+    harmony_renderer().submit_frame(
+        next_presentation_frame++, frame.width, frame.height, frame.rgb565, discontinuity);
+}
+
 void quarantine_audio_handle(AudioHandleRecord* record) noexcept
 {
     auto* head = quarantined_audio_handles.load(std::memory_order_relaxed);
@@ -108,6 +120,9 @@ void NativePlayRuntime::set_buttons(std::uint32_t buttons) noexcept
 
 void NativePlayRuntime::set_paused(bool paused)
 {
+    // Wait for the whole source step, including latest/GPU publication. A
+    // paused caller may then capture state and its matching picture separately.
+    std::lock_guard session_lock(session_mutex_);
     {
         std::lock_guard lock(audio_mutex_);
         if (paused_.exchange(paused, std::memory_order_acq_rel) != paused)
@@ -161,6 +176,33 @@ void NativePlayRuntime::load_checkpoint(const std::uint8_t* bytes, std::size_t s
     {
         std::lock_guard lock(session_mutex_);
         session_->load_checkpoint(bytes, size);
+        auto restored = session_->copy_latest_frame();
+        present_frame(restored, true);
+        std::lock_guard latest_lock(latest_mutex_);
+        latest_ = std::move(restored);
+    }
+    catch (...)
+    {
+        if (!was_paused) set_paused(false);
+        throw;
+    }
+    if (!was_paused) set_paused(false);
+}
+
+void NativePlayRuntime::restart()
+{
+    const bool was_paused = paused_.load(std::memory_order_acquire);
+    set_paused(true);
+    try
+    {
+        std::lock_guard lock(session_mutex_);
+        buttons_.store(0, std::memory_order_release);
+        session_->restart();
+        auto restarted = session_->copy_latest_frame();
+        present_frame(restarted, true);
+        std::lock_guard latest_lock(latest_mutex_);
+        latest_ = std::move(restarted);
+        source_frames_.fetch_add(1, std::memory_order_acq_rel);
     }
     catch (...)
     {
@@ -249,13 +291,12 @@ void NativePlayRuntime::run()
                 continue;
             }
             PlayStepResult step;
-            {
-                std::lock_guard lock(session_mutex_);
-                session_->set_port0_buttons(buttons_.load(std::memory_order_acquire));
-                step = session_->step();
-            }
-            harmony_renderer().submit_frame(
-                step.frame_index, step.width, step.height, step.rgb565);
+            std::unique_lock session_lock(session_mutex_);
+            if (paused_.load(std::memory_order_acquire) || stop_.load(std::memory_order_acquire))
+                continue;
+            session_->set_port0_buttons(buttons_.load(std::memory_order_acquire));
+            step = session_->step();
+            present_frame(step, source_frames_.load(std::memory_order_relaxed) == 0);
             {
                 const bool motion = harmony_renderer().status().display.motion_qualified;
                 std::lock_guard lock(audio_mutex_);
@@ -293,6 +334,7 @@ void NativePlayRuntime::run()
             }
             first_frame_ready_.notify_all();
             source_frames_.fetch_add(1, std::memory_order_acq_rel);
+            session_lock.unlock();
             if (should_fallback_audio_latency(
                     audio_underflows_.load(std::memory_order_acquire),
                     audio_fast_path_.load(std::memory_order_acquire)))

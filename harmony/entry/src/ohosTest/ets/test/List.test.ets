@@ -1,4 +1,7 @@
+import saveHistoryPlayTest from './SaveHistoryPlay.test';
+import saveHistoryUiTest from './SaveHistoryUi.test';
 import smokeTest from './Smoke.test';
+import saveHistoryTest from './SaveHistory.test';
 import { abilityDelegatorRegistry } from '@kit.TestKit';
 import controlLayoutWarningsTest from './ControlLayoutWarnings.test';
 import licenseModelTest from './LicenseModel.test';
@@ -21,6 +24,15 @@ import builtinPlaySmokeTest from './BuiltinPlaySmoke.test';
 import builtinGameplayAcceptanceTest from './BuiltinGameplayAcceptance.test';
 
 export default function testsuite() {
+  if (abilityDelegatorRegistry.getArguments().parameters['-s saveHistoryUiOnly'] === 'true') {
+    saveHistoryUiTest();
+    return;
+  }
+  if (abilityDelegatorRegistry.getArguments().parameters['-s saveHistoryOnly'] === 'true') {
+    saveHistoryTest();
+    saveHistoryPlayTest();
+    return;
+  }
   if (abilityDelegatorRegistry.getArguments().parameters['-s nearbyProductPlayOnly'] === 'true') {
     nearbyMvpProductPlayTest();
     return;
@@ -52,6 +64,7 @@ export default function testsuite() {
     nearbyUxRestorationTest();
     return;
   }
+  saveHistoryTest();
   smokeTest();
   controlLayoutWarningsTest();
   licenseModelTest();

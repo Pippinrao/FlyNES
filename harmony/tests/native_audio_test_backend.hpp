@@ -4,6 +4,10 @@
 // PlaySession, PCM support and the NES core are compiled without substitution.
 #include <cstdint>
 #include <vector>
+#include <condition_variable>
+#include <mutex>
+#include "render_mailbox.hpp"
+#include "motion_frame_scheduler.hpp"
 
 struct OH_AudioRendererStruct;
 using OH_AudioRenderer = OH_AudioRendererStruct;
@@ -43,7 +47,26 @@ int OH_AudioRenderer_GetAudioTimestampInfo(OH_AudioRenderer*, std::int64_t*, std
 namespace flynes::harmony {
 struct TestRenderStatus { struct { bool motion_qualified = false; } display; };
 struct TestRenderer {
-    bool submit_frame(std::uint64_t, std::uint32_t, std::uint32_t, const std::vector<std::uint8_t>&) { return true; }
+    RenderMailbox mailbox;
+    MotionFrameScheduler motion;
+    std::mutex gate_mutex;
+    std::condition_variable gate_wake;
+    bool block = false;
+    bool entered = false;
+    TestRenderer() { mailbox.create_surface(1, 256, 240); motion.create_surface(1); }
+    bool submit_frame(std::uint64_t index, std::uint32_t width, std::uint32_t height,
+                      const std::vector<std::uint8_t>& pixels, bool discontinuity = false) {
+        {
+            std::unique_lock lock(gate_mutex);
+            if (block) {
+                entered = true;
+                gate_wake.notify_all();
+                gate_wake.wait(lock, [&] { return !block; });
+            }
+        }
+        const bool accepted = mailbox.submit_source_frame(1, index, width, height, pixels);
+        return motion.submit(1, index, width, height, pixels, discontinuity) && accepted;
+    }
     TestRenderStatus status() const { return {}; }
 };
 inline TestRenderer& harmony_renderer() { static TestRenderer renderer; return renderer; }

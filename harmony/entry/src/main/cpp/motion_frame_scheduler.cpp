@@ -31,7 +31,8 @@ bool MotionFrameScheduler::submit(std::uint64_t generation,
                                   std::uint64_t frame_index,
                                   std::uint32_t width,
                                   std::uint32_t height,
-                                  const std::vector<std::uint8_t>& rgb565)
+                                  const std::vector<std::uint8_t>& rgb565,
+                                  bool discontinuity)
 {
     if (width == 0 || height == 0 || rgb565.size() !=
         static_cast<std::size_t>(width) * height * 2U)
@@ -41,6 +42,12 @@ bool MotionFrameScheduler::submit(std::uint64_t generation,
     std::lock_guard lock(mutex_);
     if (!status_.surface_ready || generation != status_.generation) return false;
     if (!frames_.empty() && frame_index <= frames_.back().frame_index) return false;
+    if (discontinuity)
+    {
+        // A restored checkpoint/new game is not adjacent to retained pixels.
+        frames_.clear();
+        synth_phase_ = false;
+    }
     frames_.push_back(MotionFrame{frame_index, width, height, rgb565});
     while (frames_.size() > 3)
     {

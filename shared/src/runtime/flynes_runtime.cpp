@@ -725,6 +725,27 @@ extern "C" fly_result fly_runtime_load_rom(fly_runtime_t* runtime,
     }
 }
 
+extern "C" fly_result fly_runtime_restart(fly_runtime_t* runtime)
+{
+    if (runtime == nullptr) return FLY_RESULT_INVALID_ARGUMENT;
+    try
+    {
+        std::lock_guard<std::mutex> lock(runtime->mutex);
+        if (!runtime->rom_loaded || runtime->nes == nullptr)
+            return FLY_RESULT_INVALID_STATE;
+        runtime->reset_simulation();
+        if (nes_reset(runtime->nes.get(), 1) < 0) return FLY_RESULT_INTERNAL_ERROR;
+        // Hard reset resets the APU, while the ABI's fractional sample clock
+        // belongs to its wrapper and must start at the same phase as a fresh run.
+        if (nes_set_audio_format(runtime->nes.get(), runtime->sample_rate, 0) < 0)
+            return FLY_RESULT_INTERNAL_ERROR;
+        runtime->rom_loaded = true;
+        return FLY_RESULT_OK;
+    }
+    catch (const std::bad_alloc&) { return FLY_RESULT_OUT_OF_MEMORY; }
+    catch (...) { return FLY_RESULT_INTERNAL_ERROR; }
+}
+
 extern "C" fly_result fly_runtime_load_rom_fresh(fly_runtime_t* runtime,
                                                  const uint8_t* bytes,
                                                  size_t size,

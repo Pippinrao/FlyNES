@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(nescore CXX)
+project(nescore C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -15,8 +15,11 @@ endif()
 set(FLYNES_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 add_subdirectory(${FLYNES_SHARED_DIR} ${CMAKE_BINARY_DIR}/flynes_shared)
 
+add_subdirectory(${FLYNES_SHARED_DIR}/../libs/save_history ${CMAKE_BINARY_DIR}/save_history)
+
 add_library(nescore SHARED
     nes_jni.cpp
+    save_history_jni.cpp
     flynes_app_jni.cpp
     nearby/session_owner.cpp
     nearby/nearby_mvp_jni.cpp
@@ -40,7 +43,7 @@ add_library(nescore SHARED
     video/video_presenter_jni.cpp)
 target_include_directories(nescore PRIVATE ${NES_CORE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}
     ${FLYNES_SHARED_DIR}/src/session)
-target_link_libraries(nescore nes_abi nestopia video_algorithms flynes_app flynes_session
+target_link_libraries(nescore save_history nes_abi nestopia video_algorithms flynes_app flynes_session
     flynes_session_codec)
 if(TARGET flynes_runtime)
     target_link_libraries(nescore flynes_runtime flynes_product_dual_runtime)

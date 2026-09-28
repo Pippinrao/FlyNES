@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(flynes_harmony_bridge LANGUAGES CXX)
+project(flynes_harmony_bridge LANGUAGES C CXX)
 
 set(FLYNES_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(NES_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -30,7 +30,11 @@ add_subdirectory(
     "${CMAKE_CURRENT_BINARY_DIR}/flynes_shared"
 )
 
+add_subdirectory("${FLYNES_REPOSITORY_ROOT}/libs/save_history"
+    "${CMAKE_CURRENT_BINARY_DIR}/save_history")
+
 add_library(entry SHARED
+    save_history_napi.cpp
     napi_init.cpp
     "${FLYNES_REPOSITORY_ROOT}/harmony/nearby/session_owner_v2.cpp"
     "${FLYNES_REPOSITORY_ROOT}/harmony/nearby/content_port_v2.cpp"
@@ -70,6 +74,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "OHOS" AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(entry PRIVATE -Wno-error=unused-command-line-argument)
 endif()
 target_link_libraries(entry PRIVATE
+    save_history::save_history
     flynes_app
     flynes_product
     flynes_runtime

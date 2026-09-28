@@ -614,8 +614,8 @@ public final class HomeActivity extends android.app.Activity {
         loadCover(row.canonicalId(), cover, art);
         launch.setEnabled(!busy && row.launchable());
         launch.setText(getIntent().getBooleanExtra("nearby_choose_game", false)
-                ? R.string.nearby_choose_game : row.lastPlayedSequence() > 0
-                ? R.string.continue_selected_game : R.string.start_game);
+                ? R.string.nearby_choose_game : R.string.start_game);
+        updateSavedHeadLabel(row, variant);
         launch.setContentDescription(launch.getText() + ", " + display);
         favoriteToggle.setEnabled(!busy);
         favoriteToggle.setIconResource(row.favorite()
@@ -660,6 +660,27 @@ public final class HomeActivity extends android.app.Activity {
         }));
     }
 
+    private void updateSavedHeadLabel(GameCenterSnapshot.Row row, GameVariant variant) {
+        if (variant == null || getIntent().getBooleanExtra("nearby_choose_game", false)) return;
+        java.io.File file = new java.io.File(getFilesDir(), "save-history.sqlite");
+        if (!file.isFile()) return;
+        String canonicalId = row.canonicalId();
+        waiter.execute(() -> {
+            boolean found = false;
+            try (var store = new com.flynes.emu.save.HistoryStore(file)) {
+                String key = variant.identity().sha1();
+                long head = store.head(key);
+                found = head != 0 && store.read(key, head, false).length > 0;
+            } catch (Exception ignored) { }
+            final boolean hasHead = found;
+            main.post(() -> {
+                if (isDestroyed() || !canonicalId.equals(navigation.selectedCanonicalId())) return;
+                launch.setText(hasHead ? R.string.continue_selected_game : R.string.start_game);
+                launch.setContentDescription(launch.getText() + ", " + titlePresentation(row).primary());
+            });
+        });
+    }
+
     private void launchSelected() {
         GameCenterSnapshot.Row row = rows.get(navigation.selectedCanonicalId());
         if (row == null || !row.launchable()) return;
@@ -702,7 +723,8 @@ public final class HomeActivity extends android.app.Activity {
                 canonicalId, result -> {
                     setBusy(false);
                     if (result.sessionCommitted()) {
-                        startActivity(new Intent(this, MainActivity.class));
+                        Intent play = new Intent(this, MainActivity.class);
+                        startActivity(play);
                     } else {
                         showStatus(R.string.launch_failed);
                         refreshSnapshot();

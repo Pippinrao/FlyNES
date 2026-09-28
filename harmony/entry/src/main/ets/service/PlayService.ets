@@ -5,6 +5,8 @@ import { fileIo } from '@kit.CoreFileKit';
 import { HarmonySourceMap } from '../platform/HarmonySourceMap';
 import { BuiltinGames } from './BuiltinGames';
 import { CheckpointStore } from './CheckpointStore';
+import { SaveHistoryService } from './SaveHistoryService';
+import { preferences } from '@kit.ArkData';
 
 export const NES_BTN_A = 0x01;
 export const NES_BTN_B = 0x02;
@@ -62,6 +64,8 @@ export class PlayService {
   private opened: boolean = false;
   private nearby: boolean = false;
   private checkpointStore: CheckpointStore | undefined = undefined;
+  history: SaveHistoryService | undefined = undefined;
+  historyWarning: boolean = false;
   private checkpointId: string = '';
 
   async open(context: common.UIAbilityContext, locator: RomLaunchLocator,
@@ -72,19 +76,20 @@ export class PlayService {
     this.opened = true;
     this.checkpointStore = new CheckpointStore(context.filesDir);
     this.checkpointId = locator.canonicalId;
-    if (restoreCheckpoint && this.checkpointId.length > 0) {
-      try {
-        const checkpoint = this.checkpointStore.read(this.checkpointId);
-        if (checkpoint !== undefined) {
-          nativePlay.playLoadCheckpoint(checkpoint);
-          console.info(`FlyNES autosave restored for ${this.checkpointId}`);
-        }
-      } catch (error) {
-        this.checkpointStore.quarantine(this.checkpointId);
-        const detail = error instanceof Error ? error.message : 'autosave restore failed';
-        console.error(`FlyNES corrupt autosave quarantined: ${detail}`);
-      }
+    nativePlay.playSetPaused(true);
+    this.history = new SaveHistoryService(`${context.filesDir}/save-history.db`, nativePlay.historyContentKey(rom));
+    const options = preferences.getPreferencesSync(context, { name: 'save_history' });
+    this.history.intervalMs = options.getSync('intervalMs', 60000) as number;
+    this.historyWarning = false;
+    try {
+      this.history.initialize(restoreCheckpoint, () => this.checkpointId.length > 0 ?
+        this.checkpointStore?.read(this.checkpointId) : undefined);
+    } catch (error) {
+      this.historyWarning = true;
+      console.error(`FlyNES history initialization failed: ${error}`);
     }
+    // Caller keeps a failed resume paused and offers history / fresh start.
+    if (!this.historyWarning) nativePlay.playSetPaused(false);
     nativePlay.playSetAudioMuted(this.audioMuted);
   }
 
@@ -139,10 +144,19 @@ export class PlayService {
   }
 
   saveCheckpoint(): void {
-    if (!this.opened || this.checkpointStore === undefined || this.checkpointId.length === 0) {
-      throw new Error('play session is not open');
+    if (!this.opened || this.history === undefined) throw new Error('play session is not open');
+    this.history.save();
+  }
+
+  advanceHistory(sourceFrames: number, sourceFps: number, running: boolean): boolean {
+    if (this.historyWarning) return false;
+    try {
+      this.history?.advance(sourceFrames, sourceFps, running);
+      return true;
+    } catch (error) {
+      console.error(`FlyNES timed save failed: ${error}`);
+      return false;
     }
-    this.checkpointStore.write(this.checkpointId, nativePlay.playSaveCheckpoint());
   }
 
   pauseOutput(): void {
@@ -163,6 +177,7 @@ export class PlayService {
     } finally {
       this.opened = false;
       this.nearby = false;
+      this.history = undefined;
       this.checkpointStore = undefined;
       this.checkpointId = '';
       this.outputPaused = false;

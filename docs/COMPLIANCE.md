@@ -24,6 +24,7 @@
 |---|---|---|---|---|---|
 | NestopiaUE | 1.53.2 (commit 4470a2e) | github.com/0ldsk00l/nestopia | GPLv2 | 模拟器内核 | core/vendor/nestopiaue (submodule) |
 | NstDatabase.xml | (vendored) | 同上 | GPLv2 | 游戏纠错库 | app/src/main/assets/ + core/tests/fixtures/ |
+| SQLite | 3.53.4 | sqlite.org | Public domain | 独立存档库的私有数据库依赖 | libs/save_history/vendor/sqlite/ |
 | zlib | 1.3.1 | github.com/madler/zlib | zlib 许可 | 压缩/CRC（构建期） | core/build/host-deps/（不入库） |
 | Gradle 8.14.3 / AGP 8.7.3 | 构建期 | gradle.org / developer.android.com | Apache-2.0 | 构建系统 | 构建期依赖 |
 | 本项目自有代码 | — | — | GPLv2 | 全部 | core/src, app/src, scripts |
@@ -37,5 +38,5 @@
 - **唯一一款上游构建不可字节复现的游戏如实披露**：`concentration_room` 的上游 `tools/shuffle.py` 会随机打乱内存布局（ASLR 加固）。实测在固定 `-r` 模式、固定 `--seed`、固定 `PYTHONHASHSEED` 且每次全新解包的条件下，四次构建得到三个不同哈希。因此该款的 `hashPolicy` 为 `artifact`：**出厂 ROM 仍被哈希固定并由门禁校验，仍从 pinned 源码编译并校验 iNES 头、mapper 与尺寸**，但本项目不声称其重编字节一致。其余 6 款可由 `tools/content/build-builtin-roms.ps1` 重编得到字节一致的 ROM。
 - **内置内容的门禁**：`tools/content/verify-builtin-content.ps1` 校验清单、ROM 哈希、许可文本、构建锁一致性、三端均从共享清单读取，且没有任何平台私藏一份 ROM 副本。门禁同时读取 git 索引，**任何仍被 checked-in 的、名字含 `from[-_ ]below` 的文件（包含二进制 ROM 与许可文本）都会直接失败**——二进制资产不会被文本扫描发现，必须按路径判定。`content/tests/test_builtin_manifest_contract.py`、`harmony/tests/test_builtin_games_contract.py`、`ios/tests/test_builtin_games_contract.py` 分别校验清单结构与三端消费方式。
 - **已下架游戏（From Below）的清理**：该 ROM 曾在 `app/src/main/assets/roms/`、`harmony/entry/src/main/resources/rawfile/`、`core/tests/fixtures/` 三处以 checked-in 二进制形式存在，并被 Android/Harmony 打包分发、被 `ios-stage1.yml` 的产物检查断言要求存在。本轮已全部删除（连同上列目录中的 MIT 许可文本），构建产物检查改为**按清单校验**（`ios/scripts/verify_bundled_resources.py`：逐款校验 ROM 存在、SHA-256 与清单一致、iNES 头合法，并校验随包清单与 `content/assets` 字节一致）。
-- **依赖许可核查**：C++ 依赖仅 NestopiaUE（GPLv2，兼容）与构建期 zlib（zlib 许可，宽松）；无 GPLv3 代码组件。
+- **依赖许可核查**：C/C++ 依赖包含 NestopiaUE（GPLv2）、zlib（zlib 许可）及 SQLite（public domain；固定源码与校验值见 libs/save_history/vendor/sqlite/README.md）；无 GPLv3 代码组件。
 - **内容红线**：不内置作弊码数据库/商业补丁库；金手指仅支持手动输入/导入；App 名与图标避开任天堂商标。
