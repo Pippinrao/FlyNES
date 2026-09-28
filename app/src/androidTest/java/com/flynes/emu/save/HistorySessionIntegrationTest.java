@@ -2,16 +2,190 @@ package com.flynes.emu.save;
 import static org.junit.Assert.*;
 
 import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.flynes.emu.NesCore;
 import com.flynes.emu.catalog.BuiltinGames;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class HistorySessionIntegrationTest {
+    @Test
+    public void selectedHeadSkipsUnreadableLegacyAutosave() throws Exception {
+        Context context = ApplicationProvider.getApplicationContext();
+        File file = new File(context.getCacheDir(), "history-lazy-legacy-" + System.nanoTime() + ".sqlite");
+        NesCore core = new NesCore();
+        core.create();
+        byte[] rom = batteryRom();
+        try (HistoryStore store = new HistoryStore(file)) {
+            assertTrue(core.loadRom(rom) >= 0);
+            core.setAudioFormat(48000, 0);
+            String key = core.romInfo().identity().sha1();
+            core.runFrames(20);
+            byte[] selected = core.saveState();
+            long head = store.put(key, selected, null, HistoryStore.MANUAL,
+                "Selected", 500, "one", 0, true);
+            core.runFrames(20);
+            HistoryClock clock = new HistoryClock();
+            HistorySession session = new HistorySession(core, store, key, rom, clock, () -> null);
+            try {
+                session.initializeFromLegacyLoader(() -> { throw new IOException("unreadable legacy file"); });
+            } catch (IOException failure) {
+                fail("a valid selected head must not read the legacy autosave: " + failure.getMessage());
+            }
+            assertArrayEquals(selected, core.saveState());
+            assertEquals(head, store.head(key));
+            assertEquals(1, store.list(key).length);
+            assertEquals(500, clock.playedMs());
+        } finally {
+            core.destroy();
+            SQLiteDatabase.deleteDatabase(file);
+        }
+    }
+
+    @Test
+    public void legacyLoaderMigratesOnlyWhenHistoryHasNoHead() throws Exception {
+        Context context = ApplicationProvider.getApplicationContext();
+        File file = new File(context.getCacheDir(), "history-lazy-migrate-" + System.nanoTime() + ".sqlite");
+        NesCore core = new NesCore();
+        core.create();
+        byte[] rom = batteryRom();
+        try (HistoryStore store = new HistoryStore(file)) {
+            assertTrue(core.loadRom(rom) >= 0);
+            core.setAudioFormat(48000, 0);
+            core.runFrames(20);
+            byte[] legacy = core.saveState();
+            String key = core.romInfo().identity().sha1();
+            core.runFrames(20);
+            HistorySession session = new HistorySession(core, store, key, rom, new HistoryClock(), () -> null);
+            int[] reads = {0};
+            HistorySession.LegacyLoader loader = () -> {
+                reads[0]++;
+                return new SaveRecord(legacy, 100);
+            };
+            session.initializeFromLegacyLoader(loader);
+            assertArrayEquals(legacy, core.saveState());
+            assertTrue(store.head(key) > 0);
+            assertEquals(HistoryStore.LEGACY, store.list(key)[0].kind());
+            session.initializeFromLegacyLoader(loader);
+            assertEquals("migration reads legacy storage only once", 1, reads[0]);
+            assertEquals(1, store.list(key).length);
+        } finally {
+            core.destroy();
+            SQLiteDatabase.deleteDatabase(file);
+        }
+    }
+
+
+    @Test
+    public void failedRestoreReopensAtRolledBackLiveProgress() throws Exception {
+        Context context = ApplicationProvider.getApplicationContext();
+        File file = new File(context.getCacheDir(), "history-rollback-head-" + System.nanoTime() + ".sqlite");
+        NesCore core = new NesCore();
+        core.create();
+        byte[] rom = batteryRom();
+        byte[] live;
+        try {
+            assertTrue(core.loadRom(rom) >= 0);
+            core.setAudioFormat(48000, 0);
+            String key = core.romInfo().identity().sha1();
+            try (HistoryStore store = new HistoryStore(file)) {
+                HistoryClock clock = new HistoryClock();
+                HistorySession session = new HistorySession(core, store, key, rom, clock, () -> null);
+                session.save(HistoryStore.MANUAL, "Old head");
+                core.runFrames(20);
+                clock.advance(500000);
+                live = core.saveState();
+                long bad = store.put(key, new byte[] {9, 9}, null, HistoryStore.MANUAL,
+                    "Invalid core state", 0, "one", 0, false);
+                try {
+                    session.restore(bad);
+                    fail("invalid core state accepted");
+                } catch (IllegalStateException expected) {
+                }
+                assertArrayEquals("restore failure rolls back live progress", live, core.saveState());
+                assertArrayEquals("persisted head must match rolled-back live progress",
+                    live, store.read(key, store.head(key), false));
+                assertEquals(0, store.pending(key)[0]);
+            }
+            core.runFrames(20);
+            try (HistoryStore store = new HistoryStore(file)) {
+                HistoryClock clock = new HistoryClock();
+                new HistorySession(core, store, key, rom, clock, () -> null).initialize(null);
+                assertArrayEquals(live, core.saveState());
+                assertEquals(500, clock.playedMs());
+            }
+        } finally {
+            core.destroy();
+            SQLiteDatabase.deleteDatabase(file);
+        }
+    }
+
+    @Test
+    public void interruptedRecoveryKeepsPendingIntentAndHeadUntilRetry() throws Exception {
+        Context context = ApplicationProvider.getApplicationContext();
+        File file = new File(context.getCacheDir(), "history-recovery-" + System.nanoTime() + ".sqlite");
+        NesCore core = new NesCore();
+        core.create();
+        byte[] rom = batteryRom();
+        assertTrue(core.loadRom(rom) >= 0);
+        core.setAudioFormat(48000, 0);
+        String key = core.romInfo().identity().sha1();
+        try {
+            long head;
+            long[] pending;
+            byte[] backup;
+            try (HistoryStore store = new HistoryStore(file)) {
+                head = store.put(key, core.saveState(), null, HistoryStore.MANUAL,
+                    "Selected", 0, "one", 0, true);
+                core.runFrames(20);
+                backup = core.saveState();
+                pending = store.prepare(key, head, backup, null, 500, "one", "Before restore");
+            }
+            core.runFrames(20);
+            byte[] original = core.saveState();
+            // Reject only publishing the protection head. The old split implementation
+            // commits cancellation before this fault; atomic recovery must commit neither.
+            try (SQLiteDatabase fault = SQLiteDatabase.openDatabase(
+                     file.getAbsolutePath(), null, SQLiteDatabase.OPEN_READWRITE)) {
+                fault.execSQL("CREATE TRIGGER reject_recovery_head BEFORE UPDATE ON heads "
+                    + "WHEN NEW.entry_id=" + pending[1]
+                    + " BEGIN SELECT RAISE(ABORT, 'injected recovery failure'); END");
+            }
+            try (HistoryStore store = new HistoryStore(file)) {
+                HistorySession session = new HistorySession(
+                    core, store, key, rom, new HistoryClock(), () -> null);
+                try {
+                    session.initialize(null);
+                    fail("recovery fault must be reported");
+                } catch (IllegalStateException expected) {
+                }
+                assertArrayEquals("failed recovery rolls back the live core", original, core.saveState());
+                assertEquals("failed recovery retains selected head", head, store.head(key));
+                assertEquals("failed recovery must retain pending intent", pending[0], store.pending(key)[0]);
+            }
+            try (SQLiteDatabase fault = SQLiteDatabase.openDatabase(
+                     file.getAbsolutePath(), null, SQLiteDatabase.OPEN_READWRITE)) {
+                fault.execSQL("DROP TRIGGER reject_recovery_head");
+            }
+            try (HistoryStore store = new HistoryStore(file)) {
+                HistoryClock clock = new HistoryClock();
+                new HistorySession(core, store, key, rom, clock, () -> null).initialize(null);
+                assertArrayEquals(backup, core.saveState());
+                assertEquals(pending[1], store.head(key));
+                assertEquals(0, store.pending(key)[0]);
+                assertEquals(500, clock.playedMs());
+            }
+        } finally {
+            core.destroy();
+            SQLiteDatabase.deleteDatabase(file);
+        }
+    }
+
     @Test
     public void failedSelectedHeadLoadRestoresPreviousCoreState() throws Exception {
         Context context = ApplicationProvider.getApplicationContext();
@@ -175,7 +349,7 @@ public class HistorySessionIntegrationTest {
             } catch (IllegalStateException expected) {
             }
             assertArrayEquals(first, core.saveState());
-            assertEquals(id, store.head(key));
+            assertArrayEquals(first, store.read(key, store.head(key), false));
             session.restart();
             fresh = core.saveState();
             assertFalse(java.util.Arrays.equals(first, fresh));

@@ -6,8 +6,8 @@ search, launch into landscape play, plus Sources and Settings. The leftover
 `pages/Index` debug HUD is not the default entry.
 
 Play (`pages/RunGame`) shows the NES picture with an overlay (D-pad/joystick, A,
-B, SELECT, START) and a separate pause control. Pause is Resume / Game Center /
-Settings only; there is no on-screen Save/Load. Settings follow Android’s five
+B, SELECT, START) and a separate pause control. Pause includes the existing save
+history, manual save, restart and automatic-save interval controls. Settings follow Android’s five
 roots (Display, Controls, Audio, Game & Language, About). The layout editor
 writes the shared ControlLayoutV2 string. FilePicker URIs stay in
 `HarmonySourceMap` app preferences, never in FLYCAT01.
@@ -20,6 +20,15 @@ git-ignored). Per-game licences and pinned upstream revisions are recorded in
 `docs/COMPLIANCE.md` and `content/sources.lock.json`.
 
 ## Pinned product configuration
+
+The Flutter foundation branch also contains a **debug-only** catalog probe in
+the same Stage host. On a clean checkout, first run `tools/flutter/Build-Ohos.ps1
+-BuildTests` with the pinned OH SDK and DevEco paths; it generates the ignored
+HAR dependencies before building the existing app. Release/profile builds are
+explicitly blocked until matching Flutter artifacts are validated. The default
+native Game Center is unchanged; use the debug Want `flynes.test.page=flutter_foundation`
+for the probe. Current evidence and gaps are in
+[the migration status](../docs/flutter-migration/STATUS.md).
 
 - Bundle name: `com.flynes.emu`
 - Runtime OS: HarmonyOS

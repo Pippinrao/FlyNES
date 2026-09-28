@@ -1,4 +1,5 @@
 import saveHistoryPlayTest from './SaveHistoryPlay.test';
+import flutterFoundationTest from './FlutterFoundation.test';
 import saveHistoryUiTest from './SaveHistoryUi.test';
 import smokeTest from './Smoke.test';
 import saveHistoryTest from './SaveHistory.test';
@@ -24,6 +25,10 @@ import builtinPlaySmokeTest from './BuiltinPlaySmoke.test';
 import builtinGameplayAcceptanceTest from './BuiltinGameplayAcceptance.test';
 
 export default function testsuite() {
+  if (abilityDelegatorRegistry.getArguments().parameters['-s flutterFoundationOnly'] === 'true') {
+    flutterFoundationTest();
+    return;
+  }
   if (abilityDelegatorRegistry.getArguments().parameters['-s saveHistoryUiOnly'] === 'true') {
     saveHistoryUiTest();
     return;

@@ -259,6 +259,8 @@ public final class AndroidCatalogRuntime implements AutoCloseable {
                                 GameCenterSnapshot projection =
                                         GameCenterSnapshotCodec.decodeProjection(fullEncoded);
                                 gameCenterSnapshot = projection;
+                                GameCenterStartupTrace.event("CATALOG_PROJECTION_AVAILABLE",
+                                        "count=" + projection.rows().size() + " source=cache");
                                 projectionReady.complete(projection);
                                 nativeSnapshot = GameCenterSnapshotCodec.decode(fullEncoded);
                                 nativeStatus = CacheStatus.HIT;
@@ -274,6 +276,10 @@ public final class AndroidCatalogRuntime implements AutoCloseable {
                     BootstrapResult result = nativeCatalog
                             ? bootstrapNative(nativeSnapshot, nativeStatus)
                             : bootstrapLegacy();
+                    if (nativeStatus != CacheStatus.HIT || !nativeCatalog) {
+                        GameCenterStartupTrace.event("CATALOG_PROJECTION_AVAILABLE",
+                                "count=" + gameCenterSnapshot.rows().size() + " source=native");
+                    }
                     nativeReady.complete(result);
                 } catch (Throwable failure) {
                     projectionReady.completeExceptionally(failure);

@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.flynes.emu.catalog.android.AndroidCatalogRuntime;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
 
 /** Machine-readable cold-start markers used by the performance gate. */
 public final class GameCenterStartupTrace {
@@ -18,6 +19,7 @@ public final class GameCenterStartupTrace {
     private static final long ORIGIN = Process.getStartElapsedRealtime();
     private static final AtomicBoolean SHELL_LOGGED = new AtomicBoolean();
     private static final AtomicBoolean LIST_LOGGED = new AtomicBoolean();
+    private static final AtomicBoolean FULL_LIST_LOGGED = new AtomicBoolean();
 
     private GameCenterStartupTrace() { }
 
@@ -41,9 +43,16 @@ public final class GameCenterStartupTrace {
     }
 
     public static ViewTreeObserver.OnPreDrawListener visibleOnNextPreDraw(
-            RecyclerView grid, int expectedCount, AndroidCatalogRuntime.CacheStatus cacheStatus) {
+            RecyclerView grid, int expectedCount, AndroidCatalogRuntime.CacheStatus cacheStatus,
+            boolean fullProjection, BooleanSupplier currentSubmission) {
         return new ViewTreeObserver.OnPreDrawListener() {
             @Override public boolean onPreDraw() {
+                if (!currentSubmission.getAsBoolean()) {
+                    if (grid.getViewTreeObserver().isAlive()) {
+                        grid.getViewTreeObserver().removeOnPreDrawListener(this);
+                    }
+                    return true;
+                }
                 RecyclerView.Adapter<?> adapter = grid.getAdapter();
                 if (adapter == null || adapter.getItemCount() != expectedCount
                         || expectedCount == 0 || grid.getChildCount() == 0) return true;
@@ -54,6 +63,13 @@ public final class GameCenterStartupTrace {
                 }
                 if (LIST_LOGGED.compareAndSet(false, true)) {
                     event("GAME_CENTER_VISIBLE", "count=" + expectedCount + " cache=" + cacheStatus);
+                }
+                // The fast shell may already have claimed GAME_CENTER_VISIBLE. This marker
+                // means the complete adapter is accessible and its first card is on screen;
+                // it does not mean every offscreen row was decoded or rendered.
+                if (fullProjection && FULL_LIST_LOGGED.compareAndSet(false, true)) {
+                    event("GAME_CENTER_FULL_LIST_VISIBLE",
+                            "count=" + expectedCount + " cache=" + cacheStatus);
                 }
                 return true;
             }

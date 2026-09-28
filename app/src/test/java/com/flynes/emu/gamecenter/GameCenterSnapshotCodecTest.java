@@ -2,6 +2,8 @@ package com.flynes.emu.gamecenter;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThrows;
 
 import com.flynes.emu.catalog.RomSource;
@@ -16,6 +18,23 @@ import java.util.Arrays;
 import java.util.List;
 
 public final class GameCenterSnapshotCodecTest {
+    @Test public void completenessComesFromProjectionProvenanceNotTotalCount() throws Exception {
+        GameCenterSnapshot original = synthetic(2_224, 11L, "aa".repeat(32), 12L);
+        GameCenterSnapshot startup = GameCenterSnapshotCodec.decodeStartup(
+                GameCenterSnapshotCodec.encodeStartup(original, 20));
+        GameCenterSnapshot projection = GameCenterSnapshotCodec.decodeProjection(
+                GameCenterSnapshotCodec.encode(original));
+
+        assertEquals(startup.rows().size(), projection.rows().size());
+        assertFalse("a startup window is not the complete projection", startup.fullProjection());
+        assertTrue("lazy full rows are complete without materializing them", projection.fullProjection());
+        assertTrue(original.fullProjection());
+        assertTrue(GameCenterSnapshotCodec.decode(GameCenterSnapshotCodec.encode(original)).fullProjection());
+        assertFalse("even a startup envelope fitting all rows retains startup provenance",
+                GameCenterSnapshotCodec.decodeStartup(
+                        GameCenterSnapshotCodec.encodeStartup(original, 2_224)).fullProjection());
+    }
+
     @Test public void projectionDecodeValidatesEnvelopeButDefersEmbeddedCatalogBytes()
             throws Exception {
         GameCenterSnapshot base = synthetic(2_224, 9L, "99".repeat(32), 10L);

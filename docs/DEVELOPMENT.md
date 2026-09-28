@@ -224,6 +224,13 @@ try {
 } finally { Pop-Location }
 ```
 
+On `codex/flutter-foundation`, the same host includes a debug Flutter catalog
+probe. Run `tools/flutter/Build-Ohos.ps1 -BuildTests` first to stage its generated
+HAR dependencies; its parameters accept the pinned OH SDK, DevEco and short pub
+cache paths. The current experiment rejects non-debug packaging so a release
+cannot silently contain the debug engine. See [migration status](flutter-migration/STATUS.md)
+for the verified SDK and remaining runtime gates.
+
 Host tests (the private C++ suite; not part of the HAP):
 
 ```powershell

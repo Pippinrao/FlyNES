@@ -2,7 +2,7 @@
 
 从 [总路线 roadmap.md](roadmap.md) 开始，再读 [STATUS](STATUS.md) 和仓库 [AGENTS.md](../../AGENTS.md)。
 用户已确定 Flutter，并授权创建分支/worktree、迁移版本到 3.0.0、搭建基础骨架；
-详细需求后续分块指派。总路线不是一次性实施全部需求的授权。
+当前已批准实施8.1（REQ-001～007）；总路线其余需求不因此自动进入本轮。
 
 | 文档 | 用途 / 权威范围 |
 | --- | --- |
@@ -10,10 +10,17 @@
 | [STATUS.md](STATUS.md) | 当前工作区状态、任务归属、完成证据与待接续事项 |
 | [architecture-analysis.md](architecture-analysis.md) | 原代码耦合证据、底层/联机/输入/存档边界讨论；选型已由 roadmap 收敛 |
 | [technology-research.md](technology-research.md) | 框架、引擎与输入组件调研过程；旧候选结论不是当前选型 |
-| [references/save-history-proposal.md](references/save-history-proposal.md) | 关联存档任务设计快照；实现状态去对应任务核对 |
+| [当前存档契约](../../libs/save_history/README.md) | main@3a2dc426已交付库；Android/Harmony已接入，iOS未接入 |
+| [8.1详细设计](requirements/REQ-001-007-baseline-flutter-design.md) | 已批准的UX、基线、接口与G1门槛 |
+| [8.1执行计划](requirements/REQ-001-007-baseline-flutter-plan.md) | REQ-001～007任务检查单 |
+| [references/save-history-proposal.md](references/save-history-proposal.md) | 历史设计快照，不代表当前实现 |
 | [references/save-library-research.md](references/save-library-research.md) | 独立存档库与 SQLite 取舍参考 |
 | [references/gameplay-usability-audit.md](references/gameplay-usability-audit.md) | 当时游戏体验静态审阅，不能冒充已复现或已修复 |
 | [verification/2026-09-28-foundation.md](verification/2026-09-28-foundation.md) | 本次骨架的实际检查与明确未验收范围 |
+| [存档接续验证](verification/2026-09-29-save-handoff.md) | main同步、Android失败复现/修复及本轮host/设备回归 |
+| [Android原生目录初测](verification/2026-09-29-android-startup-baseline.md) | 逐次数据、未达标门槛和未测量范围 |
+| [OH工具链探针](verification/2026-09-29-ohos-toolchain.md) | 固定SDK、API兼容失败/成功证据及Mac阻塞 |
+| [Flutter目录页/客户端](verification/2026-09-29-flutter-catalog-client.md) | 真实投影边界、迟到结果处理、UX断言与未接线能力 |
 
 后续详细需求/实施计划按需放 `requirements/REQ-xxx-*.md`，验证记录放 `verification/`；
 这里不提前生成 45 份空文件。现行附近产品方向仍由 [nearby 入口](../nearby/README.md) 管理，

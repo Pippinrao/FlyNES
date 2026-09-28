@@ -17,8 +17,16 @@ public record GameCenterSnapshot(
         long sourceEpoch,
         List<Row> rows,
         List<SourceRow> sources,
-        byte[] catalogStateBytes) {
+        byte[] catalogStateBytes,
+        boolean fullProjection) {
     public static final int CURRENT_SCHEMA = 1;
+
+    /** Ordinary projections contain every row, including when their rows decode lazily. */
+    public GameCenterSnapshot(int schemaVersion, long nativeGeneration, String builtinManifestSha256,
+            long sourceEpoch, List<Row> rows, List<SourceRow> sources, byte[] catalogStateBytes) {
+        this(schemaVersion, nativeGeneration, builtinManifestSha256, sourceEpoch,
+                rows, sources, catalogStateBytes, true);
+    }
 
     public GameCenterSnapshot {
         if (schemaVersion != CURRENT_SCHEMA || nativeGeneration < 0 || sourceEpoch < 0) {
@@ -64,6 +72,7 @@ public record GameCenterSnapshot(
         return schemaVersion == value.schemaVersion
                 && nativeGeneration == value.nativeGeneration
                 && sourceEpoch == value.sourceEpoch
+                && fullProjection == value.fullProjection
                 && builtinManifestSha256.equals(value.builtinManifestSha256)
                 && rows.equals(value.rows)
                 && sources.equals(value.sources)
@@ -72,7 +81,7 @@ public record GameCenterSnapshot(
 
     @Override public int hashCode() {
         int result = Objects.hash(schemaVersion, nativeGeneration, builtinManifestSha256,
-                sourceEpoch, rows, sources);
+                sourceEpoch, rows, sources, fullProjection);
         return 31 * result + Arrays.hashCode(catalogStateBytes);
     }
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../design_system/app_theme.dart';
-import '../features/bootstrap/bootstrap_page.dart';
+import '../features/foundation/foundation_page.dart';
 
 class FlynesApp extends StatelessWidget {
   const FlynesApp({super.key});
@@ -10,7 +10,7 @@ class FlynesApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     title: 'FlyNES',
     debugShowCheckedModeBanner: false,
-    theme: AppTheme.light(),
-    home: const BootstrapPage(),
+    theme: AppTheme.dark(),
+    home: const FoundationPage(),
   );
 }

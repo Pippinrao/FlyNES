@@ -120,7 +120,7 @@ public final class GameCenterSnapshotCodec {
             if (in.available() != 0) throw error(ErrorCode.INVALID_FIELD);
             return new GameCenterSnapshot(GameCenterSnapshot.CURRENT_SCHEMA, 0L,
                     "0".repeat(64), 0L, new StartupRowList(totalCount, visible),
-                    List.of(), new byte[0]);
+                    List.of(), new byte[0], false);
         } catch (EOFException truncated) {
             throw new CodecException(ErrorCode.TRUNCATED, truncated);
         } catch (CodecException failure) {

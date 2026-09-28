@@ -1799,7 +1799,8 @@ public class MainActivity extends AppCompatActivity {
             historySession = new com.flynes.emu.save.HistorySession(core, historyStore,
                     currentRomIdentity.sha1(), currentRom, historyClock,
                     () -> com.flynes.emu.save.HistoryThumbnail.capture(core));
-            historySession.initialize(saves.readAutosave(currentRomIdentity).orElse(null));
+            historySession.initializeFromLegacyLoader(
+                    () -> saves.readAutosave(currentRomIdentity).orElse(null));
             historyInitialized = true;
             resetHistoryPresentation();
             return true;

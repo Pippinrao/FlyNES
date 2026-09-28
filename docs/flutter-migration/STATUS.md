@@ -1,45 +1,41 @@
 # 工作区进度与协作登记
 
-更新日期：2026-09-28。工作区：`.worktrees/flutter-foundation`。
-分支：`codex/flutter-foundation`；创建基线：`main@78057350c12b`；当前产品版本：`3.0.0`。
-当前改动未提交；后续实际状态以 git/版本文件为准，提交时同步更新本记录。
+更新日期：2026-09-29。工作区 `.worktrees/flutter-foundation`，分支 `codex/flutter-foundation`。
+原生基线 `main@3a2dc426`（2.1.2）；Flutter基础 `3b4fb0fd`；合并提交 `08eb6823`。
+当前版本以根VERSION为准（3.0.x，hook正常递增）；创建起点78057350保留为历史。
 
-## 当前授权范围
+## 当前授权与进度
 
-已授权：建立分支/worktree、迁移到 3.0.0、Flutter 最小骨架、整理重构文档与协作说明。
-未整体授权：执行全部 REQ-001～045。详细需求由用户后续分块指派。
+用户已批准执行[8.1设计](requirements/REQ-001-007-baseline-flutter-design.md)及[执行计划](requirements/REQ-001-007-baseline-flutter-plan.md)。未授权把其余REQ一次性全部实现。
 
-## 完成情况
-
-| 工作 | 状态 | 证据 / 限制 |
+| 需求/工作 | 状态 | 证据/限制 |
 | --- | --- | --- |
-| 分支与隔离 worktree | 已建立 | 仓库 New-VersionedWorktree 分配器创建；随后按用户授权切换 major |
-| 版本 3.0.0 | 已同步，未提交 | VERSION_MAJOR=3，Android/Harmony code=3000000；iOS 构建从 VERSION 读取 |
-| Flutter 公共骨架 | 已实现并本机检查 | App/主题/启动页/客户端边界；无目录、游戏、联机、存档假实现 |
-| 命令行检查 | 已通过 | 格式、analyze、widget test 1/1；版本脚本 5/5 |
-| 文档集中与 AGENTS 协作入口 | 已整理 | roadmap 为唯一总路线；旧指定路径只跳转 |
-| G1 三端真实闭环 | 未完成 | 无生产宿主嵌入、无 Flutter-OH 验证、无三端构建安装证据 |
-| 独立联机/公共输入/运行重构 | 未开始 | 现有代码保留，后续按 REQ 指派 |
-| 存档任务集成 | 未接续 | 存档代码仍在另一个 worktree，不能从本目录快照推断已完成 |
+| 基础骨架与main同步 | 已提交 | 3b4fb0fd、08eb6823；本次Check-Flutter格式/analyze/widget 1/1；内容门禁7游戏通过 |
+| REQ-001 UX/调用图/兼容基线 | 已冻结本轮源码基线 | 设计有原始来源、三端链路/所有者、key/格式、已知差异；不是实机验收 |
+| REQ-002 存档接续 | Android定向子项完成 | [接续验证](verification/2026-09-29-save-handoff.md)：RED 3→GREEN 18、unit 573项/2skip；库11/11、消费者2/2、host132/132；Harmony失败一致性仍待验证 |
+| REQ-003 测量基线 | 目录初测完成，整体未完成 | [测量记录](verification/2026-09-29-android-startup-baseline.md)：三批首卡P95 398/232/463ms，200ms均失败；第三批修正完整投影标记，旧两批该字段作废；未含保存负载/冻结预算 |
+| REQ-004 OH工具链 | 运行组合未锁定 | [工具链记录](verification/2026-09-29-ohos-toolchain.md)：1.0.1/API20编译失败；1.0.0实际HAR/HAP成功但MaterialApp在API20/x64上StackOverflow |
+| REQ-005 Harmony共享页+C++ | 运行阻塞，未通过 | [Dart目录页](verification/2026-09-29-flutter-catalog-client.md)24测试通过；Harmony host15/15、宿主/测试HAP通过；5557正式包Hypium 2通过/1失败，纯MaterialApp最小复现StackOverflow |
+| REQ-006 三端往返+双机 | 未通过 | 无当前三端真机闭环；用户要求本轮先不验证Mac，iOS标记未测 |
+| REQ-007 升级+容器+性能 | 未通过 | 数据/授权/真实媒体触控/预算必须全部有证据 |
+| G1总体 | 未通过 | 缺少项不得由Hello World、构建或既有存档测试代替 |
 
-检查详情见 [foundation 验证记录](verification/2026-09-28-foundation.md)。基础骨架并不完成任何包含原生集成/三端验收的整项 REQ。
+## 存档当前事实
 
-## 会话登记
+实现0c11750c已由main@3a2dc426交付并合入本工作树，不再依赖外部save-history工作树。
+公开契约看libs/save_history/include/save_history/save_history.h及README；证据看docs/verification/2026-09-28-save-history-android-harmony.md。
+已交付Android/Harmony原生历史与独立库；公共SaveCoordinator、iOS历史接入、Flutter历史页面仍未完成。
+references仅保留早期调研；不覆盖现有schema/ABI/用户菜单修订。
 
-| 需求/范围 | 任务 | 涉及目录/接口 | 状态 |
-| --- | --- | --- | --- |
-| 基础骨架、版本与重构文档入口 | [本次架构与迁移任务](codex://threads/01a0e85a-a880-7b03-b809-256c482aa7b5) | `ui/flutter`、`tools/flutter`、版本元数据、`docs/flutter-migration`、AGENTS | 已交付基础，未提交；后续工作需按用户指派登记 |
-| 存档历史（外部工作区） | [修复通关后重新开始](codex://threads/01a0e85e-d42a-7360-b2d4-06e07971f3e5) | `.worktrees/save-history`，独立库及 Android/Harmony 接入 | 最后读取时仍进行中；并非本 worktree 的文件认领 |
+## 当前协作登记
 
-新会话开始前更新登记，写明用户指派范围、目录、共享 ABI 及直接依赖。
-多人共享本 worktree 时，登记不是文件锁；不得覆盖未识别的未提交修改。
-需求完成需附测试和限制，阶段“通过”只依据总路线要求的完整证据。
+| 范围 | 所有者/目录 | 状态 |
+| --- | --- | --- |
+| 主干合并、详细设计、STATUS/roadmap、host回归 | 当前任务主代理；文档/版本/集成 | 本批实现与证据已整理；后续首先解决REQ-005阻塞 |
+| Android恢复接续 | 当前任务子代理；HistorySession/MainActivity及相关instrumentation | 已完成并独立复核；新建任务专用空白AVD，不使用用户原安装 |
+| OH SDK/宿主工具链 | 当前任务子代理；独立SDK、忽略探针、Build-Ohos、Harmony实验入口及验证记录 | 阻塞及最小复现已归档；正式包恢复并复测；调试helper/转发已结束 |
+| 原生性能采集工具 | 当前任务子代理；tools/flutter/collect_android_baseline.py及测试 | 已完成15测试及两批目录初测；无卸载/清数据 |
+| Flutter目录实验页 | 当前任务主代理负责client；子代理负责页面/主题/widget测试 | Dart实现/24测试已完成；无Dart数据库或伪目录；当前鸿蒙桥仅目录 |
 
-## 建议的后续指派顺序
-
-1. REQ-001～003：基线、存档交付核对、测量口径；当前只是准备材料，不代替正式清单。
-2. REQ-004/005：锁 Flutter-OH 与宿主方案，先验证鸿蒙命令行构建/安装/页面测试。
-3. REQ-006/007：Android/iOS 真实 C++ 页面往返、数据保留和游戏容器验证。
-4. 通过前置门槛后，按 roadmap 推进基础 ABI 与逐功能迁移；不在当前骨架加入全部业务接口。
-
-每次交接补充：实际分支/提交、已实现的 REQ 子范围、验证命令与结果、未测项、下一步依赖。
+同一文件仍需协调；登记不等于文件锁。所有生成物在ignored目录，代码和文档提交使用明确路径。
+阶段证据包含revision/工作区改动、命令/断言、SDK/设备、限制与后续依赖；阶段通过不以复选框代替证据。

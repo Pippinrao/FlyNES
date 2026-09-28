@@ -66,6 +66,45 @@ public class HistoryUiTest {
         assertTrue(backupDir.delete());
     }
     @Test
+    public void selectedHistoryHeadStartsDespiteUnreadableLegacyAutosave() throws Exception {
+        NesCore core = new NesCore();
+        File unreadableLegacy = null;
+        boolean legacyFaultCreated = false;
+        try {
+            core.create();
+            BuiltinGames games;
+            try (InputStream in = context.getAssets().open(BuiltinGames.ASSET_NAME)) {
+                games = BuiltinGames.parse(in);
+            }
+            try (InputStream in = context.getAssets().open(games.all().get(0).assetPath())) {
+                assertTrue(core.loadRom(in.readAllBytes()) >= 0);
+            }
+            core.setAudioFormat(48000, 0);
+            core.runFrames(20);
+            try (HistoryStore store = new HistoryStore(database)) {
+                store.put(key, core.saveState(), null, HistoryStore.MANUAL,
+                    "Valid selected head", 500, "one", 0, true);
+            }
+            File legacyDirectory = new File(new File(context.getFilesDir(), "saves"),
+                core.romInfo().identity().directoryName());
+            assertTrue(legacyDirectory.isDirectory() || legacyDirectory.mkdirs());
+            unreadableLegacy = new File(legacyDirectory, "autosave.nst");
+            assertFalse("test requires no existing legacy autosave", unreadableLegacy.exists());
+            assertTrue(unreadableLegacy.mkdir()); // Reading a directory as an NST throws IOException.
+            legacyFaultCreated = true;
+            Intent paused = new Intent(context, MainActivity.class)
+                .putExtra("save_history_action", "history");
+            try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(paused)) {
+                onView(withText(R.string.history_cancel)).check(matches(isDisplayed()));
+                onView(withText(containsString("Valid selected head"))).check(matches(isDisplayed()));
+            }
+        } finally {
+            core.destroy();
+            if (legacyFaultCreated) assertTrue(unreadableLegacy.delete());
+        }
+    }
+
+    @Test
     public void selectingIntervalReenablesAutomaticSaving() {
         var repository = com.flynes.emu.settings.SettingsAccess.repository(context);
         var original = repository.load();

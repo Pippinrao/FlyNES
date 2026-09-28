@@ -1,6 +1,7 @@
 package com.flynes.emu.save;
 
 import com.flynes.emu.NesCore;
+import java.io.IOException;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -14,6 +15,10 @@ public final class HistorySession {
     private final Supplier<byte[]> thumbnail;
     private String session = UUID.randomUUID().toString();
     private long parent;
+    @FunctionalInterface
+    public interface LegacyLoader {
+        SaveRecord load() throws IOException;
+    }
     public HistorySession(NesCore core, HistoryStore store, String key, byte[] rom,
         HistoryClock clock, Supplier<byte[]> thumbnail) {
         this.core = core;
@@ -24,13 +29,19 @@ public final class HistorySession {
         this.thumbnail = thumbnail;
     }
     public void initialize(SaveRecord legacy) {
+        try {
+            initializeFromLegacyLoader(() -> legacy);
+        } catch (IOException impossible) {
+            throw new AssertionError(impossible);
+        }
+    }
+    public void initializeFromLegacyLoader(LegacyLoader legacyLoader) throws IOException {
         byte[] original = capture();
         try {
             long[] pending = store.pending(key);
             if (pending[0] != 0) {
                 load(store.read(key, pending[2], false));
-                store.cancel(pending[0]);
-                store.setHead(key, pending[2]);
+                store.recover(pending[0]);
             }
             long head = store.head(key);
             if (head != 0) {
@@ -38,6 +49,7 @@ public final class HistorySession {
                 select(metadata(head));
                 return;
             }
+            SaveRecord legacy = legacyLoader.load();
             if (legacy != null) {
                 load(legacy.state());
                 parent = store.put(
@@ -74,9 +86,10 @@ public final class HistorySession {
         } catch (RuntimeException failure) {
             rollback(original, failure);
             try {
-                store.cancel(pending[0]);
-            } catch (RuntimeException cancel) {
-                failure.addSuppressed(cancel);
+                store.recover(pending[0]);
+                select(metadata(pending[1]));
+            } catch (RuntimeException recovery) {
+                failure.addSuppressed(recovery);
             }
             throw failure;
         }

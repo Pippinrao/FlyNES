@@ -1,3 +1,5 @@
+> 历史参考快照：早于main@3a2dc426存档交付。当前实现以仓库libs/save_history及docs/verification/2026-09-28-save-history-android-harmony.md为准；不要按本快照重复开发或推断验收状态。
+
 # 可回退存档系统方案（待确认）
 
 日期：2026-09-28。范围：Android、HarmonyOS NEXT、iOS 的单机游玩；优先在 iOS 验收用户当前通关后无法重开的场景。仅为方案，尚未实现或承诺性能指标。

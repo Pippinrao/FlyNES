@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "FlyNES HarmonyOS play entry module",
   "dependencies": {
+    "@ohos/flutter_ohos": "",
+    "flutter_native_arm64_v8a": "",
+    "flutter_native_x86_64": "",
+    "@ohos/flutter_module": "",
     "libentry.so": "file:./src/main/cpp/types/libentry"
   }
 }

@@ -560,15 +560,19 @@ public final class HomeActivity extends android.app.Activity {
         GameCenterStartupTrace.event("LIST_SUBMIT", "count=" + visible.size());
         RecyclerView grid = findViewById(R.id.game_grid);
         GameCardAdapter submittedAdapter = gameAdapter;
+        boolean submittedFullProjection = currentSnapshot.fullProjection();
         if (grid == null || grid.getAdapter() != submittedAdapter) return;
         submittedAdapter.submit(visible, navigation.selectedCanonicalId(), () -> {
             // AsyncListDiffer may commit after an Activity/locale rebuild has
             // replaced this view tree. Only the attached owner may publish it.
             if (isDestroyed() || gameAdapter != submittedAdapter ||
                     !ViewCompat.isAttachedToWindow(grid)) return;
+            List<GameCenterSnapshot.Row> submittedRows = submittedAdapter.getCurrentList();
             grid.getViewTreeObserver().addOnPreDrawListener(
                     GameCenterStartupTrace.visibleOnNextPreDraw(
-                            grid, visible.size(), displayedCacheStatus));
+                            grid, visible.size(), displayedCacheStatus, submittedFullProjection,
+                            () -> gameAdapter == submittedAdapter
+                                    && submittedAdapter.getCurrentList() == submittedRows));
         });
         findViewById(R.id.disable_multiplayer_filter).setVisibility(
                 visible.isEmpty() && navigation.multiplayerOnly() ? View.VISIBLE : View.GONE);

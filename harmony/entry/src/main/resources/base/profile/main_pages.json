@@ -1,5 +1,6 @@
 {
   "src": [
+    "pages/FlutterFoundation",
     "pages/GameCenter",
     "pages/RunGame",
     "pages/Sources",

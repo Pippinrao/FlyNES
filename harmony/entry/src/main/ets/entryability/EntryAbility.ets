@@ -2,12 +2,15 @@ import { AbilityConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { resolveTestFontSizeScale } from '../ui/NearbyTestFontScale';
+import { ExclusiveAppComponent, FlutterManager } from '@ohos/flutter_ohos';
+import { isFlutterFoundationRoute } from '../flutter/FoundationProjection';
 
-export default class EntryAbility extends UIAbility {
+export default class EntryAbility extends UIAbility implements ExclusiveAppComponent<UIAbility> {
   private testPage: string = 'pages/GameCenter';
   private stage: window.WindowStage | undefined = undefined;
 
   onCreate(want: Want, _launchParam: AbilityConstant.LaunchParam): void {
+    FlutterManager.getInstance().pushUIAbility(this);
     this.applyDebugWant(want);
   }
 
@@ -32,7 +35,9 @@ export default class EntryAbility extends UIAbility {
       return false;
     }
     const page: string | undefined = want.parameters?.['flynes.test.page'] as string | undefined;
-    if (page === 'nearby_friends') {
+    if (isFlutterFoundationRoute(page, debug)) {
+      this.testPage = 'pages/FlutterFoundation';
+    } else if (page === 'nearby_friends') {
       this.testPage = 'pages/NearbyFriends';
     } else if (page === 'nearby_pairing') {
       this.testPage = 'pages/NearbyPairing';
@@ -46,6 +51,7 @@ export default class EntryAbility extends UIAbility {
 
   onWindowStageCreate(windowStage: window.WindowStage): void {
     this.stage = windowStage;
+    FlutterManager.getInstance().pushWindowStage(this, windowStage);
     console.info(`FlyNES UI configuration fontSizeScale=${this.context.config.fontSizeScale ?? -1}`);
     try {
       const win = windowStage.getMainWindowSync();
@@ -68,6 +74,11 @@ export default class EntryAbility extends UIAbility {
   onBackground(): void { this.context.eventHub.emit('save-background'); hilog.info(0, 'FlyNesNearby', 'event=ability_background'); }
 
   onWindowStageDestroy(): void {
+    FlutterManager.getInstance().popWindowStage(this);
     this.stage = undefined;
   }
+
+  detachFromFlutterEngine(): void {}
+  getAppComponent(): UIAbility { return this; }
+  onDestroy(): void { FlutterManager.getInstance().popUIAbility(this); }
 }

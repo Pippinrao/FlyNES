@@ -2,7 +2,7 @@
 
 日期：2026-09-28。当前代码审阅基线：`main@78057350c12b`，版本 `2.0.0`。
 
-> 工作区进展：用户随后授权建立 `codex/flutter-foundation` worktree、迁移版本到 3.0.0 并搭最小骨架。本文的 2.0.0 是架构审阅起点，不是当前分支版本；实际进度见 [STATUS](STATUS.md)。正文“仅方案/未创建工程”描述的是最初方案交付时点，不覆盖后续已授权的基础工作；其余详细需求仍由用户逐块指派。
+> 工作区进展：用户随后授权建立 `codex/flutter-foundation` worktree、迁移版本到 3.0.0 并搭最小骨架。本文的 2.0.0 是架构审阅起点，不是当前分支版本；实际进度见 [STATUS](STATUS.md)。正文“仅方案/未创建工程”描述的是最初方案交付时点，不覆盖后续已授权的基础工作；2026-09-28用户已批准实施8.1（REQ-001～007）；执行设计见requirements/REQ-001-007-baseline-flutter-design.md。
 
 **决策状态：用户已确定采用 Flutter。** 本文是本次讨论的统一架构与需求清单入口，覆盖 Android、HarmonyOS NEXT、iOS。它取代此前材料中“框架未定”“Flutter 与游戏引擎竞争选型”的结论；此前源码分析与事实依据仍可参考。
 
@@ -40,7 +40,7 @@
 | 输入仅按来源类别合并，方向手势/短按逻辑分散 | 设备实例、触点所有权、玩家座位和逐帧输入统一 |
 | 底层头包含应用大头，平台引用共享 `src/` | 小型公共契约、明确 CMake target、公有/私有头隔离 |
 | 历史会话模型与当前路径并存 | 按生产调用图迁移和退役，未用能力不成为新库依赖 |
-| 新存档功能在独立任务推进 | 复用其库和证据，逐步收敛公共编排，不重复实现 |
+| 存档库与Android/Harmony已在main交付，iOS/公共编排未完成 | 复用其库和证据，逐步收敛公共编排，不重复实现 |
 
 上述是静态审阅结论，不是当前构建或实机认证。更完整依据见 [原架构梳理](architecture-analysis.md)。
 
@@ -312,7 +312,7 @@ Flutter 已选定，G1 是迁移可行性放行门槛，不是重新进行无边
 
 | ID | 需求 / 阶段 | 模块 | 直接依赖 | 验收结果 |
 | --- | --- | --- | --- | --- |
-| REQ-017 | 接入独立存档库并补齐独立验收 / G3 | S01、E02 | REQ-002 | 不配置 FlyNES/NES 可构建安装，外部消费者保存/读取任意字节；沿用已测事务/保留行为 |
+| REQ-017 | 复用独立存档库并接续验收 / G3 | S01、E02 | REQ-002 | 不配置 FlyNES/NES 可构建安装，外部消费者保存/读取任意字节；沿用已测事务/保留行为 |
 | REQ-018 | 自动保存与迁移编排公共化 / G3 | A06、A03、P04 | REQ-017、REQ-012 | 同一运行计时/去重/设置策略；旧档迁移幂等且失败不删；三端格式域清楚 |
 | REQ-019 | 保护恢复、重开与继续位置统一 / G3 | A06、A04、R03 | REQ-018、REQ-015 | 先保护再切换；失败/提交歧义不报成功；重开后再次启动不回旧结局；旧历史可访问 |
 | REQ-020 | iOS 存档补齐及三端兼容验收 / G3 | A06、P04、G01 | REQ-019 | 复用关联任务已有两端成果，补 iOS 实际恢复/重开与旧档；不能把两端通过记作三端完成 |
@@ -381,7 +381,7 @@ Android native/shared 变更运行 host＋Android unit，UI 变更加 instrument
 
 ## 10. 关联存档工作、切换与交付管理
 
-关联任务 [修复通关后重新开始](codex://threads/01a0e85e-d42a-7360-b2d4-06e07971f3e5) 正在 `codex/save-history` / `.worktrees/save-history` 实施，最新范围先 Android/鸿蒙，iOS 后续。本次观察到任务仍活跃，不将其实现或测试记为已完成。本路线不修改该任务产物、不另开竞争实现；REQ-002 在接续时记录真正可复用的 revision 与缺项。
+存档实现 `0c11750c` 已合入 `main@3a2dc426`（2.1.2），并通过 `08eb6823` 合入本工作树。独立库与Android/Harmony接线和既有模拟器/host证据已交付；iOS、公共SaveCoordinator和Flutter历史页仍未完成。REQ-002复用公开ABI、schema及既有测试，并验证新旧数据接续风险。以 libs/save_history/README.md、公开头和 [存档验证记录](../verification/2026-09-28-save-history-android-harmony.md) 为现状依据；references是历史快照，不能覆盖已交付语义。
 
 依次接续：独立 S01 库与测试→公共 A06 编排→R03 安全快照接线→Flutter F06 页面。关联任务已经完成的工作只计一次；平台 Adapter 中的纯业务规则在整体迁移中下沉，设备/旧档接线保留。
 
@@ -397,7 +397,7 @@ Android native/shared 变更运行 host＋Android unit，UI 变更加 instrument
 
 - [此前架构梳理及存档合并边界](architecture-analysis.md)：源码证据与背景。
 - [跨端技术与输入组件调研](technology-research.md)：候选比较与自动化资料；框架最终决策以本文为准。
-- [存档产品方案](references/save-history-proposal.md)、[独立存档库调研](references/save-library-research.md)：保留/保护/恢复规则与库设计来源，实施成果另按 REQ-002 核实。
+- [当前存档产品方案](../superpowers/specs/2026-09-28-save-history-proposal.md)、[独立库契约](../../libs/save_history/README.md)、[交付证据](../verification/2026-09-28-save-history-android-harmony.md)：现有实现依据；references保留历史调研。
 - [附近联机当前入口](../nearby/README.md)：现行产品范围与真实证据入口。
 - [开发指南](../DEVELOPMENT.md)：工具链、平台检查、内容与版本约束。
 - 关联任务 [评估 Flutter UX 迁移](codex://threads/01a0e860-0aee-7eb2-973d-16ef06ef6c3c)：早期迁移范围与估算背景。

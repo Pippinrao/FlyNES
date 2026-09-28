@@ -136,6 +136,11 @@ export class CatalogProductService {
       snapshot = [];
     }
 
+    return this.loadRowsFromSnapshot(games, snapshot);
+  }
+
+  /** Projects an already verified snapshot without querying the owner again. */
+  loadRowsFromSnapshot(games: BuiltinGames, snapshot: GameCenterRow[]): GameCenterRow[] {
     const rows: GameCenterRow[] = uniqueGameCenterRows(snapshot);
     const bundled: BuiltinGame[] = games.all();
     const bundledRows: GameCenterRow[] = [];
