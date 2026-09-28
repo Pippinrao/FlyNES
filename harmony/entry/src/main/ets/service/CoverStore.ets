@@ -57,6 +57,11 @@ export class CoverStore {
     return fileIo.accessSync(this.pathFor(canonicalId));
   }
 
+  /** Existing app-private cover for Flutter's file image; never creates a copy. */
+  localPath(canonicalId: string): string {
+    return this.exists(canonicalId) ? this.pathFor(canonicalId) : '';
+  }
+
   /** Saves an RGB565 NES frame (256x240) as the canonical cover art. */
   async storeFromRgb565(canonicalId: string, rgb565: ArrayBuffer): Promise<boolean> {
     try {

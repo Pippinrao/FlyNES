@@ -6,9 +6,9 @@
   "dependencies": {
   },
   "overrides": {
-    "@ohos/flutter_ohos": "file:./.artifacts/flutter-har/flutter_embedding_debug.har",
-    "flutter_native_arm64_v8a": "file:./.artifacts/flutter-har/arm64_v8a_debug.har",
-    "flutter_native_x86_64": "file:./.artifacts/flutter-har/x86_64_debug.har",
+    "@ohos/flutter_ohos": "file:./.artifacts/flutter-har/flutter_embedding.har",
+    "flutter_native_arm64_v8a": "file:./.artifacts/flutter-har/arm64_v8a.har",
+    "flutter_native_x86_64": "file:./.artifacts/flutter-har/x86_64.har",
     "@ohos/flutter_module": "file:./.artifacts/flutter-har/flutter_module.har"
   },
   "devDependencies": {

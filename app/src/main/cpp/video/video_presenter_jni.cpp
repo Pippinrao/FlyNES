@@ -2,12 +2,65 @@
 #include <android/native_window_jni.h>
 #include <android/asset_manager_jni.h>
 #include <swappy/swappyGL.h>
+#include <memory>
+#include <mutex>
+#include <thread>
+#include <unordered_map>
 
 #include "egl_presenter.h"
 
 using flynes::video::EglPresenter;
 
 namespace {
+JavaVM* swappy_vm = nullptr;
+std::once_flag swappy_threads_once;
+std::mutex swappy_threads_mutex;
+std::unordered_map<SwappyThreadId, std::unique_ptr<std::thread>> swappy_threads;
+SwappyThreadId next_swappy_thread = 0;
+
+int start_swappy_thread(SwappyThreadId* id, void* (*run)(void*), void* data) {
+    try {
+        std::lock_guard lock(swappy_threads_mutex);
+        const auto value = ++next_swappy_thread;
+        // Allocate the registry slot before starting a joinable thread.
+        auto entry = swappy_threads.emplace(value, nullptr).first;
+        try {
+            entry->second = std::make_unique<std::thread>([run, data] {
+                run(data);
+                // Swappy's refresh-rate callback attaches its native worker to ART.
+                // Balance that attachment before the OS thread exits; otherwise its
+                // JNI locals retain WindowManager and the destroyed game Activity.
+                JNIEnv* env = nullptr;
+                if (swappy_vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) == JNI_OK) {
+                    swappy_vm->DetachCurrentThread();
+                }
+            });
+        } catch (...) {
+            swappy_threads.erase(entry);
+            throw;
+        }
+        *id = value;
+        return 0;
+    } catch (...) { return -1; }
+}
+
+void join_swappy_thread(SwappyThreadId id) {
+    std::unique_ptr<std::thread> thread;
+    {
+        std::lock_guard lock(swappy_threads_mutex);
+        auto found = swappy_threads.find(id);
+        if (found == swappy_threads.end()) return;
+        thread = std::move(found->second);
+        swappy_threads.erase(found);
+    }
+    if (thread->joinable()) thread->join();
+}
+
+bool swappy_thread_joinable(SwappyThreadId id) {
+    std::lock_guard lock(swappy_threads_mutex);
+    return swappy_threads.find(id) != swappy_threads.end();
+}
+
 EglPresenter* presenter(jlong handle) {
     return reinterpret_cast<EglPresenter*>(handle);
 }
@@ -19,6 +72,12 @@ JNIEXPORT jlong JNICALL
 Java_com_flynes_emu_video_NativeVideoPresenter_nativeCreate(
         JNIEnv* env, jclass, jobject asset_manager, jobject activity_context) {
     try {
+        std::call_once(swappy_threads_once, [env] {
+            env->GetJavaVM(&swappy_vm);
+            static const SwappyThreadFunctions functions{
+                    start_swappy_thread, join_swappy_thread, swappy_thread_joinable};
+            Swappy_setThreadFunctions(&functions);
+        });
         jclass activity_class = env->FindClass("android/app/Activity");
         const bool is_activity = activity_context && activity_class
                 && env->IsInstanceOf(activity_context, activity_class);

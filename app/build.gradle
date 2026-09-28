@@ -13,8 +13,8 @@ android {
         applicationId "com.flynes.emu"
         minSdk 24
         targetSdk 36
-        versionCode 3000003
-        versionName "3.0.3"
+        versionCode 3000004
+        versionName "3.0.4"
         testInstrumentationRunner "com.flynes.emu.test.SingleDeviceCertificationRunner"
         ndk {
             abiFilters 'arm64-v8a', 'x86_64'
@@ -31,6 +31,7 @@ android {
 
     buildFeatures {
         prefab true
+        buildConfig true
     }
 
     buildTypes {
@@ -69,6 +70,7 @@ android {
 }
 
 dependencies {
+    implementation project(':flutter')
     implementation 'androidx.games:games-frame-pacing:2.1.3'
     implementation 'androidx.activity:activity:1.13.0'
     implementation 'androidx.appcompat:appcompat:1.8.0'

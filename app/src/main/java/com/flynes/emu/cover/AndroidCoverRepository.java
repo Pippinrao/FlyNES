@@ -93,6 +93,12 @@ public final class AndroidCoverRepository implements CoverCaptureCoordinator.Sin
         return file(canonicalId).isFile();
     }
 
+    /** Native-generated cover reference for read-only presentation clients. */
+    public String existingPath(String canonicalId) {
+        File stored = file(canonicalId);
+        return stored.isFile() ? stored.getAbsolutePath() : "";
+    }
+
     public void removeForTest(String canonicalId) {
         memory.remove(canonicalId);
         file(canonicalId).delete();

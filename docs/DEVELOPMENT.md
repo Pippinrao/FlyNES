@@ -81,6 +81,16 @@ ROMs must never be printed or committed.
 
 ### Build and unit tests
 
+This Flutter foundation branch requires the pinned Flutter 3.41.7 / Dart 3.11.5 SDK.
+On a fresh checkout, generate the ignored Flutter module and build the host first:
+
+```powershell
+pwsh -File tools/flutter/Build-Android.ps1 -FlutterCommand <sdk>/bin/flutter.bat -IncludeTests
+```
+
+See [Android Flutter host setup](../tools/flutter/README-Android.md) for exact SDK revisions.
+After this prerequisite, incremental Gradle commands and the local CI gate work normally.
+
 ```powershell
 .\gradlew.bat :app:testDebugUnitTest
 .\gradlew.bat :app:assembleDebug
@@ -227,9 +237,11 @@ try {
 On `codex/flutter-foundation`, the same host includes a debug Flutter catalog
 probe. Run `tools/flutter/Build-Ohos.ps1 -BuildTests` first to stage its generated
 HAR dependencies; its parameters accept the pinned OH SDK, DevEco and short pub
-cache paths. The current experiment rejects non-debug packaging so a release
-cannot silently contain the debug engine. See [migration status](flutter-migration/STATUS.md)
-for the verified SDK and remaining runtime gates.
+cache paths. `-Mode debug|profile|release` selects matching Flutter HARs and host
+packaging; a provenance/hash guard rejects mixed or stale modes. `-BuildTests`
+requires debug. See [OH build modes](flutter-migration/verification/2026-09-29-ohos-build-modes.md)
+for verified artifacts and the profile native-debug limitation, and
+[migration status](flutter-migration/STATUS.md) for remaining runtime gates.
 
 Host tests (the private C++ suite; not part of the HAP):
 

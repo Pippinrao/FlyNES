@@ -45,7 +45,7 @@ export default function saveHistoryPlayTest() {
         expect(nativePlay.historyHead(path, key)).assertEqual(target);
       } finally { nativePlay.playClose(); }
     });
-    it('failed_restore_started_while_running_preserves_head_and_stays_paused', 0, () => {
+    it('failed_restore_publishes_live_protection_and_reopens_same_progress', 0, async () => {
       const context = abilityDelegatorRegistry.getAbilityDelegator().getAppContext()
         .createModuleContext('entry');
       const game = BuiltinGames.loadSync(context).all()[0];
@@ -57,6 +57,13 @@ export default function saveHistoryPlayTest() {
         const history = new SaveHistoryService(path, key);
         history.initialize(false);
         const original = history.save(1, 'current');
+        const originalFrame = nativePlay.playStep().frameIndex;
+        nativePlay.playSetPaused(false);
+        await delay(300);
+        nativePlay.playSetPaused(true);
+        const currentFrame = nativePlay.playStep().frameIndex;
+        expect(currentFrame > originalFrame).assertTrue();
+        history.playedMs = 5000;
         const invalid: HistoryInput = { playedMs: 0, kind: 1, label: 'invalid runtime state',
           session: 'invalid-state', parent: 0, state: new Uint8Array([1, 2, 3]).buffer as ArrayBuffer,
           thumbnail: new ArrayBuffer(0), makeHead: false };
@@ -66,10 +73,21 @@ export default function saveHistoryPlayTest() {
         try { history.restore(target); } catch (error) { rejected = true; }
         expect(rejected).assertTrue();
         expect(nativePlay.playRuntimeStatus().paused).assertTrue();
-        expect(nativePlay.historyHead(path, key)).assertEqual(original);
-        expect(history.list().some((row) => row.kind === 2)).assertTrue();
-        // Cancellation has released the pending operation, allowing a durable manual save.
-        expect(history.save(1, 'after rollback') > target).assertTrue();
+        const rolledBackFrame = nativePlay.playStep().frameIndex;
+        expect(rolledBackFrame >= currentFrame).assertTrue();
+        const protection = history.list().find((row) => row.kind === 2);
+        expect(protection !== undefined).assertTrue();
+        expect(nativePlay.historyHead(path, key)).assertEqual(protection!.id);
+        expect(protection!.id > original).assertTrue();
+        expect(nativePlay.historyRecover(path, key)).assertEqual(0);
+        nativePlay.playClose();
+        nativePlay.playOpen(rom); nativePlay.playSetPaused(true);
+        const reopened = new SaveHistoryService(path, key);
+        reopened.initialize(true, () => { throw new Error('new head must bypass legacy'); });
+        expect(nativePlay.playStep().frameIndex).assertEqual(rolledBackFrame);
+        expect(reopened.playedMs).assertEqual(5000);
+        // Recovery completed pending intent and permits the next durable write.
+        expect(reopened.save(1, 'after rollback') > target).assertTrue();
       } finally { nativePlay.playClose(); }
     });
     it('counts_last_running_frames_at_pause_boundary_once', 0, () => {

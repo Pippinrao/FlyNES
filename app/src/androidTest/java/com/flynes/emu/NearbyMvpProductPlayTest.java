@@ -22,11 +22,17 @@ import static androidx.test.espresso.action.ViewActions.replaceText;
 import static androidx.test.espresso.Espresso.closeSoftKeyboard;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
-import static org.hamcrest.Matchers.allOf;
 import static androidx.test.espresso.matcher.ViewMatchers.hasDescendant;
 
 /** Opt-in local acceptance. User ROMs stay in the existing catalog, never fixtures. */
 public final class NearbyMvpProductPlayTest {
+    private android.net.ConnectivityManager redirectedNetwork;
+    private android.net.Network previousNetwork;
+
+    @org.junit.After public void restoreTestNetworkBinding() {
+        if (redirectedNetwork != null) redirectedNetwork.bindProcessToNetwork(previousNetwork);
+    }
+
     @Test public void hostUsesProductControls() throws Exception {
         FlyNesApplication app = ApplicationProvider.getApplicationContext();
         var args = InstrumentationRegistry.getArguments();
@@ -56,7 +62,31 @@ public final class NearbyMvpProductPlayTest {
             rom = app.catalogRuntime().nearbyContentLoader().load(selected.variantId()).bytes();
             gameKey = selectedKey;
         }
-        assertTrue(app.nearbyMvpOwner().startHost(NearbyMvpLanAddress.current()));
+        String bindAddress = NearbyMvpLanAddress.current();
+        String redirectedAddress = args.getString("emulatorRedirectBindAddress", "");
+        if (!redirectedAddress.isEmpty()) {
+            assertTrue("NAT binding override is emulator instrumentation only",
+                    android.os.Build.HARDWARE.equals("ranchu") || android.os.Build.HARDWARE.equals("goldfish"));
+            assertEquals("Android emulator redir targets its Ethernet guest address", "10.0.2.15", redirectedAddress);
+            assertNotNull("Redirect target must be assigned on this emulator",
+                    java.net.NetworkInterface.getByInetAddress(java.net.InetAddress.getByName(redirectedAddress)));
+            redirectedNetwork = app.getSystemService(android.net.ConnectivityManager.class);
+            previousNetwork = redirectedNetwork.getBoundNetworkForProcess();
+            android.net.Network targetNetwork = null;
+            for (android.net.Network network : redirectedNetwork.getAllNetworks()) {
+                var properties = redirectedNetwork.getLinkProperties(network);
+                if (properties != null && properties.getLinkAddresses().stream().anyMatch(
+                        address -> redirectedAddress.equals(address.getAddress().getHostAddress()))) {
+                    targetNetwork = network;
+                    break;
+                }
+            }
+            assertNotNull("Redirect needs an Android Network for return traffic", targetNetwork);
+            assertTrue("Bind the test process to the redirect's Network for its return path",
+                    redirectedNetwork.bindProcessToNetwork(targetNetwork));
+            bindAddress = redirectedAddress;
+        }
+        assertTrue(app.nearbyMvpOwner().startHost(bindAddress));
         NearbyMvpSession session = app.nearbyMvpOwner().session();
         long deadline = SystemClock.elapsedRealtime() + 30_000;
         String invite;
@@ -110,6 +140,22 @@ public final class NearbyMvpProductPlayTest {
             long before = session.completedFrames();
             SystemClock.sleep(2000);
             assertTrue("Product loop did not advance", session.completedFrames() > before + 30);
+            page.onActivity(activity -> {
+                long samples = activity.nearbyAudioWrittenSamplesForTest();
+                assertTrue("Android must submit nearby PCM to AudioTrack", samples > 4800);
+                try {
+                    var playField = MainActivity.class.getDeclaredField("nearbyPlay");
+                    playField.setAccessible(true);
+                    var audioField = NearbyMvpPlayController.class.getDeclaredField("audio");
+                    audioField.setAccessible(true);
+                    android.media.AudioTrack track = (android.media.AudioTrack) audioField.get(playField.get(activity));
+                    assertNotNull("Native nearby AudioTrack exists", track);
+                    long played = Integer.toUnsignedLong(track.getPlaybackHeadPosition());
+                    assertTrue("Android AudioTrack must actually play nearby PCM", played > 4800);
+                    android.util.Log.i("FlyNesNearby", "event=product_audio written_samples=" + samples
+                            + " playback_frames=" + played);
+                } catch (ReflectiveOperationException failure) { throw new AssertionError(failure); }
+            });
             long hold = Long.parseLong(args.getString("playHoldMs", "0"));
             if (hold > 0) SystemClock.sleep(hold);
             onView(withId(R.id.pause_button)).perform(click());
@@ -153,8 +199,7 @@ public final class NearbyMvpProductPlayTest {
             String nextTitle = java.util.Locale.getDefault().getLanguage().equals("zh")
                     ? nextGame.titleZhHans : nextGame.titleEn;
             onView(withId(R.id.game_grid)).perform(
-                    RecyclerViewActions.scrollTo(hasDescendant(withText(nextTitle))));
-            onView(allOf(withId(R.id.card_title), withText(nextTitle))).perform(click());
+                    RecyclerViewActions.actionOnItem(hasDescendant(withText(nextTitle)), click()));
             onView(withId(R.id.launch_selected)).perform(click());
             waitState(session, NearbyMvpSession.RUNNING);
             assertEquals("Guest must resolve the second game through its real catalog", 1, session.snapshot()[6]);

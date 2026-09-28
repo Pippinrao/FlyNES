@@ -19,7 +19,7 @@ public FFI consolidation remains a later client design task.
 
 | Method | Arguments | Result |
 | --- | --- | --- |
-| `catalogSnapshot` | none | `{generation, games: [{canonicalId, titleEn, titleZhHans, available, unavailableReason}]}` |
+| `catalogSnapshot` | none | `{generation, games: [{canonicalId, titleEn, titleZhHans, available, unavailableReason, coverPath?}]}` |
 | `resumeCapability` | `{canonicalId}` | `{state: available / none / unavailable, reason?}` |
 | `launch` | `{canonicalId}` | `{status: returned / cancelled / unavailable, reason?}` after native return |
 | `openNative` | `{page: settings / sources / nearby}` | completes after native return |
@@ -31,7 +31,16 @@ the current head (iOS legacy slot) to provide progress, never infer from play
 history. Unimplemented methods report unavailable; they do not return fake
 success. Dart keeps queries in `querying` until a real reply.
 
-The first Harmony slice implements catalog only. It cannot certify launching,
-resume, game containers or G1. Missing host services produce an error state with
-retry, not a synthetic fallback catalog. Full categories/search and other G2 UI
-remain outside this validation page.
+`coverPath` is an optional absolute path to the existing native app-private cover
+file. Empty/missing paths use the localized title placeholder; unreadable or
+invalid images fall back to the same placeholder. Covers use `BoxFit.contain`.
+The snapshot generation invalidates decoded images after native return, even
+when a new screenshot replaces the same file. Dart never writes these files.
+
+Android and Harmony implement real catalog, resume queries, native game launch,
+and settings/source/nearby page round trips. Their independent texture probes
+use `flynes/foundation_texture`; they do not replace the native game pages.
+Missing host services produce an error state with retry, not a synthetic
+fallback catalog. Full categories/search and other G2 UI remain outside this
+validation page. Implementation alone does not certify G1: platform evidence,
+upgrade retention, repeated round trips and performance gates remain separate.

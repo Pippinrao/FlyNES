@@ -231,7 +231,8 @@ struct HarmonyRenderer::Impl final
         runtime_status.fallback_reason = reason;
     }
 
-    void create(OH_NativeXComponent* component_value, void* window_value)
+    void create(OH_NativeXComponent* component_value, void* window_value,
+                std::uint32_t texture_width = 0, std::uint32_t texture_height = 0)
     {
         stop_and_join();
         std::uint64_t next_generation = 0;
@@ -245,9 +246,10 @@ struct HarmonyRenderer::Impl final
             last_vsync_ns = 0;
             ++generation;
             next_generation = generation;
-            uint64_t next_width = 0;
-            uint64_t next_height = 0;
-            if (OH_NativeXComponent_GetXComponentSize(component, window, &next_width, &next_height) == 0)
+            uint64_t next_width = texture_width;
+            uint64_t next_height = texture_height;
+            if (component == nullptr ||
+                OH_NativeXComponent_GetXComponentSize(component, window, &next_width, &next_height) == 0)
             {
                 width = static_cast<std::uint32_t>(next_width);
                 height = static_cast<std::uint32_t>(next_height);
@@ -387,7 +389,11 @@ struct HarmonyRenderer::Impl final
                 eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
                 if (surface != EGL_NO_SURFACE) eglDestroySurface(display, surface);
                 if (context != EGL_NO_CONTEXT) eglDestroyContext(display, context);
-                eglTerminate(display);
+                // EGL_DEFAULT_DISPLAY is shared with the ArkUI/Flutter host.
+                // eglInitialize is not reference counted: terminating here
+                // invalidates the host's contexts when a game page closes.
+                // Release only this renderer's surface and context above;
+                // the process-level display owner controls display lifetime.
             }
             if (vsync != nullptr) OH_NativeVSync_Destroy(vsync);
         };
@@ -814,6 +820,16 @@ bool HarmonyRenderer::bind_component(napi_env env, napi_value exports)
     std::lock_guard lock(impl_->mutex);
     impl_->runtime_status.component_bound = registered;
     return registered;
+}
+
+void HarmonyRenderer::attach_native_window(void* window, std::uint32_t width, std::uint32_t height)
+{
+    impl_->create(nullptr, window, width, height);
+}
+
+void HarmonyRenderer::detach_native_window(void* window)
+{
+    impl_->destroy(window);
 }
 
 bool HarmonyRenderer::submit_frame(std::uint64_t frame_index,

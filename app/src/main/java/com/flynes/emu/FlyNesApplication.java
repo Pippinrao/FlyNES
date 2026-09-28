@@ -15,6 +15,24 @@ public final class FlyNesApplication extends Application {
     private NearbySession nearbySession;
     private NearbyMvpOwner nearbyMvpOwner;
     private final NearbyUiHotspot nearbyUiHotspot = new NearbyUiHotspot();
+    private io.flutter.embedding.engine.FlutterEngine foundationEngine;
+    private FoundationBridge foundationBridge;
+    private AndroidResumeService resumeService;
+
+    /** Lazily initialized on the UI thread; the Flutter page does not own native services. */
+    public io.flutter.embedding.engine.FlutterEngine foundationEngine() {
+        if (foundationEngine == null) {
+            foundationEngine = new io.flutter.embedding.engine.FlutterEngine(this);
+            foundationBridge = new FoundationBridge(this);
+            new io.flutter.plugin.common.MethodChannel(foundationEngine.getDartExecutor().getBinaryMessenger(),
+                    "flynes/foundation").setMethodCallHandler(foundationBridge);
+            foundationEngine.getDartExecutor().executeDartEntrypoint(
+                    io.flutter.embedding.engine.dart.DartExecutor.DartEntrypoint.createDefault());
+        }
+        return foundationEngine;
+    }
+    FoundationBridge foundationBridge() { return foundationBridge; }
+    AndroidResumeService resumeService() { return resumeService; }
 
     @Override public void onCreate() {
         super.onCreate();
@@ -24,6 +42,7 @@ public final class FlyNesApplication extends Application {
         catalogRuntime.start();
         GameCenterStartupTrace.event("APPLICATION_CREATE", "phase=catalog-started");
         gameLaunchService = new AndroidGameLaunchService(catalogRuntime);
+        resumeService = new AndroidResumeService(this);
         nearbyAvailability = new NearbyAvailability<>(NearbyAvailability.fromIllegalState(
                 () -> NearbySessionOwner.create(catalogRuntime), "nearby_blocked_session_read"));
         nearbyMvpOwner = new NearbyMvpOwner();

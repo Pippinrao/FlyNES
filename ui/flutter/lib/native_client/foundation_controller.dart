@@ -42,7 +42,9 @@ final class FoundationController extends ChangeNotifier {
       final games = _snapshot!.games;
       final id = _selected?.canonicalId;
       _selected = games.where((game) => game.canonicalId == id).firstOrNull;
-      _selected ??= games.firstOrNull;
+      _selected ??=
+          games.where((game) => game.available).firstOrNull ??
+          games.firstOrNull;
       _loading = false;
       _queryResume();
     } catch (_) {

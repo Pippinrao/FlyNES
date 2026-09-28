@@ -35,7 +35,9 @@ export default class EntryAbility extends UIAbility implements ExclusiveAppCompo
       return false;
     }
     const page: string | undefined = want.parameters?.['flynes.test.page'] as string | undefined;
-    if (isFlutterFoundationRoute(page, debug)) {
+    if (page === 'flutter_texture_probe') {
+      this.testPage = 'pages/FlutterTextureProbe';
+    } else if (isFlutterFoundationRoute(page, debug)) {
       this.testPage = 'pages/FlutterFoundation';
     } else if (page === 'nearby_friends') {
       this.testPage = 'pages/NearbyFriends';
@@ -69,7 +71,7 @@ export default class EntryAbility extends UIAbility implements ExclusiveAppCompo
     });
   }
 
-  onForeground(): void { hilog.info(0, 'FlyNesNearby', 'event=ability_foreground'); }
+  onForeground(): void { this.context.eventHub.emit('app-foreground'); hilog.info(0, 'FlyNesNearby', 'event=ability_foreground'); }
 
   onBackground(): void { this.context.eventHub.emit('save-background'); hilog.info(0, 'FlyNesNearby', 'event=ability_background'); }
 

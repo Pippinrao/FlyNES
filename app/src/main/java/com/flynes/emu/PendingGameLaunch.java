@@ -27,6 +27,10 @@ public final class PendingGameLaunch {
 
     public static Payload consume() { return PENDING.getAndSet(null); }
 
+    static void discard(LaunchRequest request) {
+        PENDING.updateAndGet(value -> value != null && value.request() == request ? null : value);
+    }
+
     public record Payload(LaunchRequest request, byte[] bytes,
             com.flynes.emu.catalog.CanonicalGame title) {}
 }

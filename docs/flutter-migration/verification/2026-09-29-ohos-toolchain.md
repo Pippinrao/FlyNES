@@ -1,6 +1,6 @@
 # Flutter-OH 工具链探针（2026-09-28～29）
 
-状态：**REQ-004 尚未锁定；REQ-005 页面验证失败；G1 未通过**。1.0.0 的双架构 HAR、现有宿主与测试 HAP 构建通过，任务专用 API20 x64 模拟器接受 unsigned 安装。真实 Hypium 为 2 pass / 1 failure：Flutter 页面在 MaterialApp 构建时 StackOverflow，不能以构建或原生查询通过替代页面放行。
+状态：**API20 x64 模拟器完整 Foundation 9/9、随后 Texture 4/4 通过，宿主保持运行**。已修复页面 StackOverflow、原生往返/后台的渲染表面生命周期与语义恢复。固定1.0.0的双架构HAR、现有宿主及测试HAP构建通过；未修改vendor SDK，任务专用模拟器接受unsigned安装。下面保留失败与差分证据，最终结果及固定包见末节，不能将中途失败误作当前状态。Mac仍按用户要求暂不验证，亦不由此认证真机硬件指标或整个跨平台G1。
 
 ## 环境与身份
 
@@ -160,3 +160,82 @@ void main() => runApp(const MaterialApp(
 使用固定 Flutter CLI attach 到该任务实例的 VM service，替换忽略 main 后发送 `R` hot restart。调试地址从该进程 hilog 的 VM service 行读取，不将临时连接 token 写入文档。`flutter-attach.log` / `vm-events.log` 留存结构化错误：构建 `_FocusInheritedScope` 时 StackOverflow；上层为 MaterialApp；栈包括 `_toStringVisiting`、Element.debugFillProperties、TextTreeRenderer、ComponentElement.performRebuild，另有 `_elements.contains(element)` 断言。最小 MaterialApp 无任何 FlyNES 客户端、channel 或目录逻辑，仍可复现。进一步只替换 FlutterError.onError 输出原始 exception+stack（未禁用 assert，未替换错误页面），`stack-process.log` 同样记录 `FIRST_EXCEPTION: Stack Overflow`。具体 engine/framework 根因尚未确定，不能推广为所有 OH/ARM64 不支持。
 
 差分完成后已恢复忽略 main（`main-before-differential.dart` 保存原件），并将最终 `.artifacts/oh/ab9a7bb2` 正式 HAP 覆盖安装后复测得到上述1 failure。attach/VM helper 已结束，任务创建的端口转发已移除。下一步应围绕该固定最小 MaterialApp 复现向维护方核查，或在获准的匹配 ARM64 设备/工具链做定向验证；本轮不升级 DevEco、不修改 vendor、不以关闭 assert 绕过。REQ-005 运行闸门未通过，不能推进依赖它的后续宿主实现。
+
+## 后续根因确认及页面修复（同日继续验证）
+
+用户要求除 Mac 外继续全部模拟器验证后，未升级或修改第三方 SDK，而是继续检查首个异常和线程配置。固定源码 `engine/src/flutter/common/settings.h` 默认 `merged_platform_ui_thread=kEnabled`；OH 的 `ohos_main.cpp` 使用 `SettingsFromCommandLine`，允许显式 disabled。`ohos_shell_holder.cpp` 在 disabled 时创建独立 kUi runner，`fml/thread.cc` 设置默认2MiB线程栈。平台消息仍显式 PostTask 到 platform runner，不会让 ArkTS/N-API 在 Dart UI 线程直接执行。
+
+使用忽略目录的 `stack_probe_main.dart`（Dart FFI调用本机 libc 的 pthread_self/getattr_np/attr_getstacksize，调用返回值均0）实测：
+
+| 配置 | PID/TID关系 | pthread报告栈字节 | 最小MaterialApp |
+| --- | --- | ---: | --- |
+| 默认merged | PID=TID=28165 | 135168（132KiB） | StackOverflow |
+| disabled | PID5175/TID6779 | 2099680 | 正常 |
+
+证据 `merged-stack-probe.log`、`dedicated-stack-probe.log`。这是系统API报告的线程栈边界，不是由错误页推测出来的数值。`FoundationFlutterEntry.getFlutterShellArgs()` 仅增加公开 `--merged-platform-ui-thread=disabled`，保留父类参数；没有禁用assert、替换ErrorWidget、修改SDK或切换其他模拟器。
+
+正式共享 Dart 随即显示七款真实游戏，native channel记录 `generation=1 games=7`，截图 `dedicated-ui-thread-late.jpeg`。Node配置回归先红后绿（`dedicated-ui-thread-red.log` / `...green.log`）。设备测试发现固定OH embedding不将Flutter Semantics.identifier暴露为UiTest资源id，但真实文本/按钮角色已可访问（`dedicated-ui-thread-layout.json`）；测试因此以原生Flutter宿主页锚点和manifest动态标题的真实Flutter Button断言，点击第二张卡并验证详情改变，不以宿主页存在替代Flutter内容。
+
+`foundation-visible-card-hypium.log` 最终 **3/3 pass，0 failure，0 error，4.53秒**。页面运行前置闸门已通过，可以继续原生游戏/历史/设置等往返验证。初期结论“整个SDK组合无法运行MaterialApp”已被上述可复现修正推翻；当前限制不能推广为ARM64或所有OH系统不支持。
+
+## G1 原生往返及共享图形生命周期验证（进行中）
+
+后续桥已实现真实 `resumeCapability`、`launch` 和 `openNative`：读取 ROM 的 content key 查询既有 history head / legacy checkpoint，只读查询不打开模拟核心；启动仍由原生 RunGame / PlayService 唯一拥有，暂停保存、恢复和重启沿用原实现。带 `foundationReturn` 的实验启动在原生“游戏中心”操作后返回原 Flutter 页面，页面 hide/show 才完成 launch promise。后台/页面销毁取消 pending，序号拒绝迟到路由失败。设置、来源及附近入口复用 GameCenter 的既有路由条件。封面只返回既有 CoverStore 内实际存在的本地路径。
+
+`route-resume-cover-red.log`、`bridge-complete-red.log`、`nearby-route-red.log` 与对应 green 文件保留行为红绿；`complete-bridge-node-green.log` 为合并后的 **9/9 pass**。设备首轮 `bridge-roundtrip-red.log` 证明原生退出原先替换 GameCenter 而没有回到 Flutter；修正后 `.artifacts/oh/368d3956` 完整 HAR、主 HAP、测试 HAP 构建 exit0，主/测试包均覆盖安装成功。
+
+`full-g1-hypium.log` 的前4项实际通过：debug guard、真实目录投影、Flutter 选卡、原生启动→手动保存→历史恢复→重启→回到 Flutter 并显示继续。第5项20往返开始后，**Windows 模拟器进程整体崩溃，测试没有最终报告，不能计为通过**。任务 HVD 同 userdata 重启，未卸载或清数据，用户5555始终不动。
+
+宿主证据 `hvd-roundtrip-crash-qemu.log`、`hvd-roundtrip-crash-server.log`、`hvd-roundtrip-windows-events.log`：Windows Event1000在01:14:52记录 Emulator.exe / ntdll.dll / `0xc0000374` / offset `0x117eb5`；crash server记录PID63144 exit3221226356。qemu此前反复 `real share context is NULL`、`egl_makeCurrent ... error 170`。这些是宿主堆损坏证据，不是由内存容量推断OOM。
+
+代码检查发现 Harmony renderer 每次退出游戏调用 `eglTerminate(EGL_DEFAULT_DISPLAY)`，而新嵌入的 Flutter raster 使用同一进程 display。[EGL 1.5规范](https://registry.khronos.org/EGL/specs/eglspec.1.5.withchanges.pdf)说明重复 initialize 不增加引用计数、terminate释放关联资源。最小修正保留各 renderer 自己的 GL 资源、surface、context 释放，移除页面级全局 display terminate。下一轮维持同一HVD/GPU配置验证20往返，尚不能仅凭源码推断将宿主崩溃标为解决。
+
+### 页面覆盖与应用后台的差分
+
+移除 terminate 后 `full-g1-egl-fixed-hypium.log` 仍在 native 往返中丢失整个 HVD；该修正单独不足以修复宿主堆损坏。随后 `native-only-control-hypium.log` 在同一任务镜像执行**完全不创建 Flutter 的原生 RunGame 20次往返，1/1 pass，41.955秒**。每次检查源帧增长与 core 已关闭，20条完成标记保存。原生对照也有 share-context NULL/gbuffer0日志，不能把它们独立当作根因；只有 Flutter/native 共存多出 host WGL makeCurrent error170。
+
+公开 `--enable-impeller` 的独立对照直接 `App died`：VulkanLoader `vkCreateInstance: Found no drivers`、`ErrorIncompatibleDriver`，证据 `vulkan-page-probe-hypium.log` / `vulkan-probe-driver.log`。该探针源码已恢复，不保留此参数。固定 engine 的软件渲染设置随后被无条件 kOpenGLES 分支覆盖，未把一个无效开关宣称为软件渲染验证。
+
+固定 engine `platform_view_ohos.cpp` 将 AppLifecycle.paused 在1秒后映射为 GPU aggressive cleanup；`TryFreeSkiaGpuResources` 从 raster 线程调用 `ResourceContextMakeCurrent`，后者绑定 `ohos_context_gl_skia.cpp` 的 resource_context。页面被同一前台 UIAbility 的原生页面覆盖时，SDK默认 onPageHide 也发送 appIsPaused。因此原生路由反复触发此回收/恢复路径。代码与 error170 指向该路径的线程/context处理；不把未经 vendor 符号调试的 host heap corruption精确指令归因当作已证明。
+
+宿主适配将**页面覆盖**设置为 view inactive + appIsInactive，而真正 EntryAbility `save-background` 仍显式 appIsPaused。不假报PiP，不关闭assert，不修改vendor。相同HVD/GPU配置下 `inactive-route-20-hypium.log` **1/1 pass，59.147秒**，同一Flutter页连续20次原生启动/退出均源帧增长、coreClosed=true；`inactive-route-20-markers.log` 保存20条完成与Inactive/Resumed转换。模拟器继续存活。
+
+`ability-paused-background-hypium.log` **1/1 pass，9.940秒**。真实Home后台日志明确出现 Inactive→Paused、ExecuteAggressive proceeding、Surface torn down，回前台出现 Paused→Resumed、Surface REBUILT，再返回Flutter并再次启动/退出成功（`ability-paused-background-gpu.log`）。因此后台回收仍被实际测试，未通过一直保持resumed规避后台工作。
+
+`native-navigation-hypium.log` **1/1 pass，7.278秒**，设置/来源/附近三个真实原生路由均返回。根页返回先在 `root-back-red.log` 失败，SDK默认root router.back无效；FoundationEntry的popSystemNavigator仅替换回原生GameCenter，随后 `root-back-green.log` **1/1 pass，6.386秒**，包含再次打开Flutter、启动并返回。`ability-lifecycle-red.log` / `...green.log` 保留真正后台必须paused的回归；合并Node现在 **10/10 pass**。最终完整构建与集成suite继续记录于下方。
+
+### 组合回归继续暴露后台资源回收问题
+
+新模式构建脚本 debug run `.artifacts/oh/1acd25b4` 完整成功，lib8文件与共享Dart SHA逐一一致。该包的 `final-integrated-foundation-hypium.log` 前5项通过（20次往返56.612秒），但紧接真正后台的第6项再次导致HVD宿主退出；后续texture测试未执行。**前述focused后台通过不能替代此组合失败，当前不能据此声称完整G1通过。** 失败qemu日志保存 `final-background-crash-qemu.log`。
+
+下一修正采用embedding正式surface生命周期：真正应用后台先调用 `FlutterView.onSurfaceDestroyed()`，再发送 appIsPaused；前台通过 onSurfaceCreated重绑相同engine和XComponent。固定engine的NotifyDestroyed先将onscreen_context_valid置false，在raster同步释放surface并清cached_native_window，因此paused不再尝试跨线程绑定resource context。Dart/engine及全局原生owner保留，pending route仍取消；没有假报resumed/PiP，也没有去掉后台paused。`background-surface-red.log` / `...green.log` 验证调用顺序与恢复，Node10/10。仍需完整同顺序设备suite证明该候选。
+
+### 最终采用的 surface 生命周期
+
+`.artifacts/oh/46fdff43` debug完整重建通过，8个共享Dart文件SHA完全一致。`surface-integrated-foundation-hypium.log` 为8 pass / 1 failure：宿主不再退出，但后台返回后的Flutter按钮不可被UiTest读取；引擎日志为 `FillNodesWithSearch failed`。源码进一步确认NotifyDestroyed将semantics置false，而onSurfaceCreated未恢复。因此重绑时显式 `setSemanticsEnabled(true)` 恢复实验页语义树；不修改系统辅助功能开关。
+
+最终统一页面覆盖和真正应用后台：先detach surface，再正常paused；页面重新显示才重绑，同一engine/Dart页面状态保留。应用回前台但Flutter仍被原生页面覆盖时不提前重绑。此前仅inactive的临时方案已移除，避免在原生游戏期间继续调度Flutter动画。单元 `route-surface-lifecycle-red.log` / `...green.log` 及 `final-surface-bridge-node.log` **10/10 pass**，验证detach顺序、幂等、前台覆盖页保持分离、语义恢复与root-back。
+
+`route-surface-foundation-hypium.log` 为8 pass / 1 error，不能误记全绿：20次用例第一次点击时，异步目录刷新替换了UiTest组件句柄，抛出明确 `NoCandidates`，该次没有执行20循环。测试仅对此已观测的过期组件错误重新定位，其他异常继续抛出；未降低源帧增长/coreClosed/20次断言。该主包的 `route-surface-texture-hypium.log` 已 **4/4 pass，30.690秒**。最终完整foundation复跑结果以下方实际report为准。
+
+## 最终完整设备结果与固定包
+
+同一任务HVD `FlyNESFlutterG1` / `127.0.0.1:5557`，进程23208，未清理userdata，未碰用户5555。主包包含正式surface lifecycle与语义恢复，测试包包含仅针对NoCandidates的组件重新定位。主包由完整debug run `.artifacts/oh/46fdff43` 的HAR（8个共享Dart SHA匹配）配合最终ArkTS增量构建；`route-surface-build.log`、`stale-widget-test-build.log` 均exit0。
+
+| 最终验证 | 结果 | 证据 |
+| --- | --- | --- |
+| Foundation全9项，同进程顺序执行 | 9 pass / 0 failure / 0 error，125.394秒 | `final-surface-foundation-hypium.log` |
+| 随后Texture全4项 | 4 pass / 0 failure / 0 error，26.961秒 | `final-surface-texture-hypium.log` |
+| 桥/入口/路由/历史能力/封面Node | 10/10 pass | `final-surface-bridge-node.log` |
+| Harmony host Debug CTest | 15/15 pass | `g1-bridge-ctest.log`；主任务另有fresh rebuild复验 |
+
+Foundation全套覆盖真实目录选卡，启动原生游戏、手动保存、历史恢复、重启、返回后的继续能力；同一Flutter页20次原生往返（每次源帧增长及core关闭）；紧接真实Home后台取消及恢复、下一次启动；设置/来源/附近三路由；root-back回原生大厅及重新打开；无Flutter原生20次对照。Texture覆盖真实NES帧、PCM持续增长、双指按钮同时生效及抬起清零、前后台、20次attach/detach及host退出关闭core。`final-device-markers.log` 保存生命周期与循环标记。
+
+最终固定副本位于 `.artifacts/flutter-ohos-probe/final-packages/`（hashes.json同目录）：
+
+| 包 | SHA256 |
+| --- | --- |
+| entry-default-unsigned.hap | `FC1694F3C48CE0E0D2F5E84BCD1D3425FE7D568DEC70B881625D1F6EA8470FD2` |
+| entry-ohosTest-unsigned.hap | `12AA91AEFD0274B49E82836EBF3C8B6117F53CEFFC5BEC0A3DDBA4FC8177787C` |
+
+两包已安装在5557，媒体suite结束后释放core并回原生GameCenter；HVD存活、任务VM/attach helper已退出、fport为空。设备随后交主任务做Android↔HarmonyOS真实双机联机。此处无物理刷新率、功耗、温度、端到端延迟结论；ARM64只完成构建，Mac/iOS仍按用户要求暂不验证。后续profile/release构建模式与跨版本保留另有独立验证记录。

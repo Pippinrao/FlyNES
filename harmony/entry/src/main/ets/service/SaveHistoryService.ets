@@ -15,6 +15,14 @@ export class SaveHistoryService {
 
   constructor(path: string, key: string) { this.path = path; this.key = key; }
 
+  /** Read-only capability query; migration and core validation remain in open. */
+  hasResume(readLegacy: () => ArrayBuffer | undefined = () => undefined): boolean {
+    const head = nativePlay.historyHead(this.path, this.key);
+    if (head > 0) return nativePlay.historyRead(this.path, this.key, head, false).byteLength > 0;
+    const legacy = readLegacy();
+    return legacy !== undefined && legacy.byteLength > 0;
+  }
+
   initialize(restore: boolean, readLegacy: () => ArrayBuffer | undefined = () => undefined): void {
     this.initial = nativePlay.playSaveCheckpoint();
     this.lastSource = nativePlay.playRuntimeStatus().sourceFrames;
@@ -72,9 +80,10 @@ export class SaveHistoryService {
         nativePlay.playLoadCheckpoint(target);
         nativePlay.historyFinish(this.path, operation.operation, true);
       } catch (error) {
-        // The previous state remains durable even if either rollback step itself fails.
+        // Roll back memory first, then atomically publish its protection as head.
+        // If either step fails, keep the pending operation and stay paused.
         nativePlay.playLoadCheckpoint(current.state);
-        nativePlay.historyFinish(this.path, operation.operation, false);
+        nativePlay.historyRecover(this.path, this.key);
         throw new Error(error instanceof Error ? error.message : 'Restore failed');
       }
       this.playedMs = row.playedMs;

@@ -1,5 +1,8 @@
 import saveHistoryPlayTest from './SaveHistoryPlay.test';
+import g1NativeSavePerformanceTest from './G1NativeSavePerformance.test';
+import saveHistoryUpgradeTest from './SaveHistoryUpgrade.test';
 import flutterFoundationTest from './FlutterFoundation.test';
+import flutterTextureProbeTest from './FlutterTextureProbe.test';
 import saveHistoryUiTest from './SaveHistoryUi.test';
 import smokeTest from './Smoke.test';
 import saveHistoryTest from './SaveHistory.test';
@@ -25,6 +28,18 @@ import builtinPlaySmokeTest from './BuiltinPlaySmoke.test';
 import builtinGameplayAcceptanceTest from './BuiltinGameplayAcceptance.test';
 
 export default function testsuite() {
+  if (abilityDelegatorRegistry.getArguments().parameters['-s g1NativePerformance'] === 'true') {
+    g1NativeSavePerformanceTest();
+    return;
+  }
+  if (abilityDelegatorRegistry.getArguments().parameters['-s flutterTextureOnly'] === 'true') {
+    flutterTextureProbeTest();
+    return;
+  }
+  if (abilityDelegatorRegistry.getArguments().parameters['-s saveHistoryUpgradePhase'] !== undefined) {
+    saveHistoryUpgradeTest();
+    return;
+  }
   if (abilityDelegatorRegistry.getArguments().parameters['-s flutterFoundationOnly'] === 'true') {
     flutterFoundationTest();
     return;

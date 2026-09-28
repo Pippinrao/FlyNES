@@ -45,6 +45,9 @@ public:
     HarmonyRenderer& operator=(const HarmonyRenderer&) = delete;
 
     bool bind_component(napi_env env, napi_value exports);
+    // Borrowed window: caller unregisters its Flutter texture only after detach.
+    void attach_native_window(void* window, std::uint32_t width, std::uint32_t height);
+    void detach_native_window(void* window);
     bool submit_frame(std::uint64_t frame_index,
                       std::uint32_t width,
                       std::uint32_t height,

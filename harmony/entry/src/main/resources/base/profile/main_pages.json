@@ -1,5 +1,6 @@
 {
   "src": [
+    "pages/FlutterTextureProbe",
     "pages/FlutterFoundation",
     "pages/GameCenter",
     "pages/RunGame",

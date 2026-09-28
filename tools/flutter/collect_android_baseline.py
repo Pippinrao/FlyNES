@@ -23,7 +23,7 @@ COMPONENT = PACKAGE + "/.HomeActivity"
 MARKER_TIMEOUT_SECONDS = 15
 SETTLE_SECONDS = 2
 METRICS = (
-    "firstPaintMs", "shellVisibleMs", "startupCacheDecodedMs",
+    "firstPaintMs", "firstInteractiveMs", "shellVisibleMs", "startupCacheDecodedMs",
     "fullProjectionAvailableMs", "fullListFirstCardVisibleMs", "nativeReadyMs",
     "amStartTotalTimeMs", "amStartWallMs", "settledPssKb",
 )
@@ -67,6 +67,7 @@ def parse_markers(logs, pid, launch_epoch, timed_out=False):
     failed = events.get("NATIVE_READY", {}).get("status") == "FAILED"
     return {
         "firstPaintMs": value("GAME_CENTER_VISIBLE"),
+        "firstInteractiveMs": value("GAME_CENTER_INTERACTIVE"),
         "firstPaintReportedCount": value("GAME_CENTER_VISIBLE", "count"),
         "firstPaintCache": events.get("GAME_CENTER_VISIBLE", {}).get("cache"),
         "shellVisibleMs": value("GAME_CENTER_SHELL_VISIBLE"),
@@ -302,6 +303,7 @@ def main(argv=None):
         "scope": {
             "clockOrigin": "Process.getStartElapsedRealtime() (app elapsedRealtime milliseconds)",
             "firstPaint": "GAME_CENTER_VISIBLE: first cached cards pre-draw, not full directory render",
+            "firstInteractive": "GAME_CENTER_INTERACTIVE: primary launch control visible, enabled and clickable at pre-draw",
             "startupCacheDecoded": "CACHE_DECODED: startup sidecar, not full projection",
             "fullProjectionAvailable": "CATALOG_PROJECTION_AVAILABLE: lazy directory projection available",
             "fullListFirstCardVisible": "GAME_CENTER_FULL_LIST_VISIBLE: first card pre-draw, not all cards rendered",

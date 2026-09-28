@@ -25,6 +25,15 @@ class CollectorExistsTest(unittest.TestCase):
 
 @unittest.skipIf(baseline is None, "collector not implemented yet")
 class ParserTests(unittest.TestCase):
+    def test_interactive_is_independent_from_visible_cards(self):
+        logs = line("GAME_CENTER_VISIBLE", "elapsedMs=80 count=7 cache=HIT")
+        sample = baseline.parse_markers(logs, 42, 1000)
+        self.assertIsNone(sample["firstInteractiveMs"])
+        logs += line("GAME_CENTER_INTERACTIVE", "elapsedMs=125")
+        sample = baseline.parse_markers(logs, 42, 1000)
+        self.assertEqual(sample["firstInteractiveMs"], 125)
+        self.assertEqual(sample["firstPaintMs"], 80)
+
     def test_current_process_first_cards_are_not_full_projection(self):
         logs = line("GAME_CENTER_VISIBLE", "elapsedMs=92 count=2224 cache=HIT")
         logs += line("CACHE_DECODED", "elapsedMs=50 status=HIT count=2224")

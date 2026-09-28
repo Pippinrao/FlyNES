@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 
@@ -115,15 +116,22 @@ class _FoundationPageState extends State<FoundationPage>
     ),
   );
 
-  Widget _nativeButton(String page, IconData icon, String tooltip) =>
-      IconButton(
-        key: ValueKey('native-$page'),
-        tooltip: tooltip,
-        onPressed: controller.launching
-            ? null
-            : () => controller.openNative(page),
-        icon: Icon(icon),
-      );
+  Widget _nativeButton(String page, IconData icon, String tooltip) => Semantics(
+    identifier: 'native-$page',
+    label: tooltip,
+    button: true,
+    enabled: !controller.launching,
+    excludeSemantics: true,
+    onTap: controller.launching ? null : () => controller.openNative(page),
+    child: IconButton(
+      key: ValueKey('native-$page'),
+      tooltip: tooltip,
+      onPressed: controller.launching
+          ? null
+          : () => controller.openNative(page),
+      icon: Icon(icon),
+    ),
+  );
 
   Widget _body(BuildContext context) {
     final games = controller.snapshot?.games ?? <CatalogGame>[];
@@ -273,6 +281,7 @@ class _FoundationPageState extends State<FoundationPage>
           height: large ? 88 : 56,
           child: Semantics(
             identifier: 'launch-selected',
+            container: true,
             child: FilledButton(
               key: const ValueKey('primary-play'),
               onPressed: enabled ? () => controller.launch() : null,
@@ -313,14 +322,18 @@ class _FoundationPageState extends State<FoundationPage>
               : () => controller.select(game.canonicalId),
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Center(
-              child: Text(
-                game.title(chinese),
-                maxLines: large ? 3 : 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: game.available ? AppTheme.text : AppTheme.muted,
+            child: _GameCover(
+              path: game.coverPath,
+              generation: controller.snapshot!.generation,
+              fallback: Center(
+                child: Text(
+                  game.title(chinese),
+                  maxLines: large ? 3 : 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: game.available ? AppTheme.text : AppTheme.muted,
+                  ),
                 ),
               ),
             ),
@@ -329,4 +342,74 @@ class _FoundationPageState extends State<FoundationPage>
       ),
     );
   }
+}
+
+// A returned native session may replace a screenshot at the same file path.
+// Separate snapshot keys prevent an old decode from replacing its new image.
+final class _SnapshotFileImage extends FileImage {
+  const _SnapshotFileImage(super.file, this.generation);
+  final int generation;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _SnapshotFileImage &&
+      other.file.path == file.path &&
+      other.generation == generation;
+
+  @override
+  int get hashCode => Object.hash(file.path, generation);
+}
+
+class _GameCover extends StatefulWidget {
+  const _GameCover({
+    required this.path,
+    required this.generation,
+    required this.fallback,
+  });
+  final String path;
+  final int generation;
+  final Widget fallback;
+
+  @override
+  State<_GameCover> createState() => _GameCoverState();
+}
+
+class _GameCoverState extends State<_GameCover> {
+  _SnapshotFileImage? image;
+
+  void updateImage() {
+    final previous = image;
+    image = widget.path.isEmpty
+        ? null
+        : _SnapshotFileImage(File(widget.path), widget.generation);
+    if (previous != null && previous != image) unawaited(previous.evict());
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    updateImage();
+  }
+
+  @override
+  void didUpdateWidget(_GameCover oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    updateImage();
+  }
+
+  @override
+  void dispose() {
+    if (image != null) unawaited(image!.evict());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => image == null
+      ? widget.fallback
+      : Image(
+          image: image!,
+          fit: BoxFit.contain,
+          excludeFromSemantics: true,
+          errorBuilder: (_, _, _) => widget.fallback,
+        );
 }

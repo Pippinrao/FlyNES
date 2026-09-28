@@ -41,10 +41,9 @@ public class AudioThread extends Thread {
     private final TemporalAudioDelay temporalAudioDelay;
     private final AvSyncMonitor avSyncMonitor;
     private final LongUnaryOperator videoPresentationBySequence;
-    // AtomicBoolean (not a plain volatile flag): run() CLAIMS the loop with
-    // compareAndSet(false, true) so a stopLoop() issued before the thread
-    // actually starts can never be overwritten by a later `running = true`.
-    private final AtomicBoolean running = new AtomicBoolean(false);
+    // Thread instances start once. Cancellation is monotonic, including when
+    // stopLoop() runs before the worker has been scheduled.
+    private final AtomicBoolean running = new AtomicBoolean(true);
     private volatile AudioTrack track;
 
     public AudioThread(NesCore core) {
@@ -110,13 +109,9 @@ public class AudioThread extends Thread {
     public void run() {
         Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
 
-        // Claim the loop atomically BEFORE doing any work. The old code set
-        // `running = true` only after AudioTrack construction (a few ms), so a
-        // stopLoop() landing in that window had its `running = false` overwritten
-        // and the thread looped forever — use-after-free once MainActivity
-        // destroyed the native core. If a stop was already requested before we
-        // started, bail out without creating a track at all.
-        if (!running.compareAndSet(false, true))
+        // Never reset cancellation: false also means stop was requested before
+        // start(), not permission to claim a new loop.
+        if (!running.get())
             return;
 
         int minBytes = AudioTrack.getMinBufferSize(
@@ -138,7 +133,7 @@ public class AudioThread extends Thread {
         }
 
         // A stop may have arrived while the track was being built — honor it
-        // instead of starting playback (belt-and-braces on top of the flag claim).
+        // instead of starting playback.
         if (!running.get()) {
             track.release();
             track = null;

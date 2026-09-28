@@ -8,6 +8,7 @@ final class CatalogGame {
     required this.titleZhHans,
     this.available = true,
     this.unavailableReason = '',
+    this.coverPath = '',
   });
 
   final String canonicalId;
@@ -15,6 +16,9 @@ final class CatalogGame {
   final String titleZhHans;
   final bool available;
   final String unavailableReason;
+
+  /// Existing app-private cover file, resolved by the native catalog owner.
+  final String coverPath;
 
   String title(bool chinese) {
     final primary = chinese ? titleZhHans : titleEn;
@@ -92,6 +96,7 @@ final class ChannelFoundationClient implements FoundationClient {
           titleZhHans: _text(item, 'titleZhHans'),
           available: available,
           unavailableReason: _text(item, 'unavailableReason', optional: true),
+          coverPath: _text(item, 'coverPath', optional: true),
         ),
       );
     }

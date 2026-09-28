@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flynes_ui/design_system/app_theme.dart';
 import 'package:flynes_ui/features/foundation/foundation_page.dart';
@@ -91,6 +94,112 @@ Future<void> mount(
 }
 
 void main() {
+  testWidgets('native cover preserves aspect ratio and missing cover keeps title', (
+    tester,
+  ) async {
+    final directory = Directory.systemTemp.createTempSync('flynes-cover-');
+    addTearDown(() => directory.deleteSync(recursive: true));
+    final cover = File('${directory.path}/cover.png')
+      ..writeAsBytesSync(
+        base64Decode(
+          'iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAYAAAD0In+KAAAADklEQVR4nGP4z8DwH4QBEfcD/ePF9e8AAAAASUVORK5CYII=',
+        ),
+      );
+    const channel = MethodChannel('flynes/foundation');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    messenger.setMockMethodCallHandler(
+      channel,
+      (_) async => {
+        'generation': 1,
+        'games': [
+          {
+            'canonicalId': 'cover',
+            'titleEn': 'Covered game',
+            'titleZhHans': '',
+            'available': true,
+            'coverPath': cover.path,
+          },
+          {
+            'canonicalId': 'missing',
+            'titleEn': 'Missing cover',
+            'titleZhHans': '',
+            'available': true,
+            'coverPath': '${directory.path}/missing.png',
+          },
+        ],
+      },
+    );
+    final client = HallClient()
+      ..snapshot = await const ChannelFoundationClient().catalogSnapshot();
+    final controller = FoundationController(client);
+    addTearDown(controller.dispose);
+    await tester.runAsync(() => mount(tester, client, controller: controller));
+    expect(find.byType(Image), findsNWidgets(2));
+    for (final image in tester.widgetList<Image>(find.byType(Image))) {
+      expect(image.fit, BoxFit.contain);
+    }
+    final images = tester.widgetList<Image>(find.byType(Image)).toList();
+    final context = tester.element(find.byType(FoundationPage));
+    final errors = <Object>[];
+    await tester.runAsync(
+      () => Future.wait(
+        images.map(
+          (image) => precacheImage(
+            image.image,
+            context,
+            onError: (error, _) => errors.add(error),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(errors, hasLength(1));
+    final pixels = tester
+        .widgetList<RawImage>(find.byType(RawImage))
+        .where((image) => image.image != null)
+        .single
+        .image!;
+    expect(pixels.width, 2);
+    expect(pixels.height, 1);
+    expect(find.text('Missing cover'), findsWidgets);
+    expect(tester.takeException(), isNull);
+
+    // Native save replaces this same path while the native game is open.
+    cover.writeAsBytesSync(
+      base64Decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEElEQVR4nGNg+M/wnwFEAAAR+AP9pRZvpgAAAABJRU5ErkJggg==',
+      ),
+    );
+    client.snapshot = CatalogSnapshot(
+      generation: 2,
+      games: client.snapshot.games,
+    );
+    await tester.runAsync(() async {
+      await controller.refresh();
+      await tester.pump();
+      await Future.wait(
+        tester
+            .widgetList<Image>(find.byType(Image))
+            .map(
+              (image) =>
+                  precacheImage(image.image, context, onError: (_, _) {}),
+            ),
+      );
+    });
+    await tester.pumpAndSettle();
+    final refreshed = tester
+        .widgetList<RawImage>(find.byType(RawImage))
+        .where((image) => image.image != null)
+        .single
+        .image!;
+    expect(refreshed.width, 1);
+    expect(refreshed.height, 2);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('English unavailable source translates the native reason', (
     tester,
   ) async {

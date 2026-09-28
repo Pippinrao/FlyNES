@@ -1,13 +1,12 @@
 import { hvigor } from '@ohos/hvigor';
 import { appTasks, OhosAppContext, OhosPluginId } from '@ohos/hvigor-ohos-plugin';
+import { join } from 'path';
+import { verifyFlutterHarStage } from './flutter-har-guard';
 
-// G1 currently stages debug-only Flutter HARs. Never let a release build silently
-// package that engine; release support must supply independently built HARs first.
+// A host build may consume only the exact mode and bytes staged by Build-Ohos.
 hvigor.getRootNode().afterNodeEvaluate(node => {
   const context = node.getContext(OhosPluginId.OHOS_APP_PLUGIN) as OhosAppContext;
-  if (context.getBuildMode() !== 'debug') {
-    throw new Error('Flutter foundation currently supports debug builds only. Run tools/flutter/Build-Ohos.ps1; release requires release Flutter HARs.');
-  }
+  verifyFlutterHarStage(join(__dirname, '.artifacts/flutter-har'), context.getBuildMode());
 });
 
 export default {

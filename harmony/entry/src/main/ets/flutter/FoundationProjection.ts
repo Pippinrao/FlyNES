@@ -13,6 +13,7 @@ export interface FoundationGame {
   titleZhHans: string;
   available: boolean;
   unavailableReason: string;
+  coverPath: string;
 }
 
 export interface FoundationSnapshot {
@@ -32,7 +33,7 @@ export function foundationSnapshot(rows: FoundationCatalogSource[], generation: 
     const row = rows[index];
     const available = row.builtin || (row.sourceUuidHex.length === 32 && row.sourceRelativePath.length > 0);
     games.push({ canonicalId: row.canonicalId, titleEn: row.titleEn, titleZhHans: row.titleZhHans,
-      available: available, unavailableReason: available ? '' : '游戏来源不可用' });
+      available: available, unavailableReason: available ? '' : '游戏来源不可用', coverPath: '' });
   }
   return { generation: generation, games: games };
 }

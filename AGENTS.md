@@ -7,8 +7,8 @@ These instructions apply to the whole repository.
 - **用途**：本 worktree 是用户明确授权的 Flutter 三端统一迁移工作区，分支 `codex/flutter-foundation`，目录 `.worktrees/flutter-foundation`，源基线 `main@78057350c12b`。当前用户已批准实施8.1（REQ-001～007），详见requirements中的设计与执行计划；其他需求不自动扩大为本期实现范围。
 - **版本**：用户已明确授权从 2.x 迁到 **3.0.0**，当前 `VERSION_MAJOR=3`，PATCH随提交增长，实际版本读取VERSION。继续遵守下方版本规则，不再改 major。正常提交会由 hook 递增 PATCH；不要为保持 3.0.0 绕过 hook。基础提交3b4fb0fd，已通过08eb6823合入main@3a2dc426的存档系统。
 - **先读入口**：[重构文档索引](docs/flutter-migration/README.md) → [总路线 / REQ-001～045](docs/flutter-migration/roadmap.md) → [当前进度与协作登记](docs/flutter-migration/STATUS.md)。用户最初指定的 `docs/superpowers/plans/2026-09-28-flutter-architecture-and-delivery-roadmap.md` 保留为跳转入口；只维护集中目录中的正文。
-- **已完成的基础**：`ui/flutter/` 已有深色目录验证页、不可变客户端投影和24项测试；Android存档接续修复通过真实回归，原生目录初测与OH工具链/宿主编译证据已落盘。原始骨架验证看 [09-28记录](docs/flutter-migration/verification/2026-09-28-foundation.md)，当前结论看STATUS及09-29 verification。
-- **尚未完成**：三端真实游戏闭环、稳定的OH运行组合、媒体容器、覆盖升级及性能放行。OH1.0.0/API20能编译真实宿主，但x64模拟器纯MaterialApp也复现StackOverflow，REQ-005尚未通过；先解决该运行阻塞再继续REQ-006。用户要求本轮先不验证Mac。上游生成的 `.android/` / `.ios/` 是开发宿主，不能当生产App；G1与三端迁移均未通过。
+- **已完成的基础**：`ui/flutter/` 已有深色目录验证页、不可变客户端投影和28项测试；Android/Harmony存档接续、真实目录与原生游戏桥、external texture实验已有验证记录。Android完成2.1.2→3.0.3跨版本覆盖保留；OH小栈问题由固定SDK公开独立UI线程选项解决。原始骨架验证看 [09-28记录](docs/flutter-migration/verification/2026-09-28-foundation.md)，最新实际结果看STATUS及09-29 verification。
+- **当前验证重点**：重复往返与真正后台组合、两模拟器联机、覆盖升级和受控性能预算。用户要求本轮先不验证Mac，先完成模拟器可测项；不得用单项通过替代组合回归。OH渲染生命周期曾导致Windows模拟器宿主崩溃，修正后须运行原失败组合。上游生成的 `.android/` / `.ios/` 是开发宿主，不能当生产App；G1与三端迁移均未通过。
 - **选型与边界**：Flutter 已定；公共业务、输入、运行与媒体契约留 C++，Nearby 和 save_history 独立。页面不访问核心/SQLite/QUIC；不在 Dart 建另一份目录、存档 head 或房间状态机。详细模块边界以总路线为准。
 - **关联存档任务**：存档实现0c11750c已在main@3a2dc426交付，并合入本工作树。libs/save_history公开头、README及主干验证记录是现有契约；references仅为历史快照。Android/Harmony已接入，iOS及公共保存编排未完成。REQ-002只接续、定向修复和回归，不重写库。
 

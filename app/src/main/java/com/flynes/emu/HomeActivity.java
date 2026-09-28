@@ -331,6 +331,8 @@ public final class HomeActivity extends android.app.Activity {
     private void bindViews() {
         status = findViewById(R.id.library_status);
         launch = findViewById(R.id.launch_selected);
+        launch.getViewTreeObserver().addOnPreDrawListener(
+                GameCenterStartupTrace.interactiveOnNextPreDraw(launch));
         favoriteToggle = findViewById(R.id.favorite_toggle);
         searchInput = findViewById(R.id.search_input);
         gameContent = findViewById(R.id.game_center_content);
@@ -666,15 +668,12 @@ public final class HomeActivity extends android.app.Activity {
 
     private void updateSavedHeadLabel(GameCenterSnapshot.Row row, GameVariant variant) {
         if (variant == null || getIntent().getBooleanExtra("nearby_choose_game", false)) return;
-        java.io.File file = new java.io.File(getFilesDir(), "save-history.sqlite");
-        if (!file.isFile()) return;
         String canonicalId = row.canonicalId();
         waiter.execute(() -> {
             boolean found = false;
-            try (var store = new com.flynes.emu.save.HistoryStore(file)) {
-                String key = variant.identity().sha1();
-                long head = store.head(key);
-                found = head != 0 && store.read(key, head, false).length > 0;
+            try {
+                found = "available".equals(((FlyNesApplication) getApplication())
+                        .resumeService().query(canonicalId).get("state"));
             } catch (Exception ignored) { }
             final boolean hasHead = found;
             main.post(() -> {
@@ -782,6 +781,11 @@ public final class HomeActivity extends android.app.Activity {
     }
 
     private void showSources(boolean show) {
+        if (!show && ACTION_SHOW_SOURCES.equals(getIntent().getAction())
+                && getIntent().getBooleanExtra(FoundationBridge.RETURN_TO_FOUNDATION, false)) {
+            finish();
+            return;
+        }
         gameContent.setVisibility(show ? View.GONE : View.VISIBLE);
         sourceContent.setVisibility(show ? View.VISIBLE : View.GONE);
         findViewById(R.id.category_tabs).setVisibility(show ? View.INVISIBLE : View.VISIBLE);

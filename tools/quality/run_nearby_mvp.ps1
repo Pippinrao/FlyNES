@@ -2,6 +2,9 @@
 param(
     [string]$AndroidSerial = 'emulator-5554',
     [string]$HarmonyTarget = '127.0.0.1:5557',
+    [string]$HarmonyAppPath = 'harmony/entry/build/default/outputs/default/entry-default-signed.hap',
+    [string]$HarmonyTestPath = 'harmony/entry/build/default/outputs/ohosTest/entry-ohosTest-signed.hap',
+    [string]$ZlibRoot = '.artifacts/host-deps/zlib-1.3.1-install',
     [ValidateRange(0, 60)][int]$CrossDurationMinutes = 10,
     [ValidateRange(1, 10)][int]$CrossRounds = 3,
     [ValidateRange(60, 1000000)][int]$CrossFrames = 600,
@@ -27,7 +30,7 @@ $ctest = Join-Path $androidSdk 'cmake/3.22.1/bin/ctest.exe'
 $node = 'D:/soft/DevEco Studio/tools/node/node.exe'
 $hvigor = 'D:/soft/DevEco Studio/tools/hvigor/bin/hvigorw.js'
 $cargo = (Get-Command cargo -ErrorAction Stop).Source
-$zlib = (Resolve-Path '.artifacts/host-deps/zlib-1.3.1-install').Path
+$zlib = (Resolve-Path $ZlibRoot).Path
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $evidence = Join-Path $repo "out/nearby-mvp/gate-$stamp"
 New-Item -ItemType Directory -Path $evidence -Force | Out-Null
@@ -90,6 +93,7 @@ function Invoke-CrossRound([int]$round, [int]$durationMinutes) {
     $roundPassed = $false
     $android = $null
     $networkJob = $null
+    $ownedRedirect = $false
     $roundDir = Join-Path $evidence "cross-round-$round"
     New-Item -ItemType Directory -Path $roundDir -Force | Out-Null
     $networkJob = Start-Job -ArgumentList $adb, $hdc, $AndroidSerial, $HarmonyTarget -ScriptBlock {
@@ -121,6 +125,15 @@ function Invoke-CrossRound([int]$round, [int]$durationMinutes) {
         $args = @('-s', $AndroidSerial, 'shell', 'am', 'instrument', '-w', '-r',
             '-e', 'class', 'com.flynes.emu.NearbyMvpProductPlayTest',
             '-e', 'playHoldMs', "$(($PlayHoldSeconds + 12) * 1000)")
+        if (-not $PhysicalHotspot) {
+            # Emulator redir delivers to Ethernet .15 even when product LAN choice is Wi-Fi .16.
+            # Restrict the override to the opt-in test; physical runs keep real LAN selection.
+            $ethernet = (& $adb -s $AndroidSerial shell ip -4 addr show eth0) -join "`n"
+            if ($ethernet -notmatch 'inet\s+10\.0\.2\.15/') {
+                throw 'Emulator UDP redirect requires assigned Ethernet guest address 10.0.2.15'
+            }
+            $args += @('-e', 'emulatorRedirectBindAddress', '10.0.2.15')
+        }
         if ($LocalGameQuery) { $args += @('-e', 'localGameQuery', $LocalGameQuery) }
         $args += 'com.flynes.emu.test/com.flynes.emu.test.SingleDeviceCertificationRunner'
     }
@@ -147,9 +160,13 @@ function Invoke-CrossRound([int]$round, [int]$durationMinutes) {
     $rewrittenInvite = $invite
     if (-not $PhysicalHotspot) {
     $hostPort = 43190 + $round
-    & $adb -s $AndroidSerial emu redir del "udp:$hostPort" 2>$null | Out-Null
+    $existingRedirects = (& $adb -s $AndroidSerial emu redir list) -join "`n"
+    if ($existingRedirects -match "udp\s*:\s*$hostPort\b|udp\s+$hostPort\b") {
+        throw "UDP redirect $hostPort already exists; preserve the other task's mapping"
+    }
     & $adb -s $AndroidSerial emu redir add "udp:$hostPort`:$guestPort" | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "Cross round $round could not create the emulator UDP redirect" }
+    $ownedRedirect = $true
     $fields[1] = '10.0.2.2'
     $fields[2] = "$hostPort"
     $rewrittenInvite = $fields -join ':'
@@ -192,7 +209,7 @@ function Invoke-CrossRound([int]$round, [int]$durationMinutes) {
     $androidText = Get-Content -LiteralPath $androidLog -Raw
     Assert-AndroidPass $androidText 1 "cross round $round Android"
     if ($ProductPlay) {
-        "round=$round mode=product-controls audio=consumed holdSeconds=$PlayHoldSeconds" |
+        "round=$round mode=product-controls audio=consumed holdSeconds=$PlayHoldSeconds emulatorNat=$(-not $PhysicalHotspot) opticalQr=false" |
             Set-Content (Join-Path $roundDir 'summary.txt')
         $roundPassed = $true
         return
@@ -237,6 +254,9 @@ function Invoke-CrossRound([int]$round, [int]$durationMinutes) {
         Set-Content -LiteralPath (Join-Path $roundDir 'summary.txt') -Encoding utf8
         $roundPassed = $true
     } finally {
+        if ($ownedRedirect) {
+            & $adb -s $AndroidSerial emu redir del "udp:$hostPort" 2>$null | Out-Null
+        }
         if ($android -and -not $android.HasExited) { $android.Kill() }
         if ($networkJob) {
             Stop-Job $networkJob
@@ -290,7 +310,9 @@ if ($harmonyTargets -notmatch [regex]::Escape("$HarmonyTarget`t`tTCP`tConnected`
     "physicalHotspot=$PhysicalHotspot",
     "diagnosticFault=$DiagnosticFault",
     "apkSha256=$((Get-FileHash app/build/outputs/apk/debug/app-debug.apk -Algorithm SHA256).Hash)",
-    "hapSha256=$((Get-FileHash harmony/entry/build/default/outputs/default/entry-default-signed.hap -Algorithm SHA256).Hash)",
+    "testApkSha256=$((Get-FileHash app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk -Algorithm SHA256).Hash)",
+    "hapSha256=$((Get-FileHash $HarmonyAppPath -Algorithm SHA256).Hash)",
+    "testHapSha256=$((Get-FileHash $HarmonyTestPath -Algorithm SHA256).Hash)",
     "android=$AndroidSerial",
     "harmony=$HarmonyTarget",
     "crossDurationMinutes=$CrossDurationMinutes",
@@ -368,9 +390,9 @@ Invoke-Logged 'android-install-app' $adb @('-s', $AndroidSerial, 'install', '-r'
 Invoke-Logged 'android-install-test' $adb @('-s', $AndroidSerial, 'install', '-r',
     'app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk') | Out-Null
 Invoke-Logged 'harmony-install-app' $hdc @('-t', $HarmonyTarget, 'install', '-r',
-    'harmony/entry/build/default/outputs/default/entry-default-signed.hap') | Out-Null
+    $HarmonyAppPath) | Out-Null
 Invoke-Logged 'harmony-install-test' $hdc @('-t', $HarmonyTarget, 'install', '-r',
-    'harmony/entry/build/default/outputs/ohosTest/entry-ohosTest-signed.hap') | Out-Null
+    $HarmonyTestPath) | Out-Null
 
 $androidNearbyClasses = @(
     'com.flynes.emu.ui.NearbyFriendsManageTest','com.flynes.emu.ui.NearbyFriendsTest',

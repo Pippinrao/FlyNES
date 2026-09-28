@@ -40,6 +40,29 @@ class FakeClient implements FoundationClient {
 Future<void> flush() => Future<void>.delayed(Duration.zero);
 
 void main() {
+  test(
+    'first selection is available without reordering or overriding later choice',
+    () async {
+      const missing = CatalogGame(
+        canonicalId: 'missing',
+        titleEn: 'Missing',
+        titleZhHans: '',
+        available: false,
+      );
+      final client = FakeClient()
+        ..snapshot = CatalogSnapshot(generation: 1, games: [missing, a, b]);
+      final state = FoundationController(client);
+      await state.refresh();
+      expect(state.selected, a);
+      expect(state.snapshot!.games, [missing, a, b]);
+      state.select('missing');
+      await state.refresh();
+      expect(state.selected, missing);
+      expect(state.resume.state, ResumeState.unavailable);
+      state.dispose();
+    },
+  );
+
   test('snapshot owns an immutable copy', () {
     final games = [a];
     final snapshot = CatalogSnapshot(generation: 1, games: games);

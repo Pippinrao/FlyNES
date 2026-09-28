@@ -195,6 +195,9 @@ napi_value report_error(napi_env env, const char* message, bool type_error) noex
 }
 
 std::unique_ptr<flynes::harmony::NativePlayRuntime> g_play;
+// Isolated G1 runtime; never touches production checkpoint/history persistence.
+std::unique_ptr<flynes::harmony::NativePlayRuntime> g_texture_probe;
+void* g_texture_window = nullptr;
 
 struct AppDeleter final
 {
@@ -3188,6 +3191,106 @@ napi_value NearbyInviteSnapshot(napi_env env, napi_callback_info info)
     });
 }
 
+napi_value TextureProbe(napi_env env, napi_callback_info info)
+{
+    try
+    {
+        napi_value args[3] = {};
+        std::size_t count = 3;
+        void* data = nullptr;
+        require_napi(napi_get_cb_info(env, info, &count, args, nullptr, &data), "texture arguments");
+        const auto operation = reinterpret_cast<std::uintptr_t>(data);
+        auto& renderer = flynes::harmony::harmony_renderer();
+        if (operation == 1)
+        {
+            if (g_play != nullptr) throw NapiTypeError("Production play owns the media runtime");
+            if (count < 1) throw NapiTypeError("ROM required");
+            if (g_texture_probe == nullptr) {
+                const auto rom = read_buffer(env, args[0], "rom");
+                g_texture_probe = flynes::harmony::NativePlayRuntime::open(rom.data(), rom.size());
+                g_texture_probe->set_paused(true);
+            }
+        }
+        else if (operation == 7)
+        {
+            napi_value result = nullptr;
+            require_napi(napi_create_object(env, &result), "texture stats");
+            auto integer = [&](const char* name, std::uint64_t value) {
+                require_napi(napi_set_named_property(env, result, name,
+                    create_int64(env, static_cast<std::int64_t>(value), name)), name);
+            };
+            auto boolean = [&](const char* name, bool value) {
+                require_napi(napi_set_named_property(env, result, name, create_bool(env, value, name)), name);
+            };
+            boolean("opened", g_texture_probe != nullptr);
+            boolean("attached", g_texture_window != nullptr);
+            if (g_texture_probe != nullptr) {
+                const auto status = g_texture_probe->status();
+                const auto video = renderer.status();
+                integer("sourceFrames", status.source_frames);
+                integer("presentedFrames", video.mailbox.presented_frames);
+                integer("presentFailures", video.mailbox.present_failures);
+                integer("audioProducedSamples", status.audio_produced_samples);
+                integer("audioConsumedSamples", status.audio_consumed_samples);
+                integer("audioCallbackCount", status.audio_callback_count);
+                integer("audioUnderflows", status.audio_underflows);
+                integer("appliedButtons", g_texture_probe->copy_latest_frame().applied_buttons);
+                boolean("paused", status.paused);
+                boolean("audioStarted", status.audio_started);
+                boolean("nativeReady", video.native_ready);
+                require_napi(napi_set_named_property(env, result, "fallbackReason",
+                    create_string(env, video.fallback_reason, "fallbackReason")), "fallbackReason");
+            }
+            return result;
+        }
+        else
+        {
+            if (g_texture_probe == nullptr) throw NapiTypeError("Texture runtime not open");
+            if (operation == 2) {
+                if (count != 3) throw NapiTypeError("Texture window and dimensions required");
+                double pointer = 0;
+                require_napi(napi_get_value_double(env, args[0], &pointer), "window pointer");
+                if (!(pointer > 0 && pointer <= 9007199254740991.0) ||
+                    static_cast<double>(static_cast<std::uintptr_t>(pointer)) != pointer)
+                    throw NapiTypeError("Invalid native window pointer");
+                const auto width = read_int32(env, args[1], "width");
+                const auto height = read_int32(env, args[2], "height");
+                if (width != 256 || height != 240) throw NapiTypeError("Invalid probe dimensions");
+                g_texture_probe->set_paused(true);
+                if (g_texture_window != nullptr) renderer.detach_native_window(g_texture_window);
+                g_texture_window = reinterpret_cast<void*>(static_cast<std::uintptr_t>(pointer));
+                renderer.configure(0, 0, 1, 1, true);
+                renderer.attach_native_window(g_texture_window, 256, 240);
+            } else if (operation == 3 || operation == 6) {
+                g_texture_probe->set_buttons(0);
+                g_texture_probe->set_paused(true);
+                renderer.set_paused(true);
+                if (g_texture_window != nullptr) renderer.detach_native_window(g_texture_window);
+                g_texture_window = nullptr;
+                if (operation == 6) g_texture_probe.reset();
+            } else if (operation == 4) {
+                bool active = false;
+                if (count < 1) throw NapiTypeError("Active required");
+                require_napi(napi_get_value_bool(env, args[0], &active), "active");
+                active = active && g_texture_window != nullptr;
+                if (!active) g_texture_probe->set_buttons(0);
+                g_texture_probe->set_paused(!active);
+                renderer.set_paused(!active);
+            } else if (operation == 5) {
+                if (count < 1) throw NapiTypeError("Buttons required");
+                const auto buttons = read_int32(env, args[0], "buttons");
+                if (buttons < 0 || buttons > 255) throw NapiTypeError("Invalid buttons");
+                g_texture_probe->set_buttons(static_cast<std::uint32_t>(buttons));
+            }
+        }
+        napi_value undefined = nullptr;
+        require_napi(napi_get_undefined(env, &undefined), "texture result");
+        return undefined;
+    }
+    catch (const std::exception& error) { return report_error(env, error.what(), false); }
+    catch (...) { return report_error(env, "Texture probe failed", false); }
+}
+
 napi_value Init(napi_env env, napi_value exports)
 {
     try
@@ -3276,6 +3379,13 @@ napi_value Init(napi_env env, napi_value exports)
              nullptr},
             {"scanJobCancel", nullptr, ScanJobCancel, nullptr, nullptr, nullptr, napi_default,
              nullptr},
+            {"textureProbeOpen", nullptr, TextureProbe, nullptr, nullptr, nullptr, napi_default, reinterpret_cast<void*>(1)},
+            {"textureProbeAttach", nullptr, TextureProbe, nullptr, nullptr, nullptr, napi_default, reinterpret_cast<void*>(2)},
+            {"textureProbeDetach", nullptr, TextureProbe, nullptr, nullptr, nullptr, napi_default, reinterpret_cast<void*>(3)},
+            {"textureProbeActive", nullptr, TextureProbe, nullptr, nullptr, nullptr, napi_default, reinterpret_cast<void*>(4)},
+            {"textureProbeInput", nullptr, TextureProbe, nullptr, nullptr, nullptr, napi_default, reinterpret_cast<void*>(5)},
+            {"textureProbeClose", nullptr, TextureProbe, nullptr, nullptr, nullptr, napi_default, reinterpret_cast<void*>(6)},
+            {"textureProbeStats", nullptr, TextureProbe, nullptr, nullptr, nullptr, napi_default, reinterpret_cast<void*>(7)},
             {"playOpen", nullptr, PlayOpen, nullptr, nullptr, nullptr, napi_default, nullptr},
             {"playDecodePackage", nullptr, PlayDecodePackage, nullptr, nullptr, nullptr, napi_default,
              nullptr},

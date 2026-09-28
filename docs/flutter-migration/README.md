@@ -21,6 +21,10 @@
 | [Android原生目录初测](verification/2026-09-29-android-startup-baseline.md) | 逐次数据、未达标门槛和未测量范围 |
 | [OH工具链探针](verification/2026-09-29-ohos-toolchain.md) | 固定SDK、API兼容失败/成功证据及Mac阻塞 |
 | [Flutter目录页/客户端](verification/2026-09-29-flutter-catalog-client.md) | 真实投影边界、迟到结果处理、UX断言与未接线能力 |
+| [Android跨版本升级](verification/2026-09-29-android-upgrade.md) | 2.1.2→3.0.3真实覆盖安装、存档和目录授权保留 |
+| [Harmony跨版本升级](verification/2026-09-29-harmony-cross-version-upgrade.md) | 2.1.2→3.0.3、真实文件选择导入、存档/来源/设置保留 |
+| [Flutter容器](verification/2026-09-29-flutter-texture.md) | Android external texture、输入与生命周期证据 |
+| [Harmony容器](verification/2026-09-29-harmony-texture.md) | OH同源码texture页、原生媒体和20次附着释放 |
 
 后续详细需求/实施计划按需放 `requirements/REQ-xxx-*.md`，验证记录放 `verification/`；
 这里不提前生成 45 份空文件。现行附近产品方向仍由 [nearby 入口](../nearby/README.md) 管理，
@@ -29,3 +33,5 @@
 文档已在本 worktree 内集中整理；原 main 和其他 worktree 的文档没有移动。
 最初的 [路线入口](../superpowers/plans/2026-09-28-flutter-architecture-and-delivery-roadmap.md) 保留跳转。
 后续修改只写这里的权威正文，不同步维护多份副本。
+
+- [Android ↔ Harmony 模拟器联机闭环](verification/2026-09-29-nearby-simulators.md)

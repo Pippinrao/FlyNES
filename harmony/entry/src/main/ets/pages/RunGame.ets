@@ -35,6 +35,7 @@ struct RunGame {
   @State private historyAction: string = '';
   @State private historySaved: boolean = false;
   private launchMode: string = '';
+  private foundationReturn: boolean = false;
   private backgroundHandler: () => void = () => { if (this.started && !this.nearby) this.openPause(); };
   private timerId: number = -1;
   private started: boolean = false;
@@ -85,6 +86,7 @@ struct RunGame {
     const params = router.getParams() as Record<string, Object>;
     this.nearby = params !== undefined && params['nearby'] === true;
     this.launchMode = params !== undefined && typeof params['launchMode'] === 'string' ? params['launchMode'] as string : '';
+    this.foundationReturn = params !== undefined && params['foundationReturn'] === true;
     this.gameTitle = parsePauseTitle(params, 'Game paused');
     this.titleEn = params !== undefined && typeof params['titleEn'] === 'string' ? params['titleEn'] as string : '';
     this.titleZhHans = params !== undefined && typeof params['titleZhHans'] === 'string' ? params['titleZhHans'] as string : '';
@@ -696,7 +698,8 @@ struct RunGame {
       this.play.close();
       nativePlay.renderSetPaused(true);
       this.started = false;
-      void router.replaceUrl({ url: 'pages/GameCenter' });
+      if (this.foundationReturn) router.back();
+      else void router.replaceUrl({ url: 'pages/GameCenter' });
       return;
     }
     if (id === 'settings') {

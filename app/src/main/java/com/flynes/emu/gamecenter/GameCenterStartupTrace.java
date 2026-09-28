@@ -20,6 +20,7 @@ public final class GameCenterStartupTrace {
     private static final AtomicBoolean SHELL_LOGGED = new AtomicBoolean();
     private static final AtomicBoolean LIST_LOGGED = new AtomicBoolean();
     private static final AtomicBoolean FULL_LIST_LOGGED = new AtomicBoolean();
+    private static final AtomicBoolean INTERACTIVE_LOGGED = new AtomicBoolean();
 
     private GameCenterStartupTrace() { }
 
@@ -37,6 +38,23 @@ public final class GameCenterStartupTrace {
                 if (SHELL_LOGGED.compareAndSet(false, true)) {
                     event("GAME_CENTER_SHELL_VISIBLE", "");
                 }
+                return true;
+            }
+        };
+    }
+
+    /** An enabled visible primary action is a separate boundary from cached artwork. */
+    public static ViewTreeObserver.OnPreDrawListener interactiveOnNextPreDraw(View primary) {
+        return new ViewTreeObserver.OnPreDrawListener() {
+            @Override public boolean onPreDraw() {
+                Rect bounds = new Rect();
+                if (!primary.isEnabled() || !primary.hasOnClickListeners()
+                        || !primary.getGlobalVisibleRect(bounds) || bounds.isEmpty()) return true;
+                if (primary.getViewTreeObserver().isAlive()) {
+                    primary.getViewTreeObserver().removeOnPreDrawListener(this);
+                }
+                if (INTERACTIVE_LOGGED.compareAndSet(false, true))
+                    event("GAME_CENTER_INTERACTIVE", "");
                 return true;
             }
         };

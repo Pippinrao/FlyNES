@@ -766,7 +766,7 @@ public class MainActivity extends AppCompatActivity {
                 resumeFromPauseMenu();
                 break;
             case OPEN_LIBRARY:
-                startActivity(new Intent(this, HomeActivity.class));
+                closePauseForNavigation(HomeActivity.class);
                 break;
             case OPEN_SETTINGS:
                 startActivity(new Intent(this, SettingsActivity.class));
@@ -919,6 +919,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void closePauseForNavigation(Class<?> destination) {
         removePauseLayer();
+        if (destination == HomeActivity.class
+                && getIntent().getBooleanExtra(FoundationBridge.RETURN_TO_FOUNDATION, false)) {
+            finish(); // Existing onPause stops audio and publishes history before the host resumes.
+            return;
+        }
         startActivity(new Intent(this, destination));
     }
 

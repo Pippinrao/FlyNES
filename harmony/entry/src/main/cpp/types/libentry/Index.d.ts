@@ -297,3 +297,17 @@ export const historyPrepare: (path: string, key: string, target: number, input: 
 export const historyFinish: (path: string, operation: number, success: boolean) => void;
 export const historyContentKey: (rom: Uint8Array | ArrayBuffer) => string;
 export const historyRecover: (path: string, key: string) => number;
+
+export interface TextureProbeStats {
+  opened: boolean; attached: boolean; paused: boolean; nativeReady: boolean;
+  sourceFrames: number; presentedFrames: number; presentFailures: number;
+  audioProducedSamples: number; audioConsumedSamples: number; audioCallbackCount: number;
+  audioUnderflows: number; audioStarted: boolean; appliedButtons: number; fallbackReason: string;
+}
+export const textureProbeOpen: (rom: Uint8Array | ArrayBuffer) => void;
+export const textureProbeAttach: (window: number, width: number, height: number) => void;
+export const textureProbeDetach: () => void;
+export const textureProbeActive: (active: boolean) => void;
+export const textureProbeInput: (buttons: number) => void;
+export const textureProbeClose: () => void;
+export const textureProbeStats: () => TextureProbeStats;

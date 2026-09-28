@@ -50,7 +50,7 @@ Android 深色 token：background #121316，surface #1B1D22，selected #292B31�
 | --- | --- |
 | 内容身份与授权 | catalog canonical ID不变；Android SAF、iOS bookmark、Harmony文件授权仍由各端保存；不可由Flutter猜物理路径 |
 | 目录/收藏/设置/布局 | 原fly_app和已有平台持久化保留；Dart只持不可变投影与临时导航状态 |
-| Android新历史 | files/save-history.sqlite，format=nes-state-v1，key使用原RomIdentity.sha1映射 |
+| Android新历史 | files/save-history.sqlite，format=nes-state-v1；key为核心RomIdentity.sha1（PRG+CHR），不同于目录整文件payload SHA1；适配器经既有内容授权/哈希校验后读取核心身份，缓存按payload SHA256区分 |
 | Harmony新历史 | files/save-history.db，format=fly-runtime-checkpoint-v1，key沿用historyContentKey(ROM) |
 | 旧档 | Android saves/<identity>/autosave.nst与battery.sav；Harmony checkpointKey；iOS Documents/saves/<safe canonical ID>/autosave.nst；同名不代表格式兼容 |
 | 独立库 | C++17/C ABI；user_version=1；SQLite私有；借用输入、回调范围内字符串、调用者读缓冲；同句柄串行，回调不重入 |
@@ -78,7 +78,7 @@ canonical ID到存档key由既有适配器解析。异步携带operation/subscri
 
 09-29实施选择：OH `3.41.10-ohos-1.0.0`（commit `244a0e8abb3085e8675589b13e219af8c41cb7aa`）通过 API20 HAR 与真实宿主编译；1.0.1 已复现编译 SDK 不兼容。具体 engine/HAR pin、安装与未测项见[工具链记录](../verification/2026-09-29-ohos-toolchain.md)。这仍是 G1 候选，不能用 API20 编译推断 API12 运行兼容。
 
-REQ-005 的第一片通过 `flynes/foundation` 窄方法桥复用现有 N-API owner，避免在验证页新开一套 C++ 应用实例；[具体客户端契约](../../../ui/flutter/lib/native_client/README.md)固定了参数、结果与序号语义。generation 是进程内投影响应序号，不冒充原生目录 revision。当前只实现目录桥；封面引用、恢复/启动/原生页面返回和游戏容器仍待接线，不记作最小真实游戏闭环已完成。
+REQ-005 通过 `flynes/foundation` 窄方法桥复用现有 N-API owner，避免在验证页新开一套 C++ 应用实例；[具体客户端契约](../../../ui/flutter/lib/native_client/README.md)固定参数、结果与序号语义。generation 是进程内投影响应序号，不冒充原生目录 revision。09-29 后续已补只读本地封面和同路径截图刷新；两端恢复/启动/原生页面返回及容器按真实模拟器断言逐项记录，当前结果见STATUS，不能仅凭接口存在计作闭环完成。
 
 ## 6. 性能与验收
 
@@ -108,4 +108,4 @@ G1通过要求三端真实闭环、数据授权保留、容器可行、含OH双�
 | Harmony 保存/身份 | [SaveHistoryService](../../../harmony/entry/src/main/ets/service/SaveHistoryService.ets)、[PlayService](../../../harmony/entry/src/main/ets/service/PlayService.ets)、[GameCenter](../../../harmony/entry/src/main/ets/pages/GameCenter.ets) |
 | iOS 原生目录/旧档 | [CatalogLibraryView](../../../ios/app/CatalogLibraryView.swift)、[RunSurfaceViewController](../../../ios/app/run/RunSurfaceViewController.mm) |
 
-本轮源码核对确认 Harmony 已延迟读取旧档并在初始化调用 historyRecover；其恢复失败分支仍调用 historyFinish(false)。本轮 Android 定向修复不能证明 Harmony 的失败后 head 与实时内存一致；此项保留为 REQ-002/006 后续定向验证，不记作三端通过。
+本轮接续验证发现 Harmony 恢复失败分支调用 historyFinish(false) 后，head 与回滚内存不一致。已通过真实核心/SQLite RED→GREEN 将该分支改用原子 historyRecover，Hypium 9/9、UI1/1、host15/15；[证据](../verification/2026-09-29-harmony-save-handoff.md)同时记录同版本覆盖安装保留测试。此结论不扩大为跨版本授权保留、iOS或G1整体验收。
