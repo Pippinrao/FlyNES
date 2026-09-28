@@ -60,7 +60,17 @@ public record GameCenterSnapshot(
     }
 
     /** Marker for checksum-validated, immutable row lists decoded on first access. */
-    interface LazyRows { }
+    interface LazyRows {
+        Row findByCanonicalId(String canonicalId);
+    }
+
+    /** Resolve only the selected row; lazy projections need not decode unrelated metadata. */
+    public static Row findRow(List<Row> rows, String canonicalId) {
+        if (canonicalId == null) return null;
+        if (rows instanceof LazyRows lazy) return lazy.findByCanonicalId(canonicalId);
+        for (Row row : rows) if (canonicalId.equals(row.canonicalId())) return row;
+        return null;
+    }
 
     @Override public byte[] catalogStateBytes() {
         return catalogStateBytes.clone();

@@ -551,14 +551,17 @@ public final class HomeActivity extends android.app.Activity {
     private void renderGames() {
         if (gameAdapter == null) return;
         List<GameCenterSnapshot.Row> visible = visibleRows();
-        GameCenterSnapshot.Row selected = rows.get(navigation.selectedCanonicalId());
-        if (selected == null && !visible.isEmpty()) {
+        String selectedId = navigation.selectedCanonicalId();
+        GameCenterSnapshot.Row selected = GameCenterSnapshot.findRow(visible, selectedId);
+        // Startup rows are only a window. Absence there cannot invalidate a saved selection.
+        boolean awaitingProjection = selected == null && selectedId != null && !currentSnapshot.fullProjection();
+        if (selected == null && !visible.isEmpty() && !awaitingProjection) {
             selected = visible.get(0);
-            rows.put(selected.canonicalId(), selected);
             navigation.select(selected.canonicalId());
-        } else if (visible.isEmpty()) {
+        } else if (visible.isEmpty() && !awaitingProjection) {
             navigation.select(null);
         }
+        if (selected != null) rows.put(selected.canonicalId(), selected);
         GameCenterStartupTrace.event("LIST_SUBMIT", "count=" + visible.size());
         RecyclerView grid = findViewById(R.id.game_grid);
         GameCardAdapter submittedAdapter = gameAdapter;

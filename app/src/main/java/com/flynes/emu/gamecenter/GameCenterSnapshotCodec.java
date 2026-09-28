@@ -401,6 +401,24 @@ public final class GameCenterSnapshotCodec {
         @Override public int size() {
             return offsets.length;
         }
+
+        @Override public GameCenterSnapshot.Row findByCanonicalId(String canonicalId) {
+            for (int index = 0; index < offsets.length; index++) {
+                GameCenterSnapshot.Row cached = decoded.get(index);
+                if (cached != null) {
+                    if (canonicalId.equals(cached.canonicalId())) return cached;
+                    continue;
+                }
+                try {
+                    DataInputStream input = new DataInputStream(new ByteArrayInputStream(
+                            encoded, offsets[index], encoded.length - offsets[index]));
+                    if (canonicalId.equals(readString(input))) return get(index);
+                } catch (IOException | CodecException invalid) {
+                    throw new IllegalStateException("validated snapshot identity could not be decoded", invalid);
+                }
+            }
+            return null;
+        }
     }
 
     private static final class StartupRowList extends AbstractList<GameCenterSnapshot.Row>
@@ -423,6 +441,10 @@ public final class GameCenterSnapshotCodec {
 
         @Override public int size() {
             return totalCount;
+        }
+
+        @Override public GameCenterSnapshot.Row findByCanonicalId(String canonicalId) {
+            return GameCenterSnapshot.findRow(visible, canonicalId);
         }
     }
 

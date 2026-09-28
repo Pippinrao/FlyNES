@@ -18,6 +18,22 @@ import java.util.Arrays;
 import java.util.List;
 
 public final class GameCenterSnapshotCodecTest {
+    @Test public void selectedIdentityLookupDecodesOnlyTheMatchingLazyRow() throws Exception {
+        GameCenterSnapshot original = synthetic(2_224, 11L, "aa".repeat(32), 12L);
+        GameCenterSnapshot projection = GameCenterSnapshotCodec.decodeProjection(GameCenterSnapshotCodec.encode(original));
+        GameCenterSnapshot.Row target = original.rows().get(2_223);
+        assertEquals(target, GameCenterSnapshot.findRow(projection.rows(), target.canonicalId()));
+        assertEquals(null, GameCenterSnapshot.findRow(projection.rows(), "missing"));
+        var field = projection.rows().getClass().getDeclaredField("decoded");
+        field.setAccessible(true);
+        var decoded = (java.util.concurrent.atomic.AtomicReferenceArray<?>) field.get(projection.rows());
+        int count = 0;
+        for (int index = 0; index < decoded.length(); index++) if (decoded.get(index) != null) count++;
+        assertEquals("Lookup must not materialize every row", 1, count);
+        GameCenterSnapshot startup = GameCenterSnapshotCodec.decodeStartup(GameCenterSnapshotCodec.encodeStartup(original, 8));
+        assertEquals(null, GameCenterSnapshot.findRow(startup.rows(), target.canonicalId()));
+        assertEquals(original.rows().get(0), GameCenterSnapshot.findRow(startup.rows(), original.rows().get(0).canonicalId()));
+    }
     @Test public void completenessComesFromProjectionProvenanceNotTotalCount() throws Exception {
         GameCenterSnapshot original = synthetic(2_224, 11L, "aa".repeat(32), 12L);
         GameCenterSnapshot startup = GameCenterSnapshotCodec.decodeStartup(
