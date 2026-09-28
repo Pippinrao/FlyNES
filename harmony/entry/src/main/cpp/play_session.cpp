@@ -201,4 +201,17 @@ void PlaySession::load_checkpoint(const std::uint8_t* bytes, std::size_t size)
     impl_->next_frame_index = restored.frame_index + 1;
 }
 
+void PlaySession::restart()
+{
+    if (impl_->frame_source)
+        throw PlaySessionError("restart external session", FLY_RESULT_INVALID_STATE);
+    require_ok(fly_runtime_restart(impl_->runtime.get()), "restart runtime");
+    impl_->port0_buttons = 0;
+    impl_->next_frame_index = 0;
+    impl_->input_sequence = 1;
+    // Publish the first reset frame synchronously, just as NativePlayRuntime::open
+    // waits for its first source frame. Discard startup PCM while still paused.
+    (void)step();
+}
+
 } // namespace flynes::harmony

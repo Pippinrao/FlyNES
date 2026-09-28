@@ -819,7 +819,8 @@ bool HarmonyRenderer::bind_component(napi_env env, napi_value exports)
 bool HarmonyRenderer::submit_frame(std::uint64_t frame_index,
                                    std::uint32_t width,
                                    std::uint32_t height,
-                                   const std::vector<std::uint8_t>& rgb565)
+                                   const std::vector<std::uint8_t>& rgb565,
+                                   bool discontinuity)
 {
     std::uint64_t generation = 0;
     {
@@ -829,7 +830,7 @@ bool HarmonyRenderer::submit_frame(std::uint64_t frame_index,
     const bool native_accepted = impl_->mailbox.submit_source_frame(
         generation, frame_index, width, height, rgb565);
     const bool motion_accepted = impl_->motion_scheduler.submit(
-        generation, frame_index, width, height, rgb565);
+        generation, frame_index, width, height, rgb565, discontinuity);
     return native_accepted && motion_accepted;
 }
 

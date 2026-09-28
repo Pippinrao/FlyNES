@@ -251,6 +251,8 @@ add_test(NAME flynes_harmony_native_play_support COMMAND flynes_harmony_native_p
 if(UNIX AND NOT APPLE)
     add_executable(flynes_harmony_native_play_runtime_audio_test
         native_play_runtime_audio_test.cpp
+        ../entry/src/main/cpp/render_mailbox.cpp
+        ../entry/src/main/cpp/motion_frame_scheduler.cpp
         ../entry/src/main/cpp/native_play_runtime.cpp
         ../entry/src/main/cpp/native_play_support.cpp
         ../entry/src/main/cpp/play_session.cpp)
@@ -263,7 +265,7 @@ if(UNIX AND NOT APPLE)
     target_compile_options(flynes_harmony_native_play_runtime_audio_test PRIVATE -Wall -Wextra -Wpedantic -Werror)
     target_link_libraries(flynes_harmony_native_play_runtime_audio_test PRIVATE flynes_runtime dl pthread)
     add_test(NAME flynes_harmony_native_play_runtime_audio COMMAND flynes_harmony_native_play_runtime_audio_test)
-    foreach(case pause mute start close create_failure start_failure release_failure reuse persistent_release timestamp overflow close_callback state_interleave close_noalloc)
+    foreach(case pause mute start close create_failure start_failure release_failure reuse persistent_release timestamp overflow close_callback state_interleave close_noalloc checkpoint_picture checkpoint_present reopen_present pause_boundary checkpoint_motion cold_restart)
         add_test(NAME flynes_harmony_native_audio_${case}
             COMMAND flynes_harmony_native_play_runtime_audio_test ${case})
     endforeach()

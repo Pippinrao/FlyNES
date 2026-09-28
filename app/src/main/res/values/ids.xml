@@ -70,4 +70,8 @@
     <item name="nearby_ingame_banner_row_save_and_end" type="id" />
     <item name="nearby_lobby_details" type="id" />
     <item name="nearby_lobby_details_rows" type="id" />
+    <item name="pause_history" type="id" />
+    <item name="pause_save" type="id" />
+    <item name="pause_restart" type="id" />
+    <item name="pause_save_interval" type="id" />
 </resources>

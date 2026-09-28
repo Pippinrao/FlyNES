@@ -104,6 +104,124 @@ void callback(OH_AudioRenderer* renderer, std::size_t samples) {
     std::vector<std::int16_t> output(samples, 123);
     renderer->callback(renderer, renderer->user, output.data(), static_cast<int>(output.size() * 2));
 }
+void checkpoint_restores_picture_and_presentation(bool presentation, bool motion = false) {
+    auto bytes = rom();
+    auto runtime = NativePlayRuntime::open(bytes.data(), bytes.size());
+    require(wait_for([&] { return runtime->status().source_frames >= 30; }), "initial source frames missing");
+    runtime->set_paused(true);
+    const auto saved = runtime->copy_latest_frame();
+    const auto checkpoint = runtime->save_checkpoint();
+    runtime->set_paused(false);
+    require(wait_for([&] { return runtime->copy_latest_frame().frame_index >= saved.frame_index + 15; }), "source did not advance");
+    runtime->set_paused(true);
+    auto& mailbox = flynes::harmony::harmony_renderer().mailbox;
+    const auto later = mailbox.next_decision(1);
+    mailbox.complete(later, true);
+    const auto frames = runtime->status().source_frames;
+    runtime->load_checkpoint(checkpoint.data(), checkpoint.size());
+    const auto restored = runtime->copy_latest_frame();
+    const auto rendered = mailbox.next_decision(1);
+    require(runtime->status().paused && runtime->status().source_frames == frames,
+            "restore must not advance or resume a paused source");
+    require(runtime->status().audio_queued_samples == 0, "restore kept audio from the abandoned timeline");
+    if (motion) {
+        require(flynes::harmony::harmony_renderer().motion.next_slot(1, true).kind ==
+                    flynes::harmony::MotionDecisionKind::PRIMING,
+                "rollback must discard abandoned motion pairs before accepting restored source");
+    } else if (presentation) {
+        require(rendered.kind == flynes::harmony::RenderDecisionKind::UPLOAD_AND_PRESENT &&
+                rendered.frame.frame_index > later.frame.frame_index &&
+                rendered.frame.rgb565 == saved.rgb565,
+                "restored picture must be accepted immediately after rewinding the core timeline");
+    } else {
+        require(restored.frame_index == saved.frame_index && restored.rgb565 == saved.rgb565,
+                "paused load_checkpoint must refresh latest frame to the saved picture and core index");
+    }
+    runtime->set_paused(false);
+    require(wait_for([&] { return runtime->copy_latest_frame().frame_index > saved.frame_index; }), "restored source did not resume");
+    runtime->close();
+}
+void reopen_preserves_presentation_timeline() {
+    auto bytes = rom();
+    auto runtime = NativePlayRuntime::open(bytes.data(), bytes.size());
+    require(wait_for([&] { return runtime->status().source_frames >= 10; }), "initial source frames missing");
+    runtime->close();
+    auto& mailbox = flynes::harmony::harmony_renderer().mailbox;
+    const auto old = mailbox.next_decision(1);
+    mailbox.complete(old, true);
+    auto timing = flynes::harmony::detect_source_timing(bytes.data(), bytes.size());
+    timing.frame_period_ns = 1'000'000'000;
+    auto next = NativePlayRuntime::open_session(
+        flynes::harmony::PlaySession::open(bytes.data(), bytes.size()), timing);
+    next->set_paused(true);
+    const auto fresh = mailbox.next_decision(1);
+    next->close();
+    require(fresh.kind == flynes::harmony::RenderDecisionKind::UPLOAD_AND_PRESENT &&
+            fresh.frame.frame_index > old.frame.frame_index,
+            "reopened runtime must immediately present on the retained surface");
+    require(flynes::harmony::harmony_renderer().motion.next_slot(1, true).kind ==
+                flynes::harmony::MotionDecisionKind::PRIMING,
+            "reopened runtime must not interpolate with the previous game");
+}
+void pause_waits_for_inflight_publication() {
+    auto bytes = rom();
+    auto runtime = NativePlayRuntime::open(bytes.data(), bytes.size());
+    auto& renderer = flynes::harmony::harmony_renderer();
+    {
+        std::unique_lock lock(renderer.gate_mutex);
+        renderer.block = true;
+        require(renderer.gate_wake.wait_for(lock, 2s, [&] { return renderer.entered; }), "source did not reach renderer");
+    }
+    std::atomic<bool> returned{false};
+    std::thread pauser([&] { runtime->set_paused(true); returned.store(true); });
+    std::this_thread::sleep_for(30ms);
+    const bool returned_early = returned.load();
+    {
+        std::lock_guard lock(renderer.gate_mutex);
+        renderer.block = false;
+    }
+    renderer.gate_wake.notify_all();
+    pauser.join();
+    const auto saved = runtime->copy_latest_frame();
+    const auto checkpoint = runtime->save_checkpoint();
+    auto independent = flynes::harmony::PlaySession::open(bytes.data(), bytes.size());
+    independent->load_checkpoint(checkpoint.data(), checkpoint.size());
+    const auto restored = independent->copy_latest_frame();
+    const auto frames = runtime->status().source_frames;
+    std::this_thread::sleep_for(40ms);
+    const bool stable = runtime->status().source_frames == frames;
+    runtime->close();
+    require(!returned_early, "pause returned before in-flight source frame publication completed");
+    require(stable && saved.frame_index == restored.frame_index && saved.rgb565 == restored.rgb565,
+            "paused capture state and picture must describe the same completed source frame");
+}
+void cold_restart_publishes_new_timeline_without_old_motion_or_audio() {
+    auto bytes = rom();
+    auto runtime = NativePlayRuntime::open(bytes.data(), bytes.size());
+    runtime->set_buttons(8);
+    require(wait_for([&] { return runtime->status().source_frames >= 20; }), "initial frames missing");
+    runtime->set_paused(true);
+    auto& renderer = flynes::harmony::harmony_renderer();
+    const auto old = renderer.mailbox.next_decision(1);
+    renderer.mailbox.complete(old, true);
+    const auto frames = runtime->status().source_frames;
+    runtime->restart();
+    const auto restarted = runtime->copy_latest_frame();
+    require(restarted.frame_index == 0 && restarted.applied_buttons == 0,
+            "restart must publish a cold first frame with released controls");
+    require(runtime->status().paused && runtime->status().audio_queued_samples == 0 &&
+            runtime->status().source_frames == frames + 1,
+            "restart must retain pause, discard old audio and keep cumulative source count");
+    const auto fresh = renderer.mailbox.next_decision(1);
+    require(fresh.kind == flynes::harmony::RenderDecisionKind::UPLOAD_AND_PRESENT &&
+            fresh.frame.frame_index > old.frame.frame_index,
+            "restart must immediately replace the presented timeline");
+    require(renderer.motion.next_slot(1, true).kind == flynes::harmony::MotionDecisionKind::PRIMING,
+            "restart must discard old motion frames");
+    runtime->set_paused(false);
+    require(wait_for([&] { return runtime->copy_latest_frame().frame_index > 0; }), "restarted source did not resume");
+    runtime->close();
+}
 void stalled_fallback_preserves_short_input() {
     auto bytes = rom();
     auto runtime = NativePlayRuntime::open(bytes.data(), bytes.size());
@@ -454,6 +572,12 @@ int main(int argc, char** argv) {
         else if (test == "close_callback") close_waits_for_retired_callback_and_prevents_replacement();
         else if (test == "state_interleave") prepared_sink_and_stale_start_preserve_actual_state();
         else if (test == "close_noalloc") first_close_release_failure_needs_no_worker_allocation();
+        else if (test == "checkpoint_picture") checkpoint_restores_picture_and_presentation(false);
+        else if (test == "checkpoint_present") checkpoint_restores_picture_and_presentation(true);
+        else if (test == "reopen_present") reopen_preserves_presentation_timeline();
+        else if (test == "pause_boundary") pause_waits_for_inflight_publication();
+        else if (test == "checkpoint_motion") checkpoint_restores_picture_and_presentation(false, true);
+        else if (test == "cold_restart") cold_restart_publishes_new_timeline_without_old_motion_or_audio();
         else throw std::runtime_error("unknown test");
     }
     catch (const std::exception& error) { std::cerr << "FAIL: " << error.what() << '\n'; return 1; }
