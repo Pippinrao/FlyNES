@@ -13,8 +13,8 @@ android {
         applicationId "com.flynes.emu"
         minSdk 24
         targetSdk 36
-        versionCode 3000007
-        versionName "3.0.7"
+        versionCode 3000008
+        versionName "3.0.8"
         // Same-APK Release measurements may opt in; ordinary Release always redirects to Flutter.
         buildConfigField 'boolean', 'CONTROLLED_NATIVE_BASELINE', providers.gradleProperty('flynesControlledNativeBaseline').orElse('false').get()
         buildConfigField 'String', 'BUILD_REVISION', '"' + providers.exec {
