@@ -460,7 +460,7 @@ class _ProductAppState extends State<ProductApp> with WidgetsBindingObserver {
         controller: controller,
         onSources: () => _open('sources'),
         onSettings: () => _open('settings'),
-        onNearby: _nearby,
+        onNearby: controller.purpose == 'nearby' ? _closeHost : _nearby,
       ),
     ),
   );

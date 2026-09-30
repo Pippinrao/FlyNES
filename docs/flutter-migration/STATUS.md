@@ -1,10 +1,12 @@
 # 工作区进度与协作登记
 
-更新日期：2026-09-30。工作区 `.worktrees/flutter-foundation`，分支 `codex/flutter-foundation`。
+更新日期：2026-10-01。工作区 `.worktrees/flutter-foundation`，分支 `codex/flutter-foundation`。
 原生基线 `main@3a2dc426`（2.1.2）；Flutter基础 `3b4fb0fd`；合并提交 `08eb6823`。
 当前版本以根VERSION为准（3.0.x，hook正常递增）；创建起点78057350保留为历史。
 
 ## 当前授权与进度
+
+2026-10-01 iOS 接续：用户已恢复 iOS G0/G1/G2 授权。macOS 13.7.8 无法启动 Flutter 3.41.7；iOS 独立固定 Flutter 3.38.10 / Dart 3.10.9，Android/OH 工具链不变。Mac Dart 197/197、analyze、旧 SDK 语义 6/6；最终方向边沿修正后受影响原生 29/29。普通启动 Flutter，大厅/游戏、暂停/设置及暂停/布局各 20 次，后台与进程重建、同局语言刷新均有真实所有者断言。真实 Files、目录、ZIP、权限拒绝与重新授权、扫描离页/返回可见状态均通过；旧单槽、收藏、设置、布局及来源授权覆盖安装保留。199 静态+81 动画及完整语义严格比较通过；iOS 同环境 62 图审阅与独立复采通过，五个原生交接窗口 126 帧另行审阅。双 App 最终正反角色各两项真实 UI 通过；两轮各 30 张截图及 15 组严格更晚帧释放记录经独立审阅，确认 HUMAN 擂台、双方输入、回房继续和同连接换 ROM。最终 3.0.8 模拟器包已覆盖安装至两台任务模拟器，普通启动均显示 Flutter 大厅，78 个包内文件与冻结清单一致，持久文件和旧档保留。iphoneos arm64 Release 原生/Flutter 包均已构建且未签名；单架构压缩增量 6.31 MiB。成对 Debug 诊断采集完成，但首屏交互、Release PSS、可验证 GC 后残留及真机时延仍未测，性能门禁 **not_evaluated**，故**不宣称 iOS G0/G1/G2 整体验收**。iOS 仍使用旧单槽，没有历史 head/pending。详细证据见 [iOS 实施记录](verification/2026-09-30-ios-migration.md)及 [UX/动画追溯](verification/2026-10-01-ios-ux-traceability.md)。以下 iOS 延期为历史状态。
 
 2026-09-30：用户已批准实施 [G2 设计](requirements/REQ-008-012-030-031-g2-design.md) 与 [执行清单](requirements/REQ-008-012-030-031-g2-plan.md)。G2 产品实现基线提交为 `c27cc7fc`（3.0.7）；当前版本始终以根 `VERSION` 为准。**G2 两端模拟器尚未整体验收**：本机只有 HarmonyOS API20 手机镜像，系统不支持手机目录选择／重新授权的真实验证，不能用文件导入替代。iOS 延期，G1 首卡 200ms 和 debug PSS 历史失败不变。
 
@@ -41,9 +43,9 @@ OH黑屏已定位为上传纹理正确但最终采样异常：保留CPU、纹理
 | REQ-003 测量基线 | 两端模拟器原生配对启动及保存采集完成；诊断预算已固定 | `eaafd7d0/3.0.5` 的 [Android配对基线](verification/2026-09-29-android-native-paired-baseline.md)及[OH基线](verification/2026-09-29-ohos-native-performance.md)各有2次预热+12次正式启动、65秒+真实AUTO数据。另补同3.0.5直接启动，首卡P95 389ms，200ms门槛仍失败；本次OH原生欠载591、Android保存附近播放头重置均保留。[固定预算](verification/2026-09-29-performance-budget.md) |
 | REQ-004 工具链 | Android Release及OH三模式构建通过 | 固定上游/OH SDK；[3.0.5匹配Release](verification/2026-09-29-matched-release-builds.md)双ABI/AOT/版本内容检查及完整包增量均通过；Android另以兼容本地测试签名覆盖安装Release并实测，不是生产证书。[OH模式证据](verification/2026-09-29-ohos-build-modes.md)含模式/哈希守卫及debug恢复。OH profile原生宿主仍Debug，不能直接用于整体性能放行 |
 | REQ-005 Harmony共享页+C++ | Debug共享目录页已通过 | 5557真实Hypium 3/3：宿主、manifest首卡、选卡详情；小栈问题由公开独立UI线程选项解决，未改SDK/关闭assert |
-| REQ-006 三端往返+双机 | Android/OH模拟器功能与双机通过；三端未放行 | [Android17/17](verification/2026-09-29-android-foundation.md)含20次往返；OH完整9/9+texture4/4；[真实跨App ProductPlay](verification/2026-09-29-nearby-simulators.md)最终两端各1/1，含双方输入、音频消费、回房间继续、同连接换ROM；iOS宿主未接线/实测（Mac按用户要求延期） |
+| REQ-006 三端往返+双机 | Android/OH 模拟器功能与双机通过；iOS 模拟器功能通过；三端整体未放行 | [Android17/17](verification/2026-09-29-android-foundation.md)含20次往返；OH完整9/9+texture4/4；[真实跨App ProductPlay](verification/2026-09-29-nearby-simulators.md)含双方输入、音频、回房继续和同连接换ROM；[iOS接续](verification/2026-09-30-ios-migration.md)含两组20次往返、正反双App实际擂台及最终包普通启动。三端真机／性能门禁未完成 |
 | REQ-007 升级+容器+性能 | 本轮Android/OH模拟器验证完成；性能仍有未达标项 | [Android跨版本](verification/2026-09-29-android-upgrade.md)及[Harmony跨版本](verification/2026-09-29-harmony-cross-version-upgrade.md)均为2.1.2→3.0.3真实覆盖。两端候选启动、65秒自动保存、20往返已实际执行。Android/OH debug PSS P95分别335645/350956KiB，均超固定阈值；启动、保存上下文、软件输入在阈值内。Android ART GC后增长72KiB；OH公开指定线程GC后Ark增长-123KiB，快照导出失败单列。[Android Release对照](verification/2026-09-29-android-release-pss.md)同模式增量60.13MiB、[OH Release对照](verification/2026-09-29-ohos-flutter-candidate-performance.md)增量45.29MiB均通过补充诊断，不覆盖debug失败 |
-| G1总体 | 未通过 | 模拟器执行已收尾，测试完成不等于性能达标。保留debug PSS和原生首卡失败；Mac/iOS按用户要求延期，真机签名覆盖、摄像头QR与物理媒体指标待设备。模拟器缺精确呈现时间；OH堆快照导出不可用，公开GC后的数值证据另列 |
+| G1总体 | 未通过 | Android/OH 保留 debug PSS 和原生首卡历史失败；iOS 模拟器功能及覆盖安装已补验，iOS Debug RSS 为诊断、性能门禁未评估。三端真机签名覆盖、摄像头 QR 与物理媒体指标仍按设备条件待验；OH 堆快照导出不可用，公开 GC 后数值另列 |
 
 ## 存档当前事实
 

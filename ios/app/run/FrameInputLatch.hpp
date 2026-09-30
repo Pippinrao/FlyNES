@@ -5,14 +5,22 @@
 #include <chrono>
 namespace flynes::ios {
 // Android's 17ms minimum applies only to normal face-button releases, never cancellation.
-// Keep an unsampled short release until one frame observes it, even after a delayed tick.
+// Keep a normal release until one accepted frame observes it, even after a delayed tick.
 class FrameInputLatch {
 public:
-    void update(std::uint32_t buttons) { held_ = buttons; }
+    void update(std::uint32_t buttons) {
+        // The overlay sends update before a normal release callback. Cancellation
+        // sends only update; a later update replaces this candidate, never queues it.
+        released_unobserved_ = unobserved_ & ~buttons;
+        unobserved_ = (unobserved_ & buttons) | (buttons & ~held_ & 15u);
+        held_ = buttons;
+    }
     void release(std::uint32_t buttons, double downTime, double upTime) {
+        buttons &= 15u;
+        pending_ |= buttons & released_unobserved_;
+        released_unobserved_ = 0;
         const double remaining = std::max(0.0, .017-std::max(0.0,upTime-downTime));
         if (remaining <= 0) return;
-        buttons &= 15u;
         pending_ |= buttons;
         for (unsigned index = 0; index < 4; ++index)
             if (buttons & (1u << index)) until_[index] = std::max(until_[index],upTime+remaining);
@@ -23,13 +31,13 @@ public:
             if (now < until_[index]) value |= 1u << index;
         return value;
     }
-    void commit() { pending_ = 0; }
+    void commit() { pending_ = unobserved_ = released_unobserved_ = 0; }
     std::uint32_t sample(double now = monotonicTime()) {
         const auto value = peek(now);
         commit();
         return value;
     }
-    void clear() { held_ = pending_ = 0; until_.fill(0); }
+    void clear() { held_ = pending_ = unobserved_ = released_unobserved_ = 0; until_.fill(0); }
 private:
     static double monotonicTime() {
         return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
@@ -37,5 +45,7 @@ private:
     std::array<double,4> until_{};
     std::uint32_t held_ = 0;
     std::uint32_t pending_ = 0;
+    std::uint32_t unobserved_ = 0;
+    std::uint32_t released_unobserved_ = 0;
 };
 }

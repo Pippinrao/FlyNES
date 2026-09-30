@@ -5,6 +5,8 @@
 #import "FlyNesAppBridge.h"
 #import "CatalogSourceService.h"
 #import "../app/run/RunSurfaceViewController.h"
+#import "GamepadOverlayView.h"
+#import <objc/runtime.h>
 #include <flynes/flynes_nearby_mvp.h>
 #include "NearbyPlaybackState.hpp"
 
@@ -18,6 +20,8 @@
 @end
 
 @interface RunSurfaceViewController (NearbyDrawerContract)
+- (void)applyOverlayButtons:(uint32_t)buttons;
+- (void)displayTick:(CFTimeInterval)timestamp;
 - (void)openPauseDrawer;
 - (void)resumeFromPause;
 - (void)applicationWillResignActive:(NSNotification *)notification;
@@ -38,6 +42,143 @@ static UIView *viewWithId(UIView *root, NSString *identifier)
 @end
 
 @implementation NearbyMvpBridgeTests
+
+- (void)recordNearbyOverlayBoundary:(void (^)(RunSurfaceViewController *, NSMutableArray<NSNumber *> *, NSMutableDictionary *))exercise
+{
+    // Adapter-boundary fixture only: record calls to the existing singleton.
+    // No second session, simulated core result, display tick, or ROM is created.
+    FlyNesNearbyBridge *owner = FlyNesNearbyBridge.sharedInstance;
+    NSMutableArray<NSNumber *> *submitted = [NSMutableArray array];
+    NSMutableDictionary *snapshot = [@{@"state":@6, @"paused":@NO} mutableCopy];
+    Method method = class_getInstanceMethod(FlyNesNearbyBridge.class, @selector(stepWithButtons:));
+    IMP original = method_getImplementation(method);
+    IMP observer = imp_implementationWithBlock(^BOOL(id receiver, uint32_t buttons) {
+        if (receiver != owner)
+            return ((BOOL (*)(id, SEL, uint32_t))original)(receiver, @selector(stepWithButtons:), buttons);
+        [submitted addObject:@(buttons)];
+        return [snapshot[@"state"] intValue] == 6 && ![snapshot[@"paused"] boolValue] &&
+            ![snapshot[@"rejectInput"] boolValue];
+    });
+    Method snapshotMethod = class_getInstanceMethod(FlyNesNearbyBridge.class, @selector(snapshot));
+    IMP originalSnapshot = method_getImplementation(snapshotMethod);
+    IMP snapshotObserver = imp_implementationWithBlock(^NSDictionary *(id receiver) {
+        if (receiver != owner) return ((NSDictionary *(*)(id, SEL))originalSnapshot)(receiver, @selector(snapshot));
+        snapshot[@"snapshotReads"] = @([snapshot[@"snapshotReads"] unsignedIntegerValue] + 1);
+        return snapshot;
+    });
+    RunSurfaceViewController *surface = [[RunSurfaceViewController alloc] init];
+    surface.nearbySession = YES;
+    // Configure this isolated controller's lifecycle guard without loading a
+    // Metal/audio view or letting a timer accidentally provide the missing tick.
+    for (NSString *key in @[@"running_", @"visible_", @"foreground_", @"romReady_"])
+        [surface setValue:@YES forKey:key];
+    [surface setValue:@(owner.playbackGeneration) forKey:@"nearbyPlaybackGeneration_"];
+    method_setImplementation(method, observer);
+    method_setImplementation(snapshotMethod, snapshotObserver);
+    @try { exercise(surface, submitted, snapshot); }
+    @finally {
+        method_setImplementation(method, original);
+        method_setImplementation(snapshotMethod, originalSnapshot);
+        imp_removeBlock(observer);
+        imp_removeBlock(snapshotObserver);
+    }
+}
+
+- (void)testNearbyOverlayDirectionEdgesReachOwnerBeforeDisplayTick
+{
+    [self recordNearbyOverlayBoundary:^(RunSurfaceViewController *surface, NSMutableArray<NSNumber *> *submitted, NSMutableDictionary *snapshot) {
+        [surface applyOverlayButtons:32];
+        [surface applyOverlayButtons:0];
+        XCTAssertEqualObjects(submitted, (@[@32, @0]),
+            @"The normal DOWN and release callbacks must reach the existing owner even when no display tick occurs between them");
+        XCTAssertEqual([snapshot[@"snapshotReads"] unsignedIntegerValue], 0u,
+            @"Successful input edges do not perform a snapshot projection");
+    }];
+}
+
+- (void)testInactiveOrOfflineOverlayDoesNotSubmitNearbyInput
+{
+    [self recordNearbyOverlayBoundary:^(RunSurfaceViewController *surface, NSMutableArray<NSNumber *> *submitted, NSMutableDictionary *snapshot) {
+        (void)snapshot;
+        surface.nearbySession = NO;
+        [surface applyOverlayButtons:32]; [surface applyOverlayButtons:0];
+        XCTAssertEqual(submitted.count, 0u, @"Offline sampling remains with its own input latch");
+        surface.nearbySession = YES;
+        for (NSString *key in @[@"running_", @"visible_", @"foreground_", @"romReady_"]) {
+            [surface setValue:@NO forKey:key];
+            [surface applyOverlayButtons:32]; [surface applyOverlayButtons:0];
+            XCTAssertEqual(submitted.count, 0u, @"Inactive %@ must not reach the nearby owner", key);
+            [surface setValue:@YES forKey:key];
+        }
+        for (NSString *key in @[@"paused_", @"drawerOpen_"]) {
+            [surface setValue:@YES forKey:key];
+            [surface applyOverlayButtons:32]; [surface applyOverlayButtons:0];
+            XCTAssertEqual(submitted.count, 0u, @"Active %@ must suppress nearby input", key);
+            [surface setValue:@NO forKey:key];
+        }
+    }];
+}
+
+- (void)testPeerPausedOverlayDoesNotLeaveDirectionForResume
+{
+    [self recordNearbyOverlayBoundary:^(RunSurfaceViewController *surface, NSMutableArray<NSNumber *> *submitted, NSMutableDictionary *snapshot) {
+        snapshot[@"paused"] = @YES;
+        [surface applyOverlayButtons:32];
+        XCTAssertEqualObjects(submitted, (@[@32]), @"The existing owner boundary rejects the paused touch atomically");
+        XCTAssertEqual([snapshot[@"snapshotReads"] unsignedIntegerValue], 1u);
+        snapshot[@"paused"] = @NO;
+        [surface displayTick:1.0];
+        XCTAssertEqualObjects(submitted, (@[@32, @0]), @"Resume must not submit the direction rejected during peer pause");
+    }];
+}
+
+- (void)testNearbyCapacityRejectionRetriesOnlyLatestHeldState
+{
+    [self recordNearbyOverlayBoundary:^(RunSurfaceViewController *surface, NSMutableArray<NSNumber *> *submitted, NSMutableDictionary *snapshot) {
+        snapshot[@"rejectInput"] = @YES;
+        [surface applyOverlayButtons:32];
+        XCTAssertEqualObjects(submitted, (@[@32]));
+        XCTAssertEqual([snapshot[@"snapshotReads"] unsignedIntegerValue], 1u);
+        snapshot[@"rejectInput"] = @NO;
+        [surface displayTick:1.0];
+        XCTAssertEqualObjects(submitted, (@[@32, @32]), @"A still-active owner retries current held input after capacity becomes available");
+        [surface applyOverlayButtons:0];
+        [surface displayTick:1.02];
+        XCTAssertEqualObjects(submitted, (@[@32, @32, @0, @0]), @"Release replaces the retry state, with no additional event queue");
+    }];
+}
+
+- (void)testOldGameSurfaceCannotSubmitOverlayOrFrameInputToReplacement
+{
+    [self recordNearbyOverlayBoundary:^(RunSurfaceViewController *surface, NSMutableArray<NSNumber *> *submitted, NSMutableDictionary *snapshot) {
+        (void)snapshot;
+        [surface setValue:@(FlyNesNearbyBridge.sharedInstance.playbackGeneration + 1) forKey:@"nearbyPlaybackGeneration_"];
+        [surface applyOverlayButtons:32]; [surface applyOverlayButtons:0];
+        [surface displayTick:1.0];
+        XCTAssertEqual(submitted.count, 0u, @"A stale surface must never submit input to the replacement game owner");
+    }];
+}
+
+- (void)testNearbyFaceReleaseIsNotReinsertedByNextDisplayTick
+{
+    [self recordNearbyOverlayBoundary:^(RunSurfaceViewController *surface, NSMutableArray<NSNumber *> *submitted, NSMutableDictionary *snapshot) {
+        (void)snapshot;
+        [surface loadViewIfNeeded];
+        for (NSString *key in @[@"running_", @"visible_", @"foreground_", @"romReady_"])
+            [surface setValue:@YES forKey:key];
+        [submitted removeAllObjects];
+        GamepadOverlayView *overlay = [surface valueForKey:@"overlay_"];
+        XCTAssertNotNil(overlay.buttonsChanged); XCTAssertNotNil(overlay.buttonsReleased);
+        overlay.buttonsChanged(8); overlay.buttonsChanged(0);
+        // Exercise the real normal-release callback wired by viewDidLoad. A
+        // 2ms face release would be retained by the offline minimum-tap latch.
+        overlay.buttonsReleased(8, 1.0, 1.002);
+        XCTAssertEqualObjects(submitted, (@[@8, @0]));
+        [surface displayTick:2.0];
+        XCTAssertEqualObjects(submitted, (@[@8, @0, @0]),
+            @"Display polling must not enqueue a second START after the accepted release");
+    }];
+}
 
 - (void)testSelectionCompletesAsynchronouslyAndRejectsCancelledRequest
 {

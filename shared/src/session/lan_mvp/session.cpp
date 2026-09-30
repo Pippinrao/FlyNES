@@ -39,6 +39,7 @@ constexpr std::chrono::seconds kProgressTimeout{2};
 constexpr std::uint64_t kPredictionDepth = 10;
 constexpr std::uint64_t kRollbackSlots = 12;
 constexpr std::uint64_t kDigestInterval = 60;
+constexpr std::size_t kLocalInputCapacity = 16;
 
 std::uint64_t monotonic_ns() {
     return static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -114,6 +115,12 @@ struct SimulatedFrame {
     std::array<std::uint8_t, 32> state_hash{};
 };
 
+struct LocalInputState {
+    std::uint32_t buttons = 0;
+    std::uint64_t sequence = 0;
+    std::uint64_t capture_time_ns = 0;
+};
+
 struct fly_lan_mvp_session {
     std::atomic<unsigned> references{1};
     std::mutex mutex;
@@ -165,6 +172,7 @@ struct fly_lan_mvp_session {
     std::uint64_t current_local_sequence = 0;
     std::uint64_t current_local_capture_time_ns = 0;
     std::uint64_t next_local_sequence = 0;
+    std::deque<LocalInputState> pending_local_inputs;
     bool has_input_state = false;
     std::chrono::nanoseconds frame_period{16'639'267};
     std::chrono::steady_clock::time_point next_frame_due{};
@@ -527,16 +535,21 @@ struct fly_lan_mvp_session {
         if (!has_input_state || now < next_frame_due ||
             view.completed_frames - confirmed_frames >= kPredictionDepth) return;
         const auto frame = view.completed_frames;
+        const LocalInputState local = pending_local_inputs.empty()
+            ? LocalInputState{current_local_buttons, current_local_sequence, current_local_capture_time_ns}
+            : pending_local_inputs.front();
         std::vector<std::uint8_t> payload;
         payload.reserve(12);
         append_u64(&payload, frame);
-        append_u32(&payload, current_local_buttons);
+        append_u32(&payload, local.buttons);
         if (!queue_message(wire::Kind::Input, payload)) return;
-        local_inputs[frame] = current_local_buttons;
+        local_inputs[frame] = local.buttons;
         const auto actual = remote_inputs.find(frame);
         const auto remote = actual == remote_inputs.end() ? predicted_remote(frame) : actual->second;
-        if (!step_frame(frame, current_local_buttons, remote,
-                current_local_sequence, current_local_capture_time_ns)) return;
+        if (!step_frame(frame, local.buttons, remote, local.sequence, local.capture_time_ns)) return;
+        // A deadline/prediction stall never consumes a transition. It belongs to
+        // this exact successful core frame, including its original capture data.
+        if (!pending_local_inputs.empty()) pending_local_inputs.pop_front();
         ++stats.simulated_frames;
         if (actual == remote_inputs.end()) ++stats.predicted_frames;
         view.completed_frames = frame + 1;
@@ -544,6 +557,13 @@ struct fly_lan_mvp_session {
         confirm_history();
         next_frame_due += frame_period;
         if (next_frame_due < now) next_frame_due = now + frame_period;
+    }
+
+    void clear_pending_input() {
+        pending_local_inputs.clear();
+        current_local_buttons = 0;
+        current_local_sequence = current_local_capture_time_ns = 0;
+        last_submitted_buttons = 0;
     }
 
     void enter_running() {
@@ -564,6 +584,7 @@ struct fly_lan_mvp_session {
         current_local_buttons = 0;
         current_local_sequence = current_local_capture_time_ns = next_local_sequence = 0;
         has_input_state = false;
+        pending_local_inputs.clear();
         local_digests.clear();
         remote_digests.clear();
         fly_runtime_source_timing_v1 timing{};
@@ -607,6 +628,7 @@ struct fly_lan_mvp_session {
         current_local_buttons = 0;
         current_local_sequence = current_local_capture_time_ns = next_local_sequence = 0;
         has_input_state = false;
+        pending_local_inputs.clear();
         last_submitted_buttons = 0; last_applied_buttons = {};
     }
 
@@ -653,6 +675,7 @@ struct fly_lan_mvp_session {
             if (view.state != FLY_LAN_MVP_RUNNING) return;
             const auto reply = pause.receive(message.payload[0], role == Role::Host);
             view.paused = pause.paused();
+            if (view.paused) clear_pending_input();
             last_progress = std::chrono::steady_clock::now();
             if (reply) (void)queue_message(wire::Kind::Pause, {*reply});
             if (!view.paused) advance();
@@ -1180,6 +1203,16 @@ extern "C" int fly_lan_mvp_submit_input_v1(fly_lan_mvp_session* session,
         input->version != FLY_LAN_MVP_INPUT_VERSION_1 || input->reserved != 0) return 0;
     std::lock_guard<std::mutex> lock(session->mutex);
     if (session->view.state != FLY_LAN_MVP_RUNNING || session->view.paused) return 0;
+    const bool changed = input->buttons != session->current_local_buttons;
+    // Complete states preserve ordering (including releases and direction
+    // changes). Reserve the final slot for all-up; held refreshes use no slots.
+    const auto limit = input->buttons == 0 ? kLocalInputCapacity : kLocalInputCapacity - 1;
+    if (changed && session->pending_local_inputs.size() >= limit) {
+        session->trace("input_rejected", "reason=state_queue_full buttons=" +
+            std::to_string(input->buttons) + " queued=" +
+            std::to_string(session->pending_local_inputs.size()));
+        return 0;
+    }
     const auto submitted_ns = monotonic_ns();
     session->current_local_buttons = input->buttons;
     session->current_local_capture_time_ns = input->capture_time_ns == 0
@@ -1188,6 +1221,8 @@ extern "C" int fly_lan_mvp_submit_input_v1(fly_lan_mvp_session* session,
         ? ++session->next_local_sequence : input->sequence;
     session->next_local_sequence = std::max(session->next_local_sequence,
                                              session->current_local_sequence);
+    if (changed) session->pending_local_inputs.push_back({input->buttons,
+        session->current_local_sequence, session->current_local_capture_time_ns});
     session->has_input_state = true;
     session->stats.last_input_submit_ns = submitted_ns;
     if (input->buttons != session->last_submitted_buttons) {
@@ -1224,6 +1259,7 @@ extern "C" int fly_lan_mvp_set_paused(fly_lan_mvp_session* session, int paused) 
         return 0;
     }
     session->last_progress = std::chrono::steady_clock::now();
+    if (session->view.paused) session->clear_pending_input();
     if (!session->view.paused) session->wake.notify_one();
     return 1;
 }

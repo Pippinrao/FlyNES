@@ -142,7 +142,7 @@ static NSString *const HundredSource = @"FlyNES-E2E-Hundred";
 - (void)tearDown
 {
     if (self.testRun.failureCount > 0) {
-        XCTAttachment *attachment = [XCTAttachment attachmentWithScreenshot:self.app.screenshot];
+        XCTAttachment *attachment = [XCTAttachment attachmentWithScreenshot:XCUIScreen.mainScreen.screenshot];
         attachment.name = @"import-failure";
         attachment.lifetime = XCTAttachmentLifetimeKeepAlways;
         [self addAttachment:attachment];
@@ -302,6 +302,68 @@ static NSString *const HundredSource = @"FlyNES-E2E-Hundred";
     XCTAssertTrue([self.app.buttons[builtinID] waitForExistenceWithTimeout:15]);
     XCTAssertFalse(self.app.buttons[importID].exists);
     XCTAssertEqual(self.cards.count, self.bundledCount, @"repeated import removal persists across restart");
+}
+
+// Run only against the frozen native baseline on a dedicated simulator. This
+// deliberately retains user-created state for the subsequent covering install.
+- (void)testSeedNativeToFlutterUpgradeThroughRealPicker
+{
+    [self importSource:SingleSource directory:NO];
+    [self search:@"FlyNES-E2E-Single"];
+    [self expectGameCount:1];
+    [self.cards.firstMatch tap];
+    [self.app.buttons[@"favorite_toggle"] tap];
+    [self waitFor:^BOOL { return [self.app.buttons[@"favorite_toggle"].label isEqual:@"Remove from Favorites"]; }
+            reason:@"upgrade fixture favorite committed" timeout:10];
+    [self.app.buttons[@"launch_selected"] tap];
+    XCTAssertTrue([self.app.buttons[@"OPEN_PAUSE"] waitForExistenceWithTimeout:15]);
+    [self.app.buttons[@"NES_START"] tap];
+    [self.app.buttons[@"OPEN_PAUSE"] tap];
+    XCTAssertTrue([self.app.buttons[@"game_center"] waitForExistenceWithTimeout:10]);
+    [self.app.buttons[@"game_center"] tap];
+    XCTAssertTrue([self.app.buttons[@"category_favorites"] waitForExistenceWithTimeout:15]);
+    [self.app.buttons[@"category_favorites"] tap];
+    [self expectGameCount:1];
+    XCTAttachment *shot = [XCTAttachment attachmentWithScreenshot:XCUIScreen.mainScreen.screenshot];
+    shot.name = @"native-upgrade-source-favorite-progress";
+    shot.lifetime = XCTAttachmentLifetimeKeepAlways; [self addAttachment:shot];
+    [self.app.buttons[@"open_settings"] tap];
+    [self.app.buttons[@"section.audio"] tap];
+    XCUIElement *audio = self.app.switches[@"settings_audio"];
+    XCTAssertTrue([audio waitForExistenceWithTimeout:5]);
+    if (![[audio.value description] isEqual:@"0"])
+        [[audio coordinateWithNormalizedOffset:CGVectorMake(0.95, 0.5)] tap];
+    XCTAssertEqualObjects([audio.value description], @"0");
+    [self.app.buttons[@"section.controls"] tap];
+    [self.app.buttons[@"settings_layout"] tap];
+    XCUIElement *opacity = self.app.sliders[@"layout_opacity"];
+    XCTAssertTrue([opacity waitForExistenceWithTimeout:10]);
+    [opacity adjustToNormalizedSliderPosition:0.3];
+    [self.app.buttons[@"layout_save"] tap];
+    XCTAssertTrue([self.app.buttons[@"settings_done"] waitForExistenceWithTimeout:10]);
+    [self.app.buttons[@"settings_done"] tap];
+}
+
+- (void)testPrepareFilesProviderForUpgradeFixture
+{
+    XCUIApplication *files = [[XCUIApplication alloc] initWithBundleIdentifier:@"com.apple.DocumentsApp"];
+    files.launchArguments = @[@"-AppleLanguages", @"(en)", @"-AppleLocale", @"en_US"];
+    [files launch];
+    XCUIElement *browse = files.tabBars.buttons[@"Browse"];
+    if ([browse waitForExistenceWithTimeout:10]) [browse tap];
+    XCUIElement *local = files.cells[@"On My iPhone"];
+    if (!local.exists) local = files.staticTexts[@"On My iPhone"];
+    XCTAssertTrue([local waitForExistenceWithTimeout:10]);
+    [local tap];
+    // Files exposes this visible location title as static text on iOS 16.4;
+    // its navigation bar does not use the displayed title as its identifier.
+    XCTAssertTrue([files.staticTexts[@"On My iPhone"] waitForExistenceWithTimeout:10]);
+    XCTAttachment *tree = [XCTAttachment attachmentWithString:files.debugDescription];
+    tree.name = @"upgrade-files-local-provider-semantics";
+    tree.lifetime = XCTAttachmentLifetimeKeepAlways; [self addAttachment:tree];
+    XCTAttachment *shot = [XCTAttachment attachmentWithScreenshot:XCUIScreen.mainScreen.screenshot];
+    shot.name = @"upgrade-files-local-provider";
+    shot.lifetime = XCTAttachmentLifetimeKeepAlways; [self addAttachment:shot];
 }
 
 - (void)testHundredGameDirectoryDuplicateAliasesSearchRescanRestartAndRemove

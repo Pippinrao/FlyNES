@@ -68,7 +68,7 @@ compensation are gated behind measured device capability.
 | Platform | Toolchain used by this repo |
 |---|---|
 | Android | JDK 17, Android SDK 36, NDK `27.0.12077973` (SDK `cmake;3.22.1`), Gradle wrapper |
-| iOS | macOS + Xcode 26.x, CMake 3.31.8 (see `CMAKE_BIN`), iOS deployment target 16.4 |
+| iOS | Current Flutter validation: Intel macOS 13.7.8 + Xcode 14.3.1, CMake 3.31.8 (see `CMAKE_BIN`), iOS deployment target 16.4; other native-device workflows have used Xcode 26.x |
 | HarmonyOS | DevEco Studio 6.0 with API 20 SDK, `hvigorw` + `ohpm` shipped with DevEco, `hdc` |
 | Shared/host | Visual Studio 2022 (x64) or any C++17 toolchain, Python 3, PowerShell 7 |
 | Content build | WSL Ubuntu-24.04 as root, cc65 2.19, Millfork 0.3.12, bespoke STB toolchain |
@@ -179,8 +179,23 @@ The product app is `ios/app` (CMake target `FlyNES`, bundle id
 `com.flynes.app`). iOS work runs on a Mac; keep a synced checkout there and use
 the repo's scripts instead of hand-rolled `xcodebuild` invocations.
 
+On this Flutter branch the iOS compatibility toolchain is **Flutter 3.38.10 /
+Dart 3.10.9**, verified on Intel macOS 13.7.8 / Xcode 14.3.1 / iOS 16.4.
+Flutter 3.41.7's Dart did not start on that Mac. Android remains on 3.41.7;
+Harmony keeps its own pinned SDK. `tools/flutter/Build-Ios.sh` verifies the
+framework and engine revisions and uses `tools/flutter/locks/ios-3.38.10.lock`
+in an isolated generated module. Set `FLUTTER_BIN` to that SDK's executable.
+Both production build scripts enable Flutter by default; only an explicit
+`FLYNES_NATIVE_BASELINE=1` builds the old native comparison shell.
+
+Simulator Flutter is a Debug runtime even when its XCFramework sits in a
+Release directory. Simulator functional results cannot certify device AOT
+Release performance. The complete unsigned iphoneos Release build is a
+separate compile gate, not evidence of a signed device install.
+
 ```sh
 # build the product app for the simulator
+export FLUTTER_BIN=/path/to/flutter-3.38.10/bin/flutter
 CMAKE_BIN=~/Developer/FlyNES-tools/cmake-3.31.8-macos-universal/CMake.app/Contents/bin/cmake \
   bash ios/scripts/build_simulator.sh
 
@@ -190,11 +205,35 @@ bash ios/scripts/run_product_simulator.sh <SIMULATOR_UDID>
 # test suites through the official runner (installs the app and exports the
 # app's data container to the tests)
 python3 ios/scripts/run_simulator_tests.py <SIMULATOR_UDID> FlyNESRuntimeTests
-python3 ios/scripts/run_simulator_tests.py <SIMULATOR_UDID> FlyNESUITests
+python3 ios/scripts/run_simulator_tests.py <SIMULATOR_UDID> FlyNESUITests \
+  -only-testing:FlyNESUITests/FlutterProductUITests
 
 # import-flow UI tests need their fixtures staged first
+# ProductImportUITests targets the explicit native baseline. Its upgrade seed
+# deliberately retains fixture state for a covering install; run on an isolated
+# task simulator. Never remove existing sources to satisfy that precondition.
 python3 ios/scripts/stage_import_fixtures.py --udid <SIMULATOR_UDID>
 ```
+
+The G2 two-App UI harness is `tools/flutter/run_two_ios_ui_peers.py`. It uses
+the two dedicated task simulators declared in that script; both must already
+be booted, retain their existing data, and use English in-product language.
+Build the simulator host and `FlyNESUITests` with
+`FLYNES_IOS_BUILD_XCTESTS=ON`, then run the harness from the Mac checkout.
+Swap its explicit `--host-udid` / `--guest-udid` values to check both roles.
+The harness forwards the real host QR payload at the guest join boundary;
+selection, input, pause, Continue and changing games use the actual two UIs.
+This excludes optical camera scanning and physical network certification.
+Run one logical test batch at a time on the 8 GiB Mac. Test observers only
+exist in simulator XCTest builds and activate for a valid per-run UUID;
+they never create a substitute session or generate input.
+
+For screenshot rechecks, `verify_ios_screenshots.py` compares actual XCTest
+captures against an explicitly reviewed reference with matching SDK, runtime,
+device and font identities. It honors PNG EXIF orientation without resampling.
+Use `verify_flutter_semantics.py` in addition to `verify_g2_visuals.py` for the
+Flutter capture families: the former retains identifiers and full tree structure,
+normalizing only runtime node/sort-key identities. Neither tool accepts goldens.
 
 Two traps cost this repository real time:
 

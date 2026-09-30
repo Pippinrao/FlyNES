@@ -7,6 +7,18 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/// Owns one immutable native snapshot; used only on the product serial worker.
+@interface FlyNesProductCatalogSnapshot : NSObject
+@property(nonatomic, readonly) uint64_t generation;
+@property(nonatomic, readonly, copy) NSArray<NSDictionary<NSString *, id> *> *rows;
+- (nullable NSDictionary<NSString *, id> *)project:(NSDictionary<NSString *, id> *)query
+                                           offset:(uint64_t)offset limit:(uint32_t)limit
+                                            error:(NSError * _Nullable * _Nullable)error;
+- (nullable NSDictionary<NSString *, id> *)itemForCanonicalID:(NSString *)canonicalID;
+@end
+
+FOUNDATION_EXPORT NSURL * _Nullable FlyNesLegacyAutosaveURL(NSURL *documentsRoot, NSString *canonicalID);
+
 @interface FlyNesAppBridge : NSObject
 
 + (instancetype)sharedInstance;
@@ -24,6 +36,7 @@ NS_ASSUME_NONNULL_BEGIN
                      error:(NSError * _Nullable * _Nullable)error;
 
 - (NSArray<NSDictionary<NSString *, id> *> *)catalogSnapshotGames;
+- (nullable FlyNesProductCatalogSnapshot *)productCatalogSnapshot:(NSError * _Nullable * _Nullable)error;
 // Nearby peers use manifest keys for bundled games; local saves keep content IDs.
 - (nullable NSDictionary<NSString *, id> *)catalogGameForNearbyKey:(NSString *)key NS_SWIFT_NAME(catalogGame(forNearbyKey:));
 - (NSString *)nearbyGameKeyForCanonicalID:(NSString *)canonicalID;

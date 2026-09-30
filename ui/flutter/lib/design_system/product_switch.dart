@@ -16,6 +16,7 @@ class ProductSwitch extends StatelessWidget {
   final ValueChanged<bool>? onChanged;
   @override
   Widget build(BuildContext context) => Semantics(
+    container: true,
     label: label,
     toggled: value,
     enabled: onChanged != null,

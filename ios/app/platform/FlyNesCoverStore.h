@@ -41,6 +41,8 @@ extern NSString *const FlyNesCoverStoreCanonicalIdKey;
 /// Cached cover for one game, or nil when no acceptable sample was captured yet.
 - (nullable FlyNesCoverImage *)coverForCanonicalId:(NSString *)canonicalId;
 - (BOOL)hasCoverForCanonicalId:(NSString *)canonicalId;
+/// Read-only durable file reference for the product UI; never decodes a bitmap.
+- (NSDictionary<NSString *, id> *)referenceForCanonicalId:(NSString *)canonicalId;
 - (void)removeCoverForCanonicalId:(NSString *)canonicalId;
 
 @end

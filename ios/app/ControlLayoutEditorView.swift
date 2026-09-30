@@ -45,7 +45,7 @@ struct ControlLayoutEditorView: View {
                     Text("control_layout.hint").font(.caption).foregroundStyle(.secondary)
                     Picker("control_layout.selected", selection: $selected) {
                         ForEach(draft.elements) { element in
-                            Text(LocalizedStringKey("control.\(element.name)")).tag(element.name)
+                            Text(LocalizedStringKey("control." + element.name)).tag(element.name)
                         }
                     }
                     }
@@ -117,7 +117,7 @@ struct ControlLayoutEditorView: View {
                     .allowsHitTesting(!tryMode)
                     .gesture(drag(element))
                     .onTapGesture { selected = element.name }
-                    .accessibilityLabel(Text(LocalizedStringKey("control.\(element.name)")))
+                    .accessibilityLabel(Text(LocalizedStringKey("control." + element.name)))
             }
         }.coordinateSpace(name: "layoutStage")
     }

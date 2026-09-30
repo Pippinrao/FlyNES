@@ -12,10 +12,16 @@ xcodebuild -version | tee "$evidence_dir/xcode-version.txt"
 sdk_path="$(xcrun --sdk iphonesimulator --show-sdk-path)"
 arch="$(uname -m)"
 case "$arch" in arm64|x86_64) ;; *) echo "Unsupported Mac architecture: $arch" >&2; exit 1;; esac
+flutter_args=(-DFLYNES_IOS_FLUTTER=OFF)
+if [ "${FLYNES_NATIVE_BASELINE:-0}" != 1 ]; then
+  FLYNES_FLUTTER_MODE=Debug bash "$repo_dir/tools/flutter/Build-Ios.sh"
+  flutter_args=(-DFLYNES_IOS_FLUTTER=ON
+    "-DFLYNES_FLUTTER_FRAMEWORK_DIR=${FLYNES_FLUTTER_OUTPUT:-$repo_dir/.artifacts/flutter-ios/frameworks}/Debug")
+fi
 "$cmake_bin" -S "$repo_dir/ios/app" -B "$build_dir" -G Xcode \
   -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT="$sdk_path" \
-  -DCMAKE_OSX_ARCHITECTURES="$arch" -DCMAKE_OSX_DEPLOYMENT_TARGET=16.4
-"$cmake_bin" --build "$build_dir" --config Debug --target FlyNES --parallel 2 \
+  -DCMAKE_OSX_ARCHITECTURES="$arch" -DCMAKE_OSX_DEPLOYMENT_TARGET=16.4 "${flutter_args[@]}"
+"$cmake_bin" --build "$build_dir" --config Debug --target FlyNES --parallel "${FLYNES_BUILD_JOBS:-2}" \
   2>&1 | tee "$evidence_dir/build.log"
 app_path="$build_dir/Debug-iphonesimulator/FlyNES.app"
 test -f "$app_path/FlyNES"

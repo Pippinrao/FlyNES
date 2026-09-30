@@ -55,6 +55,7 @@ flynes_add_runtime_library()
 
 set(FLYNES_PRODUCT_SWIFT
     FlyNESApp.swift
+    FlutterProductHost.swift
     CatalogLibraryView.swift
     CatalogGameRow.swift
     CatalogGame.swift
@@ -82,6 +83,7 @@ set(FLYNES_PRODUCT_SWIFT
     diagnostics/DiagnosticExport.swift
 )
 set(FLYNES_PRODUCT_OBJCXX
+    platform/FlyNesProductService.mm
     bridge/FlyNesAppBridge.mm
     bridge/FlyNesNearbyBridge.mm
     bridge/FlyNesRuntimeBridge.mm
@@ -253,6 +255,11 @@ set_target_properties(FlyNES PROPERTIES
     XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME AppIcon
 )
 
+option(FLYNES_IOS_FLUTTER "Use the shared Flutter product UI in the production host" ON)
+if(FLYNES_IOS_FLUTTER)
+    include(FlutterFrameworks.cmake)
+endif()
+
 if(FLYNES_IOS_IS_SIMULATOR)
     set_target_properties(FlyNES PROPERTIES
         XCODE_ATTRIBUTE_AD_HOC_CODE_SIGNING_ALLOWED YES
@@ -287,7 +294,9 @@ endif()
 
 option(FLYNES_IOS_BUILD_XCTESTS "Build simulator integration tests" OFF)
 if(FLYNES_IOS_IS_SIMULATOR AND FLYNES_IOS_BUILD_XCTESTS)
-    target_sources(FlyNES PRIVATE ../tests/NearbyUITestPeer.mm)
+    # Xcode requires a configuration-invariant source list. Test diagnostics
+    # compile to an empty translation unit without the Debug-only macro below.
+    target_sources(FlyNES PRIVATE ../tests/NearbyUITestPeer.mm ../tests/NearbyTwoAppDiagnostics.mm ../tests/ScanInFlightTestDiagnostics.mm)
     target_compile_definitions(FlyNES PRIVATE "$<$<CONFIG:Debug>:FLYNES_UI_TEST_PEER=1>")
     get_filename_component(_sdk_parent "${CMAKE_OSX_SYSROOT}" DIRECTORY)
     get_filename_component(_platform_developer "${_sdk_parent}" DIRECTORY)
@@ -296,6 +305,8 @@ if(FLYNES_IOS_IS_SIMULATOR AND FLYNES_IOS_BUILD_XCTESTS)
     find_package(XCTest REQUIRED)
     set_target_properties(FlyNES PROPERTIES ENABLE_EXPORTS YES CXX_VISIBILITY_PRESET default)
     xctest_add_bundle(FlyNESRuntimeTests FlyNES
+        ../tests/ProductServiceTests.mm
+        ../tests/RuntimeOwnerDiagnosticsTests.mm
         ../tests/PlaybackRuntimeBridgeTests.mm
         ../tests/NearbySessionV2BridgeTests.mm
         ../tests/NearbyMvpBridgeTests.mm
@@ -308,7 +319,7 @@ if(FLYNES_IOS_IS_SIMULATOR AND FLYNES_IOS_BUILD_XCTESTS)
         ../tests/MetalPixelParityTests.mm
         ../tests/PlaybackSoakTests.mm)
     target_include_directories(FlyNESRuntimeTests PRIVATE bridge run platform "../../shared/include" "../../core/include")
-    target_link_libraries(FlyNESRuntimeTests PRIVATE flynes_runtime flynes_lan_mvp "-framework UIKit" "-framework AVFoundation" "-framework CoreGraphics" "-framework Metal" "-framework QuartzCore")
+    target_link_libraries(FlyNESRuntimeTests PRIVATE flynes_runtime flynes_lan_mvp flynes_product "-framework UIKit" "-framework AVFoundation" "-framework CoreGraphics" "-framework Metal" "-framework QuartzCore")
     target_compile_features(FlyNESRuntimeTests PRIVATE cxx_std_17)
     set_target_properties(FlyNESRuntimeTests PROPERTIES
         XCODE_GENERATE_SCHEME YES
@@ -319,8 +330,10 @@ if(FLYNES_IOS_IS_SIMULATOR AND FLYNES_IOS_BUILD_XCTESTS)
         XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "-"
         XCODE_ATTRIBUTE_DEVELOPMENT_TEAM ""
         XCODE_ATTRIBUTE_LD_RUNPATH_SEARCH_PATHS "@loader_path/Frameworks @executable_path/Frameworks ${_platform_developer}/Library/Frameworks")
-    add_library(FlyNESUITests MODULE ../tests/ProductUITests.mm ../tests/ProductImportUITests.mm ../tests/NearbyUiParityTests.mm ../tests/NearbyUxRestorationTests.mm
+    add_library(FlyNESUITests MODULE ../tests/ProductUITests.mm ../tests/FlutterProductUITests.mm ../tests/FlutterSourceUITests.mm ../tests/ProductImportUITests.mm ../tests/NearbyUiParityTests.mm ../tests/NearbyUxRestorationTests.mm
+        ../tests/FlutterScanInFlightUITests.mm
         ../tests/NearbyLiveRoomUITests.mm
+        ../tests/NearbyTwoAppUITests.mm
         "${FLYNES_IOS_BUNDLED_MANIFEST}")
     # The UI tests assert against the shared manifest instead of hardcoding a
     # single bundled game, so the manifest travels in the test bundle too.

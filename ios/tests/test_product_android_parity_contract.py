@@ -95,7 +95,12 @@ def main() -> int:
     compact_load_cp = load_cp_body.replace(" ", "").replace("\n", "")
     require("frame_index+1" in compact_load_cp,
             "loadCheckpoint must set the bridge next frame index to last+1")
-    persist_src = runtime_bridge + "\n" + run
+    app_bridge = read("ios/app/bridge/FlyNesAppBridge.mm")
+    require("return FlyNesLegacyAutosaveURL(documents, self.canonicalId);" in run,
+            "playback and product resume must share the existing canonical autosave path")
+    require("NSURL *FlyNesLegacyAutosaveURL" in app_bridge,
+            "the shared legacy path helper must be implemented by the native app bridge")
+    persist_src = runtime_bridge + "\n" + run + "\n" + app_bridge
     require("autosave.nst" in persist_src,
             "pause autosave must persist as per-ROM autosave.nst")
     require("saves/" in persist_src or "saves" in persist_src,

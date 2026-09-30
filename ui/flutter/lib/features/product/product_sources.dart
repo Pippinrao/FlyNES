@@ -310,7 +310,10 @@ class _ProductSourcesState extends State<ProductSources>
                 ProductButton.text(
                   key: ValueKey('remove-${row['uuid']}'),
                   onPressed: busy ? null : () => _remove(row),
-                  child: Text(s.text('Remove', '移除')),
+                  child: Semantics(
+                    identifier: 'source-remove-${row['uuid']}',
+                    child: Text(s.text('Remove', '移除')),
+                  ),
                 ),
               ],
             ),

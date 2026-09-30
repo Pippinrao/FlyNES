@@ -9,6 +9,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface FlyNesRuntimeBridge : NSObject
 
+/// Process count of actual single-player runtime allocations (including hidden owners).
++ (NSUInteger)liveRuntimeCount;
 @property(nonatomic, readonly) uint32_t lastFrameSampleCount;
 
 /// Copies the latest RGB565 native game frame together with its authoritative

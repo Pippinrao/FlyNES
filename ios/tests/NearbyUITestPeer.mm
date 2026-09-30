@@ -24,6 +24,7 @@
     BOOL joined_;
     BOOL peerHosting_;
     BOOL cleaned_;
+    BOOL peerDisconnectRequested_;
 }
 
 + (void)load {
@@ -162,6 +163,15 @@
     [self ensureCoverDirectory];
     NSString *action = request[@"action"];
     if ([action isEqual:@"cleanup"]) { [self cleanup]; return; }
+    if ([action isEqual:@"disconnect-peer"]) {
+        // Real remote endpoint cancellation only. Keep the app bridge alive so
+        // its transport observes disconnection; cleanup deliberately cancels both.
+        if (!peer_ || !joined_) { error_ = @"Peer-only disconnect requires an actual joined peer"; return; }
+        pendingGame_ = -1;
+        peerDisconnectRequested_ = YES;
+        fly_lan_mvp_cancel(peer_);
+        return;
+    }
     if ([action isEqual:@"pause"]) fly_lan_mvp_set_paused(peer_, 1);
     if ([action isEqual:@"resume"]) fly_lan_mvp_resume_game(peer_);
     if ([action isEqual:@"select-first"]) pendingGame_ = 0;
@@ -191,7 +201,7 @@
         @"playbackGeneration": @(bridge.playbackGeneration),
         @"coverDirectory": FlyNesCoverStore.sharedInstance.directory,
         @"error": error_ ?: @"", @"games": games, @"command": lastCommand_ ?: @"",
-        @"cleaned": @(cleaned_)};
+        @"cleaned": @(cleaned_), @"peerDisconnectRequested": @(peerDisconnectRequested_)};
     [status writeToFile:[self path:@"nearby-ui-state.plist"] atomically:YES];
 }
 

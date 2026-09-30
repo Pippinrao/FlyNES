@@ -37,7 +37,10 @@
         <integer>1</integer>
     </array>
     <key>UILaunchScreen</key>
-    <dict/>
+    <dict>
+        <key>UIColorName</key>
+        <string>LaunchBackground</string>
+    </dict>
     <key>UIRequiredDeviceCapabilities</key>
     <array>
         @FLYNES_REQUIRED_CPU@

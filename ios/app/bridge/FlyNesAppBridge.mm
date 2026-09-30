@@ -4,6 +4,7 @@
 #import "platform/BuiltinGames.h"
 
 #include <flynes/flynes_app.h>
+#include <flynes/flynes_product.h>
 #include <flynes/flynes_session.h>
 #include "flynes/product/game_center_item.hpp"
 #include "flynes/product/game_center_state.hpp"
@@ -13,6 +14,7 @@
 #include <exception>
 #include <limits>
 #include <mutex>
+#include <map>
 #include <string>
 #include <vector>
 #include <fcntl.h>
@@ -199,6 +201,144 @@ NSDictionary<NSString *, id> *with_merged_presentation(
 
 } // namespace
 
+NSURL *FlyNesLegacyAutosaveURL(NSURL *documentsRoot, NSString *canonicalID)
+{
+    if (documentsRoot.path.length == 0 || canonicalID.length == 0) return nil;
+    NSString *safe = [[[canonicalID stringByReplacingOccurrencesOfString:@"/" withString:@"_"]
+        stringByReplacingOccurrencesOfString:@":" withString:@"_"]
+        stringByReplacingOccurrencesOfString:@"\\" withString:@"_"];
+    return [[[documentsRoot URLByAppendingPathComponent:@"saves"] URLByAppendingPathComponent:safe]
+        URLByAppendingPathComponent:@"autosave.nst"];
+}
+
+@interface FlyNesProductCatalogSnapshot ()
+- (instancetype)initWithSnapshot:(fly_catalog_snapshot_t *)snapshot;
+@end
+
+@implementation FlyNesProductCatalogSnapshot {
+    fly_catalog_snapshot_t *snapshot_;
+    NSArray<NSDictionary<NSString *, id> *> *rows_;
+    NSDictionary<NSString *, NSDictionary *> *items_;
+    NSDictionary<NSString *, FlyNesBuiltinGame *> *facts_;
+    uint64_t generation_;
+}
+- (instancetype)initWithSnapshot:(fly_catalog_snapshot_t *)snapshot
+{
+    if ((self = [super init])) {
+        snapshot_ = snapshot;
+        fly_catalog_snapshot_generation(snapshot, &generation_);
+        std::map<std::string, fly_catalog_user_state> users;
+        uint64_t count = 0;
+        fly_catalog_snapshot_user_count(snapshot, &count);
+        for (uint64_t i = 0; i < count; ++i) {
+            char canonical[FLY_CANONICAL_ID_MAX_UTF8_BYTES + 1] = {};
+            uint32_t required = 0;
+            fly_catalog_user_state user{};
+            user.struct_size = FLY_CATALOG_USER_STATE_V1_SIZE;
+            user.version = FLY_CATALOG_USER_STATE_VERSION_1;
+            if (fly_catalog_snapshot_user_get(snapshot, i, canonical, sizeof(canonical), &required, &user) == FLY_RESULT_OK)
+                users[canonical] = user;
+        }
+        NSMutableArray *rows = [NSMutableArray array];
+        NSMutableDictionary<NSString *, NSMutableArray *> *groups = [NSMutableDictionary dictionary];
+        NSMutableDictionary *facts = [NSMutableDictionary dictionary];
+        fly_catalog_snapshot_count(snapshot, &count);
+        for (uint64_t i = 0; i < count; ++i) {
+            char canonical[FLY_CANONICAL_ID_MAX_UTF8_BYTES + 1] = {};
+            char variant[FLY_CANONICAL_ID_MAX_UTF8_BYTES + 1] = {};
+            char display[FLY_SCAN_DISPLAY_NAME_MAX_UTF8_BYTES + 1] = {};
+            char relative[FLY_SCAN_RELATIVE_PATH_MAX_UTF8_BYTES + 1] = {};
+            fly_catalog_entry entry{};
+            entry.struct_size = FLY_CATALOG_ENTRY_V1_SIZE; entry.version = FLY_CATALOG_ENTRY_VERSION_1;
+            entry.canonical_id_utf8 = canonical; entry.canonical_id_capacity = sizeof(canonical);
+            entry.variant_id_utf8 = variant; entry.variant_id_capacity = sizeof(variant);
+            entry.display_name_utf8 = display; entry.display_name_capacity = sizeof(display);
+            entry.source_relative_path_utf8 = relative; entry.source_relative_path_capacity = sizeof(relative);
+            if (fly_catalog_snapshot_get(snapshot, i, &entry) != FLY_RESULT_OK) return nil;
+            fly_game_title title{}; fly_catalog_snapshot_get_title(snapshot, i, &title);
+            NSDictionary *row = catalog_row_dictionary(entry, users[canonical], title);
+            [rows addObject:row];
+            NSString *key = row[@"canonicalId"];
+            if (!groups[key]) groups[key] = [NSMutableArray array];
+            [groups[key] addObject:row];
+            if ([row[@"builtin"] boolValue]) {
+                FlyNesBuiltinGame *game = [FlyNesBuiltinGames.shared byAssetFilename:row[@"relativePath"]];
+                if (game) facts[key] = game;
+            }
+        }
+        NSMutableDictionary *items = [NSMutableDictionary dictionary];
+        for (NSString *key in groups) {
+            NSArray *variants = groups[key];
+            NSDictionary *chosen = variants.firstObject;
+            BOOL available = NO, builtin = NO;
+            NSMutableSet *variantIDs = [NSMutableSet set];
+            for (NSDictionary *row in variants) {
+                BOOL playable = [row[@"freshness"] unsignedIntValue] == 1 && [row[@"compatibilityState"] unsignedIntValue] == 1;
+                BOOL chosenPlayable = [chosen[@"freshness"] unsignedIntValue] == 1 && [chosen[@"compatibilityState"] unsignedIntValue] == 1;
+                if ((!chosenPlayable && playable) || (chosenPlayable == playable && [row[@"builtin"] boolValue])) chosen = row;
+                available |= playable; builtin |= [row[@"builtin"] boolValue];
+                [variantIDs addObject:row[@"variantId"]];
+            }
+            NSMutableDictionary *item = [with_merged_presentation(chosen, variants) mutableCopy];
+            FlyNesBuiltinGame *fact = facts[key];
+            item[@"available"] = @(available); item[@"builtin"] = @(builtin);
+            item[@"favorite"] = @([item[@"favorite"] boolValue]);
+            item[@"variantCount"] = @(variantIDs.count);
+            item[@"unavailableReason"] = available ? @"" : @"source_unavailable";
+            item[@"multiplayerSupported"] = @(fact && [fact.multiplayerEligibility isEqual:@"SUPPORTED"] &&
+                fact.multiplayerProfileVersion == FlyNesBuiltinGames.shared.multiplayerProfileVersion);
+            if (fact) { item[@"titleEn"] = fact.titleEn; item[@"titleZhHans"] = fact.titleZhHans; }
+            if (![item[@"titleEn"] length] && ![item[@"titleZhHans"] length]) item[@"titleEn"] = item[@"titleUnknown"] ?: item[@"displayName"];
+            items[key] = [item copy];
+        }
+        rows_ = [rows copy]; items_ = [items copy]; facts_ = [facts copy];
+    }
+    return self;
+}
+- (void)dealloc { fly_catalog_snapshot_release(snapshot_); }
+- (uint64_t)generation { return generation_; }
+- (NSArray<NSDictionary<NSString *, id> *> *)rows { return rows_; }
+- (NSDictionary<NSString *, id> *)itemForCanonicalID:(NSString *)canonicalID { return items_[canonicalID]; }
+- (NSDictionary<NSString *, id> *)project:(NSDictionary<NSString *, id> *)query offset:(uint64_t)offset
+                                   limit:(uint32_t)limit error:(NSError **)error
+{
+    NSArray *categories = @[@"recent", @"favorites", @"all", @"builtin"];
+    NSUInteger category = [categories indexOfObject:query[@"category"]];
+    if (category == NSNotFound || limit == 0 || limit > FLY_PRODUCT_CATALOG_WINDOW_MAX) {
+        if (error) *error = flynes_error(FLY_RESULT_INVALID_ARGUMENT, @"invalid_arguments"); return nil;
+    }
+    std::vector<fly_product_capability> capabilities;
+    for (NSString *key in facts_) {
+        FlyNesBuiltinGame *game = facts_[key];
+        fly_product_capability fact{};
+        fact.canonical_id_utf8 = key.UTF8String; fact.canonical_id_utf8_length = (uint32_t)[key lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
+        fact.eligibility = [game.multiplayerEligibility isEqual:@"SUPPORTED"] ? FLY_PRODUCT_MULTIPLAYER_SUPPORTED :
+            [game.multiplayerEligibility isEqual:@"UNSUPPORTED"] ? FLY_PRODUCT_MULTIPLAYER_UNSUPPORTED : FLY_PRODUCT_MULTIPLAYER_UNKNOWN;
+        fact.profile_version = (uint32_t)game.multiplayerProfileVersion;
+        fact.title_en_utf8 = game.titleEn.UTF8String; fact.title_en_utf8_length = (uint32_t)[game.titleEn lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
+        fact.title_zh_hans_utf8 = game.titleZhHans.UTF8String; fact.title_zh_hans_utf8_length = (uint32_t)[game.titleZhHans lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
+        capabilities.push_back(fact);
+    }
+    NSString *search = query[@"query"] ?: @"", *selected = query[@"selectedId"] ?: @"";
+    fly_product_catalog_query request{};
+    request.struct_size = FLY_PRODUCT_CATALOG_QUERY_V1_SIZE; request.version = FLY_PRODUCT_CATALOG_VERSION_1;
+    request.category = (uint32_t)category; request.multiplayer_only = [query[@"multiplayerOnly"] boolValue];
+    request.query_utf8 = search.UTF8String; request.query_utf8_length = (uint32_t)[search lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
+    request.selected_canonical_id_utf8 = selected.UTF8String; request.selected_canonical_id_utf8_length = (uint32_t)[selected lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
+    request.offset = offset; request.limit = limit;
+    request.registry_profile_version = (uint32_t)FlyNesBuiltinGames.shared.multiplayerProfileVersion;
+    request.capabilities = capabilities.data(); request.capability_count = (uint32_t)capabilities.size();
+    fly_product_catalog_window window{};
+    window.struct_size = FLY_PRODUCT_CATALOG_WINDOW_V1_SIZE; window.version = FLY_PRODUCT_CATALOG_VERSION_1;
+    fly_result result = fly_product_catalog_project(snapshot_, &request, &window);
+    if (result != FLY_RESULT_OK) { if (error) *error = flynes_error(result, @"projection_failed"); return nil; }
+    NSMutableArray *ids = [NSMutableArray array];
+    for (uint32_t i = 0; i < window.count; ++i) [ids addObject:rows_[(NSUInteger)window.snapshot_indices[i]][@"canonicalId"]];
+    return @{@"catalogGeneration":@(window.catalog_generation), @"total":@(window.filtered_total),
+             @"offset":@(window.offset), @"ids":ids, @"selectedId":@(window.selected_canonical_id_utf8)};
+}
+@end
+
 static fly_result complete_pending_invite(fly_session_t *session, bool success)
 {
     fly_session_command command{};
@@ -217,6 +357,11 @@ static fly_result complete_pending_invite(fly_session_t *session, bool success)
 
 @implementation FlyNesAppBridge {
     std::mutex mutex_;
+    // Immutable read projections are published by the serial owner after writes.
+    // UI lifecycle reads never wait for source IO holding mutex_.
+    std::mutex readProjectionMutex_;
+    NSDictionary<NSString *, id> *settingsProjection_;
+    NSString *layoutProjection_;
     fly_app_t *app_;
     fly_session_t *session_;
     uint64_t nextNearbyHostGeneration_;
@@ -287,6 +432,10 @@ static fly_result complete_pending_invite(fly_session_t *session, bool success)
                      error:(NSError **)error
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    {
+        std::lock_guard<std::mutex> readLock(readProjectionMutex_);
+        settingsProjection_ = nil; layoutProjection_ = nil;
+    }
     if (app_ != nullptr)
     {
         fly_app_destroy(app_);
@@ -324,16 +473,26 @@ static fly_result complete_pending_invite(fly_session_t *session, bool success)
             *error = flynes_error(result, @"fly_app_create failed");
         return NO;
     }
+    [self publishReadProjectionsLocked];
     return YES;
 }
 
 - (NSDictionary<NSString *, id> *)settingsGet
 {
+    {
+        std::lock_guard<std::mutex> readLock(readProjectionMutex_);
+        if (settingsProjection_ != nil) return settingsProjection_;
+    }
     std::lock_guard<std::mutex> lock(mutex_);
-    NSError *create_error = nil;
-    if (app_ == nullptr && ![self ensureAppLocked:&create_error])
-        return @{};
+    if (app_ == nullptr && ![self ensureAppLocked:nil]) return @{};
+    [self publishReadProjectionsLocked];
+    std::lock_guard<std::mutex> readLock(readProjectionMutex_);
+    return settingsProjection_;
+}
 
+// Caller holds the application owner lock. This never reads a second database.
+- (NSDictionary<NSString *, id> *)readSettingsLocked
+{
     char locale[FLY_SETTINGS_LOCALE_MAX_UTF8_BYTES + 1] = {};
     char last_played[FLY_CANONICAL_ID_MAX_UTF8_BYTES + 1] = {};
     fly_settings_snapshot snapshot{};
@@ -370,6 +529,15 @@ static fly_result complete_pending_invite(fly_session_t *session, bool success)
         @"locale_tag" : @(locale),
         @"last_played_id" : @(last_played),
     };
+}
+
+- (void)publishReadProjectionsLocked
+{
+    NSDictionary *settings = [self readSettingsLocked];
+    NSString *layout = [self readControlLayoutLocked];
+    std::lock_guard<std::mutex> readLock(readProjectionMutex_);
+    settingsProjection_ = [settings copy];
+    layoutProjection_ = [layout copy];
 }
 
 - (BOOL)applySettings:(NSDictionary<NSString *, id> *)settings error:(NSError **)error
@@ -441,6 +609,7 @@ static fly_result complete_pending_invite(fly_session_t *session, bool success)
             *error = flynes_error(result, @"fly_settings_apply failed");
         return NO;
     }
+    [self publishReadProjectionsLocked];
     return YES;
 }
 
@@ -489,6 +658,16 @@ static fly_result complete_pending_invite(fly_session_t *session, bool success)
     }
     fly_catalog_snapshot_release(snapshot);
     return games;
+}
+
+- (FlyNesProductCatalogSnapshot *)productCatalogSnapshot:(NSError **)error
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (app_ == nullptr && ![self ensureAppLocked:error]) return nil;
+    fly_catalog_snapshot_t *snapshot = nullptr;
+    fly_result result = fly_catalog_snapshot(app_, &snapshot);
+    if (result != FLY_RESULT_OK) { if (error) *error = flynes_error(result, @"snapshot_failed"); return nil; }
+    return [[FlyNesProductCatalogSnapshot alloc] initWithSnapshot:snapshot];
 }
 
 - (NSDictionary<NSString *, id> *)catalogGameForNearbyKey:(NSString *)key
@@ -615,6 +794,7 @@ static fly_result complete_pending_invite(fly_session_t *session, bool success)
     const fly_result result = fly_catalog_mark_played(app_, canonicalID.UTF8String,
         (uint32_t)[canonicalID lengthOfBytesUsingEncoding:NSUTF8StringEncoding]);
     if (result != FLY_RESULT_OK && error) *error = flynes_error(result, @"Cannot save play history");
+    if (result == FLY_RESULT_OK) [self publishReadProjectionsLocked];
     return result == FLY_RESULT_OK;
 }
 
@@ -770,11 +950,19 @@ static fly_result complete_pending_invite(fly_session_t *session, bool success)
 
 - (NSString *)controlLayoutGet
 {
+    {
+        std::lock_guard<std::mutex> readLock(readProjectionMutex_);
+        if (layoutProjection_ != nil) return layoutProjection_;
+    }
     std::lock_guard<std::mutex> lock(mutex_);
-    NSError *create_error = nil;
-    if (app_ == nullptr && ![self ensureAppLocked:&create_error])
-        return @"";
+    if (app_ == nullptr && ![self ensureAppLocked:nil]) return @"";
+    [self publishReadProjectionsLocked];
+    std::lock_guard<std::mutex> readLock(readProjectionMutex_);
+    return layoutProjection_;
+}
 
+- (NSString *)readControlLayoutLocked
+{
     std::uint32_t required = 0;
     const fly_result sized = fly_control_layout_get(app_, nullptr, 0, &required);
     if (sized != FLY_RESULT_OK && sized != FLY_RESULT_BUFFER_TOO_SMALL)
@@ -811,6 +999,7 @@ static fly_result complete_pending_invite(fly_session_t *session, bool success)
             *error = flynes_error(result, @"fly_control_layout_apply failed");
         return NO;
     }
+    [self publishReadProjectionsLocked];
     return YES;
 }
 
@@ -957,6 +1146,7 @@ static fly_result complete_pending_invite(fly_session_t *session, bool success)
             *error = flynes_error(result, @"fly_app_create failed");
         return NO;
     }
+    [self publishReadProjectionsLocked];
     return YES;
 }
 

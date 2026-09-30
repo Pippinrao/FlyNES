@@ -1,4 +1,5 @@
 #import "FlyNesAppBridge.h"
+#import "FlyNesProductService.h"
 #import "FlyNesNearbyBridge.h"
 #import "FlyNesRuntimeBridge.h"
 #import "FlyNesBookmarkStore.h"

@@ -5,6 +5,9 @@
 #include <vector>
 #include <mutex>
 #include <algorithm>
+#include <atomic>
+
+namespace { std::atomic<NSUInteger> liveRuntimeCount{0}; }
 
 @implementation FlyNesRuntimeBridge {
     fly_runtime_t *runtime_;
@@ -26,6 +29,8 @@
     }
     return self;
 }
+
++ (NSUInteger)liveRuntimeCount { return liveRuntimeCount.load(); }
 
 - (void)dealloc
 {
@@ -54,6 +59,7 @@
         return NO;
     }
     frame_index_ = 0;
+    liveRuntimeCount.fetch_add(1);
     return YES;
 }
 
@@ -247,6 +253,7 @@
 - (void)destroyRuntime
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
+    if (runtime_ != nullptr) liveRuntimeCount.fetch_sub(1);
     fly_runtime_destroy(runtime_);
     runtime_ = nullptr;
     frame_index_ = 0;

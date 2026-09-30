@@ -585,6 +585,17 @@ if(FLYNES_BUILD_TESTS)
                  COMMAND flynes_lan_mvp_session_test --early-ready)
         add_test(NAME flynes_lan_mvp_session_input_timestamp
                  COMMAND flynes_lan_mvp_session_test --input-timestamp)
+        foreach(input_case IN ITEMS short-tap-p1 short-tap-p2
+                short-tap-pause-p1 short-tap-pause-p2
+                short-tap-pause-remote-p1 short-tap-pause-remote-p2
+                short-tap-switch-p1 short-tap-switch-p2
+                input-capacity-p1 input-capacity-p2)
+            string(REPLACE "-" "_" input_test_suffix "${input_case}")
+            add_test(NAME flynes_lan_mvp_session_${input_test_suffix}
+                     COMMAND flynes_lan_mvp_session_test --${input_case})
+            set_tests_properties(flynes_lan_mvp_session_${input_test_suffix} PROPERTIES
+                TIMEOUT 30 SKIP_RETURN_CODE 77 LABELS "nearby_mvp;runtime")
+        endforeach()
         add_test(NAME flynes_lan_mvp_session_prediction
                  COMMAND flynes_lan_mvp_session_test --prediction)
         add_test(NAME flynes_lan_mvp_session_stall

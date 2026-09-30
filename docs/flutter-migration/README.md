@@ -2,7 +2,7 @@
 
 从 [总路线 roadmap.md](roadmap.md) 开始，再读 [STATUS](STATUS.md) 和仓库 [AGENTS.md](../../AGENTS.md)。
 用户已确定 Flutter，并授权创建分支/worktree、迁移版本到 3.0.0、搭建基础骨架；
-当前已批准实施 G2 Android／Harmony 产品页面迁移（iOS 暂缓）；以本轮详细设计限定范围，G1 历史失败保留。
+当前已批准实施 G2 产品页面迁移；2026-09-30 用户已恢复 iOS G0/G1/G2 实施与测试授权。以已批准详细设计限定范围，G1 历史失败保留；各平台实际门禁见 STATUS。
 
 | 文档 | 用途 / 权威范围 |
 | --- | --- |
@@ -26,6 +26,8 @@
 | [Android跨版本升级](verification/2026-09-29-android-upgrade.md) | 2.1.2→3.0.3真实覆盖安装、存档和目录授权保留 |
 | [Harmony跨版本升级](verification/2026-09-29-harmony-cross-version-upgrade.md) | 2.1.2→3.0.3、真实文件选择导入、存档/来源/设置保留 |
 | [Flutter容器](verification/2026-09-29-flutter-texture.md) | Android external texture、输入与生命周期证据 |
+| [iOS G0/G1/G2 实施与测试](verification/2026-09-30-ios-migration.md) | iOS 兼容 SDK、真实宿主／来源／联机、双向模拟器、冻结工件及未放行性能口径 |
+| [iOS UX 与动画追溯](verification/2026-10-01-ios-ux-traceability.md) | U01～U26、A01～A17 的具体断言、截图和证据边界 |
 | [Harmony容器](verification/2026-09-29-harmony-texture.md) | OH同源码texture页、原生媒体和20次附着释放 |
 
 后续详细需求/实施计划按需放 `requirements/REQ-xxx-*.md`，验证记录放 `verification/`；
@@ -53,3 +55,4 @@
 - [G2 实施及失败回归记录](verification/2026-09-30-g2-implementation.md)
 - [G2 Android G1→G2 数据保留](verification/2026-09-30-g2-android-upgrade.md)
 - [G2 Harmony G1→G2 数据保留](verification/2026-09-30-g2-harmony-upgrade.md)
+- [iOS G0/G1/G2 恢复迁移及兼容工具链](verification/2026-09-30-ios-migration.md)

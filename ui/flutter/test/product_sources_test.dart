@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flynes_ui/design_system/app_theme.dart';
@@ -10,6 +11,7 @@ class SourceClient implements ProductClient, ProductEventSource {
   @override
   Stream<ProductMap> get events => changes.stream;
   final calls = <String>[];
+  final removedUuids = <Object?>[];
   ProductMap? folderSelection;
   bool removeFails = false;
   bool cleanupFails = false;
@@ -39,6 +41,7 @@ class SourceClient implements ProductClient, ProductEventSource {
   @override
   Future<ProductMap> call(String method, [ProductMap args = const {}]) async {
     calls.add(method);
+    if (method == 'removeSource') removedUuids.add(args['uuid']);
     if (method == 'sources') {
       return {
         'items': rows,
@@ -86,6 +89,64 @@ void main() {
     } else {
       await tester.pumpAndSettle();
     }
+  }
+
+  for (final locale in ['en', 'zh-CN']) {
+    testWidgets(
+      'U09 adjacent Remove actions identify their own source $locale',
+      (tester) async {
+        final semantics = tester.ensureSemantics();
+        try {
+          client.rows
+            ..clear()
+            ..addAll([
+              for (final uuid in ['hundred-source', 'single-source'])
+                {
+                  'uuid': uuid,
+                  'name': uuid,
+                  'type': 'directory',
+                  'count': 1,
+                  'status': 'ready',
+                  'builtin': false,
+                },
+            ]);
+          await tester.binding.setSurfaceSize(const Size(960, 540));
+          addTearDown(() => tester.binding.setSurfaceSize(null));
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: AppTheme.dark(),
+              home: ProductSources(client: client, locale: locale),
+            ),
+          );
+          await tester.pumpAndSettle();
+          for (final uuid in ['hundred-source', 'single-source']) {
+            final action = find.bySemanticsIdentifier('source-remove-$uuid');
+            expect(action, findsOneWidget);
+            final node = tester.getSemantics(action);
+            final data = node.getSemanticsData();
+            expect(data.label, locale == 'en' ? 'Remove' : '移除');
+            expect(data.hasAction(ui.SemanticsAction.tap), isTrue);
+            final button = find.byKey(ValueKey('remove-$uuid'));
+            expect(node.rect.size, tester.getSize(button));
+            expect(node.rect.width, greaterThanOrEqualTo(48));
+            expect(node.rect.height, greaterThanOrEqualTo(48));
+            tester.binding.renderViews.first.owner!.semanticsOwner!
+                .performAction(node.id, ui.SemanticsAction.tap);
+            await tester.pumpAndSettle();
+            expect(
+              client.removedUuids,
+              hasLength(uuid == 'hundred-source' ? 0 : 1),
+            );
+            await tester.tap(find.text(locale == 'en' ? 'Confirm' : '确认'));
+            await tester.pumpAndSettle();
+            expect(client.removedUuids.last, uuid);
+          }
+          expect(client.removedUuids, ['hundred-source', 'single-source']);
+        } finally {
+          semantics.dispose();
+        }
+      },
+    );
   }
 
   testWidgets(

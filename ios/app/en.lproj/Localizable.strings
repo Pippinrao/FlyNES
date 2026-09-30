@@ -401,3 +401,4 @@
 "nearby.scan.expired" = "This room QR code has expired. Ask the host to refresh it, then scan again.";
 "nearby.invite.hotspotGuidance" = "No local network. Open Settings to enable a hotspot or join one, connect both devices, then refresh the QR code.";
 "nearby.action.returnToRoom" = "Return to room";
+"flutter.initialization_failed" = "The interface could not start. Close FlyNES and try again.";

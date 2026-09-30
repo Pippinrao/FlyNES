@@ -65,11 +65,13 @@
   },
   "head-nearby": {
     "status": "reviewed",
-    "reviewer": "g2_client_spec_review",
-    "reviewReference": "icon-label-review.json",
-    "sha256": "62905b03ae3dd5d8b2c2d484f958e00931cee77507d8ea5cab989ebd0d2d5b1a",
+    "reviewer": "ios_g2_contract_audit",
+    "reviewReference": "docs/flutter-migration/verification/2026-09-30-ios-migration.md#u08-返回房间金标修订",
+    "sha256": "f3064ab167ddfeaf33c86d8ee8fb4fc605d6622605e6ed5fec0f57ae1f1c1eda",
     "geometrySha256": "be7a28fe318756f493396d0aace33c335b3d90f6e7c6fbb49d0992110ff2d159",
-    "semanticsSha256": "f6bd26997a1d49395a34ce448a422518a7f82b884291c8633d7dc9712a6fc0c7"
+    "semanticsSha256": "3453557df7c1a769c12e650c84c7d433235409452e2738b8b8a10377174288dc",
+    "previousSha256": "62905b03ae3dd5d8b2c2d484f958e00931cee77507d8ea5cab989ebd0d2d5b1a",
+    "reason": "Approved U08: explicit cancel returns to the existing room; 48x48 geometry unchanged; independent actual/expected/diff review."
   },
   "hall-recent": {
     "status": "reviewed",

@@ -102,7 +102,7 @@ class _ProductHallState extends State<ProductHall> {
       final large = productUsesLargeText(context);
       final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
       return PopScope(
-        canPop: !searchOpen,
+        canPop: !searchOpen && c.purpose != 'nearby',
         onPopInvokedWithResult: (didPop, result) {
           if (!didPop && searchOpen) {
             if (_searchFocus.hasFocus &&
@@ -111,6 +111,8 @@ class _ProductHallState extends State<ProductHall> {
             } else {
               _closeSearch();
             }
+          } else if (!didPop && c.purpose == 'nearby') {
+            widget.onNearby();
           }
         },
         child: Scaffold(
@@ -148,8 +150,10 @@ class _ProductHallState extends State<ProductHall> {
                         widget.onSettings,
                       ),
                       _icon(
-                        Icons.wifi,
-                        s.text('Nearby', '附近联机'),
+                        c.purpose == 'nearby' ? Icons.arrow_back : Icons.wifi,
+                        c.purpose == 'nearby'
+                            ? s.text('Return to room', '返回房间')
+                            : s.text('Nearby', '附近联机'),
                         widget.onNearby,
                       ),
                     ],
@@ -195,26 +199,31 @@ class _ProductHallState extends State<ProductHall> {
                                 child: Row(
                                   children: [
                                     Expanded(
-                                      child: TextField(
-                                        key: const ValueKey('search-field'),
-                                        controller: _search,
-                                        focusNode: _searchFocus,
-                                        onChanged: c.search,
-                                        decoration: InputDecoration(
-                                          labelText: s.text(
-                                            'Search games',
-                                            '搜索游戏',
+                                      child: Semantics(
+                                        container: true,
+                                        child: TextField(
+                                          key: const ValueKey('search-field'),
+                                          controller: _search,
+                                          focusNode: _searchFocus,
+                                          onChanged: c.search,
+                                          decoration: InputDecoration(
+                                            labelText: s.text(
+                                              'Search games',
+                                              '搜索游戏',
+                                            ),
+                                            prefixIcon: const Icon(
+                                              Icons.search,
+                                            ),
+                                            suffixIcon: _icon(
+                                              Icons.clear,
+                                              s.text('Clear search', '清除搜索'),
+                                              () {
+                                                _search.clear();
+                                                c.search('', immediate: true);
+                                              },
+                                            ),
+                                            border: const OutlineInputBorder(),
                                           ),
-                                          prefixIcon: const Icon(Icons.search),
-                                          suffixIcon: _icon(
-                                            Icons.clear,
-                                            s.text('Clear search', '清除搜索'),
-                                            () {
-                                              _search.clear();
-                                              c.search('', immediate: true);
-                                            },
-                                          ),
-                                          border: const OutlineInputBorder(),
                                         ),
                                       ),
                                     ),

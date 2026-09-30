@@ -5,7 +5,7 @@ publish_to: none
 # This is an embedded module, not a separately versioned product.
 # Production hosts derive their version from the repository VERSION file.
 environment:
-  sdk: ^3.11.5
+  sdk: ^3.10.9
 
 dependencies:
   flutter:

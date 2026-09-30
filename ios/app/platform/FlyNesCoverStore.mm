@@ -99,6 +99,17 @@ NSString *cover_digest(NSString *canonicalId)
     return [NSFileManager.defaultManager fileExistsAtPath:[self pathForCanonicalId:canonicalId]];
 }
 
+- (NSDictionary<NSString *, id> *)referenceForCanonicalId:(NSString *)canonicalId
+{
+    if (canonicalId.length == 0) return @{@"coverPath":@"", @"coverRevision":@0};
+    NSString *path = [self pathForCanonicalId:canonicalId];
+    NSDictionary *attributes = [NSFileManager.defaultManager attributesOfItemAtPath:path error:nil];
+    if (![attributes[NSFileType] isEqual:NSFileTypeRegular] || [attributes[NSFileSize] unsignedLongLongValue] == 0)
+        return @{@"coverPath":@"", @"coverRevision":@0};
+    NSDate *modified = attributes[NSFileModificationDate];
+    return @{@"coverPath":path, @"coverRevision":@((int64_t)(modified.timeIntervalSince1970 * 1000000.0))};
+}
+
 - (nullable FlyNesCoverImage *)coverForCanonicalId:(NSString *)canonicalId
 {
     if (canonicalId.length == 0)

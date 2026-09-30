@@ -23,7 +23,11 @@ struct FlyNESApp: App {
                 } else if ProcessInfo.processInfo.arguments.contains("-flynes.test.nearby_role_connected") {
                     CatalogLibraryView(testStartInNearbyEntry: true)
                 } else {
+                    #if FLYNES_FLUTTER
+                    FlutterProductView().ignoresSafeArea()
+                    #else
                     CatalogLibraryView()
+                    #endif
                 }
             }
                 .environment(\.locale, localeTag == "system" ? .autoupdatingCurrent : Locale(identifier: localeTag))

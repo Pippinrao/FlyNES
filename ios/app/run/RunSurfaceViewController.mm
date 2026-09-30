@@ -1,5 +1,6 @@
 #import "RunSurfaceViewController.h"
 #import "BuiltinGames.h"
+#import "CatalogPresentation.h"
 
 #import "FlyNesAppBridge.h"
 #import "FlyNesRuntimeBridge.h"
@@ -65,6 +66,7 @@ NSString *pause_command_title(flynes::product::PauseCommand command)
     GamepadOverlayView *overlay_;
     UIButton *pauseButton_;
     UIView *pauseLayer_;
+    UIStackView *pauseStack_;
     UILabel *pauseTitle_;
     FlyNesRuntimeBridge *runtime_;
     FlyNesMetalRenderer *renderer_;
@@ -88,6 +90,8 @@ NSString *pause_command_title(flynes::product::PauseCommand command)
     NSTimer *nearbyStateTimer_;
     uint64_t nearbyPlaybackGeneration_;
     BOOL leavingNearbySession_;
+    NSString *productSessionID_;
+    NSUInteger productRomLoadCount_;
 }
 
 @synthesize gameTitle = _gameTitle;
@@ -101,6 +105,7 @@ NSString *pause_command_title(flynes::product::PauseCommand command)
 - (void)viewDidLoad
 {
     [super viewDidLoad];
+    productSessionID_ = NSUUID.UUID.UUIDString;
     nearbyPlaybackGeneration_ = FlyNesNearbyBridge.sharedInstance.playbackGeneration;
     self.view.backgroundColor = UIColor.blackColor;
     self.view.multipleTouchEnabled = YES;
@@ -138,7 +143,8 @@ NSString *pause_command_title(flynes::product::PauseCommand command)
     };
     overlay_.buttonsReleased = ^(uint32_t buttons, NSTimeInterval downTime, NSTimeInterval upTime) {
         RunSurfaceViewController *strong = weakSelf;
-        if (strong && strong->running_) strong->input_.release(buttons,downTime,upTime);
+        if (strong && strong->running_ && !strong.nearbySession)
+            strong->input_.release(buttons,downTime,upTime);
     };
     overlay_.buttonsCancelled = ^{ RunSurfaceViewController *strong = weakSelf;
         if (strong) strong->input_.clear(); };
@@ -186,8 +192,10 @@ NSString *pause_command_title(flynes::product::PauseCommand command)
             rom = [self bundledRomForCanonicalId:self.canonicalId];
         self.romData = rom;
         NSError *romError = nil;
-        if (rom.length > 0)
+        if (rom.length > 0) {
+            productRomLoadCount_ += 1;
             romReady_ = [runtime_ loadRom:rom error:&romError];
+        }
         if (romReady_) {
             [FlyNesAppBridge.sharedInstance markPlayedCanonicalID:self.canonicalId error:nil];
             [self restoreAutosave];
@@ -276,6 +284,7 @@ NSString *pause_command_title(flynes::product::PauseCommand command)
 - (void)reloadProductSettings
 {
     NSAssert(NSThread.isMainThread, @"Playback settings are main-thread owned");
+    [self refreshLocalizedPauseContent];
     NSDictionary<NSString *, id> *snapshot = FlyNesAppBridge.sharedInstance.settingsGet;
     NSNumber *direction = snapshot[@"direction_mode"];
     NSNumber *haptic = snapshot[@"haptic_level"];
@@ -304,6 +313,35 @@ NSString *pause_command_title(flynes::product::PauseCommand command)
     [self updatePlayback];
 }
 
+- (void)refreshLocalizedPauseContent
+{
+    pauseButton_.accessibilityLabel = FlyNesLocalizedString(@"run.pause");
+    NSDictionary<NSString *, NSString *> *fields = self.gameTitleFields;
+    if (fields == nil) {
+        FlyNesBuiltinGame *game = [FlyNesBuiltinGames.shared byCanonicalId:self.canonicalId];
+        if (game != nil) fields = @{@"titleEn":game.titleEn, @"titleZhHans":game.titleZhHans};
+    }
+    if ([fields[@"titleEn"] length] || [fields[@"titleZhHans"] length]) {
+        NSString *tag = [NSUserDefaults.standardUserDefaults stringForKey:@"FlyNesLocaleTag"] ?: @"system";
+        NSArray<NSString *> *preferences = [tag isEqualToString:@"system"] ? NSLocale.preferredLanguages : @[tag];
+        NSString *locale = [NSBundle preferredLocalizationsFromArray:@[@"en", @"zh-Hans"]
+                                                     forPreferences:preferences].firstObject ?: @"en";
+        self.gameTitle = [FlyNesCatalogPresentation titleForFields:fields locale:locale][@"primary"];
+    }
+    // Settings keeps this drawer and its paused runtime alive. Update its existing views.
+    for (UIView *view in pauseStack_.arrangedSubviews) {
+        if ([view isKindOfClass:UIButton.class]) {
+            UIButton *button = (UIButton *)view;
+            const auto command = static_cast<flynes::product::PauseCommand>(button.tag);
+            [button setTitle:(self.nearbySession && command == flynes::product::PauseCommand::GameCenter
+                ? FlyNesLocalizedString(@"nearby.action.returnToRoom") : pause_command_title(command))
+                forState:UIControlStateNormal];
+        } else if ([view.accessibilityIdentifier isEqualToString:@"pause_checkpoint_failed"]) {
+            ((UILabel *)view).text = FlyNesLocalizedString(@"pause.checkpoint_failed");
+        }
+    }
+}
+
 /** Bytes of a bundled game's ROM, resolved from the shared manifest. */
 - (nullable NSData *)bundledRomForCanonicalId:(nullable NSString *)canonicalId
 {
@@ -319,21 +357,10 @@ NSString *pause_command_title(flynes::product::PauseCommand command)
 
 - (NSURL *)autosaveURL
 {
-    if (self.canonicalId.length == 0)
-        return nil;
-    NSString *safe = [[self.canonicalId stringByReplacingOccurrencesOfString:@"/" withString:@"_"]
-        stringByReplacingOccurrencesOfString:@":"
-                                  withString:@"_"];
-    safe = [safe stringByReplacingOccurrencesOfString:@"\\" withString:@"_"];
-    if (safe.length == 0)
-        return nil;
     NSFileManager *files = NSFileManager.defaultManager;
     NSURL *documents =
         [files URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
-    if (documents.path == nil)
-        return nil;
-    return [[[documents URLByAppendingPathComponent:@"saves"] URLByAppendingPathComponent:safe]
-        URLByAppendingPathComponent:@"autosave.nst"];
+    return FlyNesLegacyAutosaveURL(documents, self.canonicalId);
 }
 
 - (BOOL)persistAutosave:(NSData *)blob
@@ -395,6 +422,30 @@ NSString *pause_command_title(flynes::product::PauseCommand command)
 
 - (void)applyOverlayButtons:(uint32_t)buttons
 {
+    if (self.nearbySession) {
+        FlyNesNearbyBridge *bridge = FlyNesNearbyBridge.sharedInstance;
+        if (!running_ || ![self isPlaybackAllowed] ||
+            nearbyPlaybackGeneration_ != bridge.playbackGeneration) {
+            buttons_ = 0;
+            input_.clear();
+            return;
+        }
+        buttons_ = buttons;
+        // UIKit can deliver a complete press/release between display ticks.
+        // The existing session FIFO owns those states; never wait for rendering
+        // to sample them. A rejected latest held state is retried by displayTick.
+        if (![bridge stepWithButtons:buttons_]) {
+            // The owner atomically rejects peer pause/end. Inspect only failure;
+            // successful UIKit edges must not pay for a snapshot projection.
+            NSDictionary *snapshot = bridge.snapshot;
+            if (flynes::ios::nearbyPlaybackAction([snapshot[@"state"] unsignedIntValue],
+                    [snapshot[@"paused"] boolValue]) != flynes::ios::NearbyPlaybackAction::Submit) {
+                buttons_ = 0;
+                input_.clear();
+            }
+        }
+        return;
+    }
     buttons_ = running_ ? buttons : 0;
     input_.update(buttons_);
 }
@@ -410,6 +461,8 @@ NSString *pause_command_title(flynes::product::PauseCommand command)
     overlay_.hidden = YES;
     pauseButton_.hidden = YES;
     [self saveAutosaveIfEnabled];
+    if ([NSProcessInfo.processInfo.arguments containsObject:@"-flynes.test.product_diagnostics"])
+        [NSNotificationCenter.defaultCenter postNotificationName:@"flynes.product.playbackDiagnostics" object:self];
 
     pauseLayer_ = [[UIView alloc] initWithFrame:self.view.bounds];
     pauseLayer_.translatesAutoresizingMaskIntoConstraints = NO;
@@ -429,6 +482,7 @@ NSString *pause_command_title(flynes::product::PauseCommand command)
     [pauseLayer_ addSubview:drawer];
 
     UIStackView *stack = [[UIStackView alloc] init];
+    pauseStack_ = stack;
     stack.translatesAutoresizingMaskIntoConstraints = NO;
     stack.axis = UILayoutConstraintAxisVertical;
     stack.spacing = 12.0;
@@ -545,6 +599,7 @@ NSString *pause_command_title(flynes::product::PauseCommand command)
     paused_ = keepPaused;
     [pauseLayer_ removeFromSuperview];
     pauseLayer_ = nil;
+    pauseStack_ = nil;
     pauseTitle_ = nil;
     drawerOpen_ = NO;
     overlay_.hidden = NO;
@@ -584,6 +639,10 @@ NSString *pause_command_title(flynes::product::PauseCommand command)
     if (self.nearbySession) {
         BOOL produced = NO;
         FlyNesNearbyBridge *bridge = FlyNesNearbyBridge.sharedInstance;
+        if (nearbyPlaybackGeneration_ != bridge.playbackGeneration) {
+            [self stopPlayback];
+            return;
+        }
         auto playbackAction = [&] {
             NSDictionary *snapshot = bridge.snapshot;
             return flynes::ios::nearbyPlaybackAction(
@@ -608,8 +667,9 @@ NSString *pause_command_title(flynes::product::PauseCommand command)
                 [self drawFrame];
                 return;
             }
-            const auto buttons = input_.peek(NSProcessInfo.processInfo.systemUptime);
-            if (![bridge stepWithButtons:buttons]) {
+            // Refresh only the actual held state. The offline minimum-tap latch
+            // must not reinsert a face press after its release entered the FIFO.
+            if (![bridge stepWithButtons:buttons_]) {
                 if (playbackAction() == flynes::ios::NearbyPlaybackAction::Exit)
                     leaveEndedSession();
                 else {
@@ -618,7 +678,6 @@ NSString *pause_command_title(flynes::product::PauseCommand command)
                 }
                 return;
             }
-            input_.commit();
             clock_.didProduceDuration(bridge.sourceFrameDuration);
             NSData *pcm = [bridge pullPCM];
             if (!audioInterrupted_) [audio_ enqueuePCM:pcm];
@@ -784,11 +843,21 @@ NSString *pause_command_title(flynes::product::PauseCommand command)
     if (self.nearbySession) return NO;
     NSAssert(NSThread.isMainThread, @"Playback reset is main-thread owned");
     [self stopPlayback];
+    if (self.romData.length > 0) productRomLoadCount_ += 1;
     romReady_ = self.romData.length > 0 && [runtime_ loadRom:self.romData error:error];
     // Android restarts the cover best-score gate per play session.
     coverSession_ = flynes::ios::CoverCaptureSession{};
     [self updatePlayback];
     return romReady_;
+}
+
+- (NSDictionary<NSString *, id> *)productDiagnostics
+{
+    uint64_t sequence = 0;
+    if (runtime_) [runtime_ copyLatestRgb565FrameWithSequence:&sequence width:nullptr height:nullptr];
+    return @{@"gameSessionId": productSessionID_ ?: @"", @"romLoadCount": @(productRomLoadCount_),
+             @"frameSequence": @(sequence), @"paused": @(paused_ || drawerOpen_),
+             @"running": @(running_)};
 }
 
 - (void)applicationWillResignActive:(NSNotification *)notification

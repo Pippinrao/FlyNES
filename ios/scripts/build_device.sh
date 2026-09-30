@@ -18,15 +18,21 @@ test -x "$cmake_bin"
 device_sdk="$(xcrun --sdk iphoneos --show-sdk-path)"
 sdk_version="$(xcrun --sdk iphoneos --show-sdk-version)"
 printf 'iphoneos sdk=%s (%s)\n' "$device_sdk" "$sdk_version"
+flutter_args=(-DFLYNES_IOS_FLUTTER=OFF)
+if [ "${FLYNES_NATIVE_BASELINE:-0}" != 1 ]; then
+  FLYNES_FLUTTER_MODE="$config" bash "$repo_dir/tools/flutter/Build-Ios.sh"
+  flutter_args=(-DFLYNES_IOS_FLUTTER=ON
+    "-DFLYNES_FLUTTER_FRAMEWORK_DIR=${FLYNES_FLUTTER_OUTPUT:-$repo_dir/.artifacts/flutter-ios/frameworks}/$config")
+fi
 
 "$cmake_bin" -S "$repo_dir/ios/app" -B "$build_dir" -G Xcode \
   -DCMAKE_SYSTEM_NAME=iOS \
   -DCMAKE_OSX_SYSROOT="$device_sdk" \
   -DCMAKE_OSX_ARCHITECTURES=arm64 \
   -DCMAKE_OSX_DEPLOYMENT_TARGET="${FLYNES_DEPLOYMENT_TARGET:-16.4}" \
-  -DFLYNES_IOS_SIGNING_TEAM="$signing_team"
+  -DFLYNES_IOS_SIGNING_TEAM="$signing_team" "${flutter_args[@]}"
 
-"$cmake_bin" --build "$build_dir" --config "$config" --target FlyNES --parallel 2
+"$cmake_bin" --build "$build_dir" --config "$config" --target FlyNES --parallel "${FLYNES_BUILD_JOBS:-2}"
 
 app_path="$build_dir/$config-iphoneos/FlyNES.app"
 test -f "$app_path/FlyNES"

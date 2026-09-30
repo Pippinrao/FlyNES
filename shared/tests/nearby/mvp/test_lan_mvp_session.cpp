@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <iterator>
 #include <map>
+#include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
@@ -28,6 +29,72 @@ int failures = 0;
 void check(bool good, const char* label) {
     if (!good) { std::cerr << "FAIL: " << label << '\n'; ++failures; }
 }
+
+// The diagnostic callback runs on the real session worker. Never call a session
+// API from it, and detach it before this collector leaves scope.
+struct AppliedInputTrace {
+    std::mutex mutex;
+    std::vector<std::string> lines;
+    std::vector<std::string> rejections;
+
+    static void capture(void* context, const char* line) {
+        auto& self = *static_cast<AppliedInputTrace*>(context);
+        std::lock_guard<std::mutex> lock(self.mutex);
+        if (std::strstr(line, "event=input_apply") != nullptr) self.lines.emplace_back(line);
+        if (std::strstr(line, "event=input_rejected") != nullptr) self.rejections.emplace_back(line);
+    }
+
+    bool pressed_then_released(bool p2) {
+        std::lock_guard<std::mutex> lock(mutex);
+        const std::string key = p2 ? " p2=" : " p1=";
+        bool pressed = false;
+        for (const auto& line : lines) {
+            const auto at = line.find(key);
+            if (at == std::string::npos) continue;
+            const auto buttons = std::stoul(line.substr(at + key.size()));
+            if (buttons == 8) pressed = true;
+            if (pressed && buttons == 0) return true;
+        }
+        return false;
+    }
+
+    bool contains_press(bool p2) {
+        std::lock_guard<std::mutex> lock(mutex);
+        const std::string key = p2 ? " p2=" : " p1=";
+        for (const auto& line : lines) {
+            const auto at = line.find(key);
+            if (at != std::string::npos &&
+                std::stoul(line.substr(at + key.size())) == 8) return true;
+        }
+        return false;
+    }
+
+    std::vector<std::uint32_t> states(bool p2) {
+        std::lock_guard<std::mutex> lock(mutex);
+        std::vector<std::uint32_t> result;
+        const std::string key = p2 ? " p2=" : " p1=";
+        for (const auto& line : lines) {
+            const auto at = line.find(key);
+            if (at != std::string::npos)
+                result.push_back(static_cast<std::uint32_t>(std::stoul(line.substr(at + key.size()))));
+        }
+        return result;
+    }
+
+    void print(const char* label) {
+        std::lock_guard<std::mutex> lock(mutex);
+        std::cout << label << " input_apply events=" << lines.size() << '\n';
+        for (const auto& line : lines) std::cout << line << '\n';
+        for (const auto& line : rejections) std::cout << line << '\n';
+    }
+
+    bool rejected_at_capacity() {
+        std::lock_guard<std::mutex> lock(mutex);
+        return rejections.size() == 2 &&
+            rejections[0].find("reason=state_queue_full buttons=16 queued=15") != std::string::npos &&
+            rejections[1].find("reason=state_queue_full buttons=17 queued=16") != std::string::npos;
+    }
+};
 
 std::string local_ipv4() {
     const char* specified = std::getenv("FLYNES_TEST_LAN_IPV4");
@@ -221,6 +288,9 @@ int main(int argc, char** argv) {
     fly_lan_mvp_set_diagnostic_sink(host, capture, &diagnostics);
     check(fly_lan_mvp_host(host, ip.c_str(), token.data()) == 1, "host begins listening");
     std::string qr = wait_invite(host);
+    // Detachment takes the session mutex: the writer has completed before the
+    // assertions read this setup-only string, and it cannot outlive the string.
+    fly_lan_mvp_set_diagnostic_sink(host, nullptr, nullptr);
     check(!qr.empty(), "reachable host publishes QR after real bind");
     check(diagnostics.find("event=listen_ready") != std::string::npos,
           "diagnostics identify real bound listener");
@@ -270,6 +340,166 @@ int main(int argc, char** argv) {
         (void)fly_lan_mvp_snapshot_read(guest, &b);
         check(std::memcmp(a.session_id, b.session_id, 16) == 0,
               "both peers share one session id");
+        if (mode == "--short-tap-p1" || mode == "--short-tap-p2" ||
+            mode == "--short-tap-pause-p1" || mode == "--short-tap-pause-p2" ||
+            mode == "--short-tap-pause-remote-p1" || mode == "--short-tap-pause-remote-p2" ||
+            mode == "--short-tap-switch-p1" || mode == "--short-tap-switch-p2" ||
+            mode == "--input-capacity-p1" || mode == "--input-capacity-p2") {
+            const bool p2 = mode.find("p2") != std::string::npos;
+            const bool pause_boundary = mode.find("pause") != std::string::npos;
+            const bool switch_boundary = mode.find("switch") != std::string::npos;
+            const bool capacity = mode.find("capacity") != std::string::npos;
+            auto* sender = p2 ? guest : host;
+            auto* peer = p2 ? host : guest;
+            AppliedInputTrace sender_trace, peer_trace;
+            fly_lan_mvp_set_diagnostic_sink(sender, AppliedInputTrace::capture, &sender_trace);
+            fly_lan_mvp_set_diagnostic_sink(peer, AppliedInputTrace::capture, &peer_trace);
+            const auto roms = read_distinct_roms();
+            check(roms.size() == 2, "short tap uses two readable real ROMs");
+            const auto start_round = [&](const std::vector<std::uint8_t>& rom) {
+                check(fly_lan_mvp_select_rom(host, rom.data(), rom.size()) == 1,
+                      "short tap host loads real ROM");
+                check(fly_lan_mvp_select_rom(guest, rom.data(), rom.size()) == 1,
+                      "short tap guest loads matching real ROM");
+                check(fly_lan_mvp_confirm(host) == 1 && fly_lan_mvp_confirm(guest) == 1,
+                      "short tap round confirmed by both owners");
+                check(wait_running(host, guest, 5000), "short tap round runs");
+            };
+            if (roms.size() == 2) {
+                start_round(roms[0]);
+                check(fly_lan_mvp_submit_input(sender, 0) == 1,
+                      "only sender supplies initial idle state");
+                const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(1);
+                do {
+                    (void)fly_lan_mvp_snapshot_read(sender, &a);
+                    if (a.completed_frames >= 10) break;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                } while (std::chrono::steady_clock::now() < deadline);
+                (void)fly_lan_mvp_snapshot_read(peer, &b);
+                check(a.completed_frames == 10 && b.completed_frames == 0,
+                      "real prediction window blocks sender at ten frames before peer submits");
+                const auto blocked_frame = a.completed_frames;
+                if (capacity) {
+                    fly_lan_mvp_input_v1 input{};
+                    input.struct_size = FLY_LAN_MVP_INPUT_V1_SIZE;
+                    input.version = FLY_LAN_MVP_INPUT_VERSION_1;
+                    input.capture_time_ns = 543210;
+                    for (std::uint32_t buttons = 1; buttons <= 15; ++buttons) {
+                        input.buttons = buttons;
+                        input.sequence = buttons * 100;
+                        check(fly_lan_mvp_submit_input_v1(sender, &input) == 1,
+                              "fifteen distinct full states fit before the reserved all-up slot");
+                        for (unsigned repeat = 0; repeat < 32; ++repeat) {
+                            ++input.sequence;
+                            check(fly_lan_mvp_submit_input_v1(sender, &input) == 1,
+                                  "duplicate held samples do not occupy transition capacity");
+                        }
+                    }
+                    input.buttons = 16;
+                    input.sequence = 9999;
+                    check(fly_lan_mvp_submit_input_v1(sender, &input) == 0,
+                          "full nonzero transition capacity rejects without consuming all-up slot");
+                    input.buttons = 0;
+                    input.sequence = 10000;
+                    check(fly_lan_mvp_submit_input_v1(sender, &input) == 1,
+                          "final all-up is accepted in reserved sixteenth slot");
+                    input.buttons = 17;
+                    input.sequence = 10001;
+                    input.capture_time_ns = 999999;
+                    check(fly_lan_mvp_submit_input_v1(sender, &input) == 0,
+                          "full queue rejects a new press without changing accepted release metadata");
+                } else {
+                    check(fly_lan_mvp_submit_input(sender, 8) == 1,
+                          "START press is accepted while sampling is blocked");
+                    std::this_thread::sleep_for(std::chrono::milliseconds(150));
+                    check(fly_lan_mvp_submit_input(sender, 0) == 1,
+                          "START release is accepted before next sample");
+                }
+                (void)fly_lan_mvp_snapshot_read(sender, &a);
+                check(a.completed_frames == blocked_frame,
+                      "press and release both precede the next sampled core frame");
+                std::cout << mode << " queued states while blocked; frames="
+                          << blocked_frame << " -> " << a.completed_frames << '\n';
+                if (pause_boundary) {
+                    auto* pauser = mode.find("remote") == std::string::npos ? sender : peer;
+                    check(fly_lan_mvp_set_paused(pauser, 1) == 1,
+                          "pause accepted with an unconsumed short tap");
+                    const auto until = std::chrono::steady_clock::now() + std::chrono::seconds(1);
+                    do {
+                        (void)fly_lan_mvp_snapshot_read(sender, &a);
+                        (void)fly_lan_mvp_snapshot_read(peer, &b);
+                        if (a.paused && b.paused) break;
+                        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                    } while (std::chrono::steady_clock::now() < until);
+                    check(a.paused && b.paused, "both owners observe the pause boundary");
+                    check(fly_lan_mvp_submit_input(sender, 8) == 0,
+                          "input while paused is rejected");
+                    check(fly_lan_mvp_resume_game(sender) == 1,
+                          "explicit continue resumes the original room");
+                    const auto resumed = std::chrono::steady_clock::now() + std::chrono::seconds(1);
+                    do {
+                        (void)fly_lan_mvp_snapshot_read(sender, &a);
+                        (void)fly_lan_mvp_snapshot_read(peer, &b);
+                        if (!a.paused && !b.paused) break;
+                        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                    } while (std::chrono::steady_clock::now() < resumed);
+                    check(!a.paused && !b.paused, "both owners acknowledge continue");
+                }
+                if (switch_boundary) {
+                    const auto session_id = std::vector<std::uint8_t>(a.session_id, a.session_id + 16);
+                    check(fly_lan_mvp_return_lobby(sender) == 1 && wait_pair(host, guest, 5000),
+                          "pending-input game returns to original connected lobby");
+                    start_round(roms[1]);
+                    (void)fly_lan_mvp_snapshot_read(sender, &a);
+                    check(std::equal(session_id.begin(), session_id.end(), a.session_id),
+                          "replacement ROM uses the same real connection");
+                }
+                if (pause_boundary || switch_boundary)
+                    check(fly_lan_mvp_submit_input(sender, 0) == 1,
+                          "resumed or replacement game receives fresh idle input");
+                check(fly_lan_mvp_submit_input(peer, 0) == 1,
+                      "peer idle input releases the real prediction barrier");
+                check(wait_completed(host, guest, 26, 1800),
+                      "both real cores advance beyond the blocked frame");
+                if (capacity) {
+                    check(sender_trace.rejected_at_capacity(),
+                          "capacity rejection reports both reserved and full queue boundaries");
+                    std::vector<std::uint32_t> expected;
+                    for (std::uint32_t buttons = 1; buttons <= 15; ++buttons) expected.push_back(buttons);
+                    expected.push_back(0);
+                    check(sender_trace.states(p2) == expected,
+                          "sender core applies all accepted full states once in order, then final release");
+                    const auto peer_states = peer_trace.states(p2);
+                    std::size_t next = 0;
+                    for (const auto buttons : peer_states)
+                        if (next < expected.size() && buttons == expected[next]) ++next;
+                    check(next == expected.size(),
+                          "peer core receives every accepted full state in order through real transport");
+                    std::vector<std::uint8_t> pixels(FLY_RUNTIME_RGB565_BYTES);
+                    fly_latest_frame_v1 frame{};
+                    frame.struct_size = FLY_LATEST_FRAME_V1_SIZE;
+                    frame.version = FLY_LATEST_FRAME_VERSION_1;
+                    check(fly_lan_mvp_copy_latest_frame(sender, pixels.data(), pixels.size(), &frame) == 1 &&
+                          frame.applied_input_sequence[p2 ? 1 : 0] == 10000 && frame.source_time_ns == 543210,
+                          "rejected input cannot replace the accepted final release sequence or capture time");
+                } else if (pause_boundary || switch_boundary) {
+                    check(!sender_trace.contains_press(p2) && !peer_trace.contains_press(p2),
+                          "pause or replacement game never applies the prior pending START");
+                } else {
+                    check(sender_trace.pressed_then_released(p2),
+                          "sender core applies accepted short START then a later zero release");
+                    check(peer_trace.pressed_then_released(p2),
+                          "peer core receives short START then a later zero release over real transport");
+                }
+            }
+            fly_lan_mvp_set_diagnostic_sink(sender, nullptr, nullptr);
+            fly_lan_mvp_set_diagnostic_sink(peer, nullptr, nullptr);
+            sender_trace.print("sender");
+            peer_trace.print("peer");
+            fly_lan_mvp_destroy(guest);
+            fly_lan_mvp_destroy(host);
+            return failures == 0 ? 0 : 1;
+        }
         if (mode == "--invalid-rom") {
             const std::array<std::uint8_t, 8> invalid{{0, 1, 2, 3, 4, 5, 6, 7}};
             check(fly_lan_mvp_select_rom(guest, invalid.data(), invalid.size()) == 0,
@@ -563,7 +793,21 @@ int main(int argc, char** argv) {
             (void)fly_lan_mvp_snapshot_read(guest, &b);
             check(a.completed_frames > 60 && b.completed_frames > 60,
                   "both runtimes progress independently past the digest boundary");
-            check(a.last_digest_frame == b.last_digest_frame &&
+            std::cout << "digest observation completed=" << a.completed_frames << '/' << b.completed_frames
+                      << " digest_frame=" << a.last_digest_frame << '/' << b.last_digest_frame
+                      << " state=" << a.state << '/' << b.state
+                      << " reason=" << a.reason << '/' << b.reason << '\n';
+            // completed_frames includes prediction. A digest is published only
+            // after remote confirmation, so compare an actually shared boundary.
+            const auto digest_until = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+            while ((a.last_digest_frame == 0 || a.last_digest_frame != b.last_digest_frame) &&
+                   a.state == FLY_LAN_MVP_RUNNING && b.state == FLY_LAN_MVP_RUNNING &&
+                   std::chrono::steady_clock::now() < digest_until) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                (void)fly_lan_mvp_snapshot_read(host, &a);
+                (void)fly_lan_mvp_snapshot_read(guest, &b);
+            }
+            check(a.last_digest_frame != 0 && a.last_digest_frame == b.last_digest_frame &&
                   std::memcmp(a.last_state_digest, b.last_state_digest, 32) == 0,
                   "periodic real-core state digests match");
 
