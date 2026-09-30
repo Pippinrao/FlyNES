@@ -18,6 +18,13 @@ public final class HistoryClock {
     public synchronized void saved() {
         savedMicros = micros;
     }
+    /** Capture while the core is quiescent; retain precision across resumed I/O. */
+    public synchronized long captureMicros() { return micros; }
+    public synchronized void savedAt(long capturedMicros) {
+        if(capturedMicros<savedMicros||capturedMicros>micros)
+            throw new IllegalArgumentException("Checkpoint is outside current history progress");
+        savedMicros=capturedMicros;
+    }
     public synchronized void restore(long playedMs) {
         micros = Math.max(0, playedMs) * 1000;
         savedMicros = micros;

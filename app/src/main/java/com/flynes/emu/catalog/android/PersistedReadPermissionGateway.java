@@ -39,11 +39,16 @@ public final class PersistedReadPermissionGateway implements ReadPermissionGatew
 
     @Override
     public boolean hasPersistedRead(String locator) {
-        Uri expected = Uri.parse(locator);
+        return persistedReadSnapshot().contains(locator);
+    }
+
+    /** Capture once on the catalog owner so one projection uses one permission observation. */
+    public java.util.Set<String> persistedReadSnapshot() {
+        java.util.Set<String> granted=new java.util.HashSet<>();
         for (UriPermission permission : resolver.getPersistedUriPermissions()) {
-            if (permission.isReadPermission() && expected.equals(permission.getUri())) return true;
+            if (permission.isReadPermission())granted.add(permission.getUri().toString());
         }
-        return false;
+        return java.util.Collections.unmodifiableSet(granted);
     }
 
     @Override

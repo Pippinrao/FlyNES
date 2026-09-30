@@ -139,6 +139,7 @@ class AggregationTests(unittest.TestCase):
 @unittest.skipIf(baseline is None, "collector not implemented yet")
 class CollectionTests(unittest.TestCase):
     def test_launch_exhausting_deadline_retains_am_time_and_missing_nulls(self):
+        test = self
         class Device:
             def call(self, *args, **kwargs):
                 if args == ("shell", "am", "force-stop", baseline.PACKAGE):
@@ -146,6 +147,7 @@ class CollectionTests(unittest.TestCase):
                 if args == ("shell", "date", "+%s.%N"):
                     return "1000.000000000"
                 if args[:3] == ("shell", "am", "start"):
+                    test.assertEqual(args[-3:], ("--ez", "controlled_native_baseline", "true"))
                     return "Status: ok\nTotalTime: 14900\n"
                 raise AssertionError(f"Unexpected device command: {args}")
         with TemporaryDirectory() as folder, patch.object(baseline.time, "monotonic", side_effect=[0, 15, 15]):

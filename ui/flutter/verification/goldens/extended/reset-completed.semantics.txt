@@ -1,0 +1,125 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 420.0, 600.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 420.0, 600.0)
+   │ textDirection: ltr
+   │
+   └─SemanticsNode#2
+     │ Rect.fromLTRB(0.0, 0.0, 420.0, 600.0)
+     │ sortKey: OrdinalSortKey#f84ce(order: 0.0)
+     │
+     └─SemanticsNode#3
+       │ Rect.fromLTRB(0.0, 0.0, 420.0, 600.0)
+       │ flags: scopesRoute
+       │
+       ├─SemanticsNode#11
+       │ │ Rect.fromLTRB(0.0, 0.0, 420.0, 56.0)
+       │ │
+       │ ├─SemanticsNode#13
+       │ │ │ Rect.fromLTRB(0.0, 0.0, 56.0, 56.0)
+       │ │ │ traversalParentIdentifier: _OverlayPortalState#6a39f
+       │ │ │
+       │ │ └─SemanticsNode#14
+       │ │     Rect.fromLTRB(0.0, 0.0, 56.0, 56.0)
+       │ │     actions: focus, tap
+       │ │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │ │     label: "Back"
+       │ │     textDirection: ltr
+       │ │
+       │ └─SemanticsNode#12
+       │     Rect.fromLTRB(72.0, 9.5, 179.5, 46.5)
+       │     flags: isHeader, namesRoute
+       │     label: "Settings"
+       │     textDirection: ltr
+       │
+       └─SemanticsNode#15
+         │ Rect.fromLTRB(0.0, 56.0, 420.0, 600.0)
+         │
+         └─SemanticsNode#24
+           │ Rect.fromLTRB(0.0, 0.0, 420.0, 544.0)
+           │ actions: scrollDown, scrollToOffset
+           │ flags: hasImplicitScrolling
+           │ scrollChildren: 6
+           │ scrollIndex: 0
+           │ scrollExtentMin: 0.0
+           │ scrollPosition: 80.0
+           │ scrollExtentMax: 80.0
+           │
+           ├─SemanticsNode#16
+           │   Rect.fromLTRB(16.0, 0.0, 404.0, 40.0)
+           │   tags: RenderViewport.twoPane
+           │   actions: focus, tap
+           │   flags: isButton, hasEnabledState, isEnabled, isFocusable,
+           │     hasSelectedState
+           │   label:
+           │     "Direction control
+           │     Fixed joystick"
+           │   textDirection: ltr
+           │   indexInParent: 0
+           │
+           ├─SemanticsNode#17
+           │   Rect.fromLTRB(16.0, 40.0, 404.0, 184.0)
+           │   tags: RenderViewport.twoPane
+           │   actions: focus, tap
+           │   flags: isButton, hasEnabledState, isEnabled, isFocusable,
+           │     hasSelectedState
+           │   label:
+           │     "Edit layout
+           │     Recommended layout"
+           │   textDirection: ltr
+           │   indexInParent: 1
+           │
+           ├─SemanticsNode#18
+           │   Rect.fromLTRB(16.0, 184.0, 404.0, 248.0)
+           │   tags: RenderViewport.twoPane
+           │   actions: focus, tap
+           │   flags: isButton, hasEnabledState, isEnabled, isFocusable,
+           │     hasSelectedState
+           │   label: "Preview haptics"
+           │   textDirection: ltr
+           │   indexInParent: 2
+           │
+           ├─SemanticsNode#19
+           │   Rect.fromLTRB(16.0, 248.0, 404.0, 352.0)
+           │   tags: RenderViewport.twoPane
+           │   actions: focus, tap
+           │   flags: isButton, hasEnabledState, isEnabled, isFocusable,
+           │     hasSelectedState
+           │   label:
+           │     "Haptic strength
+           │     Light"
+           │   textDirection: ltr
+           │   indexInParent: 3
+           │
+           ├─SemanticsNode#20
+           │ │ Rect.fromLTRB(16.0, 352.0, 404.0, 464.0)
+           │ │ tags: RenderViewport.twoPane
+           │ │ indexInParent: 4
+           │ │
+           │ └─SemanticsNode#21
+           │   │ merge boundary ⛔️
+           │   │ Rect.fromLTRB(0.0, 0.0, 388.0, 112.0)
+           │   │ actions: focus, tap
+           │   │ flags: isButton, hasEnabledState, isEnabled, isFocusable,
+           │   │   hasSelectedState
+           │   │ label: "Distinct A/B haptics"
+           │   │ textDirection: ltr
+           │   │
+           │   └─SemanticsNode#22
+           │       merged up ⬆️
+           │       Rect.fromLTRB(296.0, 32.0, 364.0, 80.0)
+           │       actions: tap
+           │       flags: hasEnabledState, isEnabled, hasToggledState, isToggled
+           │       label: "Distinct A/B haptics"
+           │       textDirection: ltr
+           │
+           └─SemanticsNode#23
+               Rect.fromLTRB(16.0, 464.0, 404.0, 528.0)
+               tags: RenderViewport.twoPane
+               actions: focus, tap
+               flags: isButton, hasEnabledState, isEnabled, isFocusable,
+                 hasSelectedState
+               label: "Reset controls"
+               textDirection: ltr
+               indexInParent: 5

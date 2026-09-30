@@ -1,0 +1,20 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 2880.0, 1620.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0) scaled by 3.0x
+   │ textDirection: ltr
+   │
+   └─SemanticsNode#2
+     │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+     │ sortKey: OrdinalSortKey#1ba97(order: 0.0)
+     │
+     └─SemanticsNode#3
+       │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+       │ flags: scopesRoute
+       │
+       └─SemanticsNode#5
+           Rect.fromLTRB(406.4, 260.0, 553.6, 280.0)
+           flags: isLiveRegion
+           label: "Reading game sources"
+           textDirection: ltr

@@ -3,6 +3,7 @@
 #include <jni.h>
 
 #include <flynes/flynes_app.h>
+#include <flynes/flynes_product.h>
 #include <flynes/flynes_session.h>
 #include "nearby/session_owner.hpp"
 
@@ -1167,6 +1168,48 @@ Java_com_flynes_emu_NearbySessionOwner_nativeWaitTestTimer(
                                   static_cast<std::uint64_t>(timeout_ms))
                ? 1
                : 0;
+}
+
+JNIEXPORT jlongArray JNICALL
+Java_com_flynes_emu_app_FlyNesApp_nativeProductWindow(JNIEnv* env,jclass,jlong snapshot,
+    jint category,jboolean multiplayer,jbyteArray query_bytes,jbyteArray selected_bytes,
+    jlong offset,jint limit,jobjectArray metadata,jintArray eligibility,jint profile)
+{
+    if (!snapshot || !metadata || !eligibility || offset < 0 || limit < 1 || limit > 128) return nullptr;
+    const auto count=env->GetArrayLength(eligibility);
+    if (count > FLY_PRODUCT_CAPABILITY_MAX || env->GetArrayLength(metadata)!=count*3) return nullptr;
+    std::vector<std::array<std::string,3>> strings(static_cast<size_t>(count));
+    std::vector<jint> flags(static_cast<size_t>(count));
+    env->GetIntArrayRegion(eligibility,0,count,flags.data());
+    std::vector<fly_product_capability> caps(static_cast<size_t>(count));
+    for(jsize i=0;i<count;i++) {
+        for(jsize j=0;j<3;j++) {
+            auto bytes=static_cast<jbyteArray>(env->GetObjectArrayElement(metadata,i*3+j));
+            strings[i][j]=copy_bytes(env,bytes); env->DeleteLocalRef(bytes);
+        }
+        caps[i]={strings[i][0].data(),static_cast<uint32_t>(strings[i][0].size()),
+            static_cast<uint32_t>(flags[i]),static_cast<uint32_t>(profile),
+            strings[i][1].data(),static_cast<uint32_t>(strings[i][1].size()),
+            strings[i][2].data(),static_cast<uint32_t>(strings[i][2].size())};
+    }
+    const auto query=copy_bytes(env,query_bytes), selected=copy_bytes(env,selected_bytes);
+    fly_product_catalog_query request{};
+    request.struct_size=FLY_PRODUCT_CATALOG_QUERY_V1_SIZE;request.version=FLY_PRODUCT_CATALOG_VERSION_1;
+    request.category=static_cast<uint32_t>(category);request.multiplayer_only=multiplayer?1u:0u;
+    request.query_utf8=query.data();request.query_utf8_length=static_cast<uint32_t>(query.size());
+    request.selected_canonical_id_utf8=selected.data();request.selected_canonical_id_utf8_length=static_cast<uint32_t>(selected.size());
+    request.offset=static_cast<uint64_t>(offset);request.limit=static_cast<uint32_t>(limit);
+    request.registry_profile_version=static_cast<uint32_t>(profile);request.capabilities=caps.data();
+    request.capability_count=static_cast<uint32_t>(caps.size());
+    fly_product_catalog_window window{};
+    window.struct_size=FLY_PRODUCT_CATALOG_WINDOW_V1_SIZE;window.version=FLY_PRODUCT_CATALOG_VERSION_1;
+    if(fly_product_catalog_project(reinterpret_cast<fly_catalog_snapshot_t*>(snapshot),&request,&window)!=FLY_RESULT_OK) return nullptr;
+    std::vector<jlong> values={static_cast<jlong>(window.catalog_generation),static_cast<jlong>(window.filtered_total),
+        static_cast<jlong>(window.offset),static_cast<jlong>(window.selected_snapshot_index)};
+    for(uint32_t i=0;i<window.count;i++) values.push_back(static_cast<jlong>(window.snapshot_indices[i]));
+    auto result=env->NewLongArray(static_cast<jsize>(values.size()));
+    if(result) env->SetLongArrayRegion(result,0,static_cast<jsize>(values.size()),values.data());
+    return result;
 }
 
 } // extern "C"

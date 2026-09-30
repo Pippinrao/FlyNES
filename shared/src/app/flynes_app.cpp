@@ -1,12 +1,15 @@
 #include <flynes/flynes_app.h>
+#include <flynes/flynes_product.h>
 #include <flynes/catalog/game_title_index.hpp>
 
 #include "app/catalog_persist.hpp"
 #include "app/catalog_state.hpp"
+#include "app/catalog_snapshot.hpp"
 #include "app/layout_persist.hpp"
 #include "app/settings_persist.hpp"
 #include "catalog/bounded_zip_archive.hpp"
 #include "flynes/product/control_layout.hpp"
+#include "flynes/product/game_center_state.hpp"
 #include "catalog/content_identity.hpp"
 #include "catalog/rom_payload_parser.hpp"
 #include "catalog/unsupported_payload_classifier.hpp"
@@ -28,6 +31,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include <unordered_map>
 
 #if defined(_WIN32)
 #include <io.h>
@@ -1273,15 +1277,6 @@ struct fly_app_handle final
     std::shared_ptr<AppState> state;
 };
 
-struct fly_catalog_snapshot_handle final
-{
-    explicit fly_catalog_snapshot_handle(std::shared_ptr<const CatalogData> catalog_data)
-        : catalog(std::move(catalog_data))
-    {
-    }
-    std::shared_ptr<const CatalogData> catalog;
-};
-
 struct fly_scan_handle final
 {
     fly_scan_handle(std::weak_ptr<AppState> app_state,
@@ -1711,6 +1706,34 @@ extern "C" fly_result fly_catalog_user_state_get(const fly_app_t* app,
     catch (...) { return FLY_RESULT_INTERNAL_ERROR; }
 }
 
+extern "C" fly_result fly_catalog_user_state_copy_if_absent(
+    fly_app_t* app, const char* legacy, std::uint32_t legacy_length,
+    const char* target, std::uint32_t target_length)
+{
+    if (app == nullptr) return FLY_RESULT_INVALID_ARGUMENT;
+    const auto legacy_valid = validate_canonical_id(legacy, legacy_length);
+    const auto target_valid = validate_canonical_id(target, target_length);
+    if (legacy_valid != FLY_RESULT_OK) return legacy_valid;
+    if (target_valid != FLY_RESULT_OK) return target_valid;
+    try {
+        std::lock_guard<std::mutex> lock(app->state->mutex);
+        const auto& current = *app->state->catalog;
+        const std::string_view legacy_id(legacy, legacy_length), target_id(target, target_length);
+        const auto* existing = find_user(current, legacy_id);
+        if (existing == nullptr || find_user(current, target_id) != nullptr) return FLY_RESULT_OK;
+        auto next = std::make_shared<CatalogData>(current);
+        auto& copied = upsert_user(*next, target_id);
+        copied.favorite = existing->favorite;
+        copied.favorite_revision = existing->favorite_revision;
+        copied.play_count = existing->play_count;
+        copied.last_played_sequence = existing->last_played_sequence;
+        if (!flynes::app::save_catalog(app->state->data_root, *next)) return FLY_RESULT_INTERNAL_ERROR;
+        app->state->catalog = std::move(next);
+        return FLY_RESULT_OK;
+    } catch (const std::bad_alloc&) { return FLY_RESULT_OUT_OF_MEMORY; }
+    catch (...) { return FLY_RESULT_INTERNAL_ERROR; }
+}
+
 extern "C" fly_result fly_catalog_favorite_set(fly_app_t* app,
                                                const char* canonical_id_utf8,
                                                std::uint32_t canonical_id_utf8_length,
@@ -2058,6 +2081,124 @@ extern "C" fly_result fly_control_layout_apply(fly_app_t* app,
             return FLY_RESULT_INTERNAL_ERROR;
         }
         app->state->control_layout_utf8 = std::move(normalized);
+        return FLY_RESULT_OK;
+    }
+    catch (const std::bad_alloc&) { return FLY_RESULT_OUT_OF_MEMORY; }
+    catch (...) { return FLY_RESULT_INTERNAL_ERROR; }
+}
+
+extern "C" fly_result fly_product_catalog_project(const fly_catalog_snapshot_t* snapshot,
+    const fly_product_catalog_query* query, fly_product_catalog_window* window_out)
+{
+    if (snapshot == nullptr || query == nullptr || window_out == nullptr || !snapshot->catalog)
+        return FLY_RESULT_INVALID_ARGUMENT;
+    if (query->struct_size < FLY_PRODUCT_CATALOG_QUERY_V1_SIZE
+        || window_out->struct_size < FLY_PRODUCT_CATALOG_WINDOW_V1_SIZE)
+        return FLY_RESULT_STRUCT_TOO_SMALL;
+    if (query->version != FLY_PRODUCT_CATALOG_VERSION_1
+        || window_out->version != FLY_PRODUCT_CATALOG_VERSION_1)
+        return FLY_RESULT_UNSUPPORTED_VERSION;
+    const auto valid_optional = [](const char* bytes, std::uint32_t length) {
+        return length == 0 || is_valid_utf8(bytes, length, FLY_PRODUCT_QUERY_MAX_UTF8_BYTES);
+    };
+    if (query->category > FLY_PRODUCT_CATEGORY_BUILTIN || query->multiplayer_only > 1
+        || query->limit == 0 || query->limit > FLY_PRODUCT_CATALOG_WINDOW_MAX
+        || query->capability_count > FLY_PRODUCT_CAPABILITY_MAX
+        || (query->capability_count != 0 && query->capabilities == nullptr)
+        || !valid_optional(query->query_utf8, query->query_utf8_length)
+        || !valid_optional(query->selected_canonical_id_utf8, query->selected_canonical_id_utf8_length))
+        return FLY_RESULT_INVALID_ARGUMENT;
+    for (std::uint32_t i = 0; i < query->capability_count; ++i)
+    {
+        const auto& capability = query->capabilities[i];
+        if (capability.eligibility > FLY_PRODUCT_MULTIPLAYER_UNKNOWN
+            || !is_valid_utf8(capability.canonical_id_utf8, capability.canonical_id_utf8_length,
+                              FLY_CANONICAL_ID_MAX_UTF8_BYTES)
+            || !valid_optional(capability.title_en_utf8, capability.title_en_utf8_length)
+            || !valid_optional(capability.title_zh_hans_utf8, capability.title_zh_hans_utf8_length))
+            return FLY_RESULT_INVALID_ARGUMENT;
+    }
+    try
+    {
+        using namespace flynes::product;
+        const auto string_input = [](const char* bytes, std::uint32_t length) {
+            return length == 0 ? std::string{} : std::string(bytes, length);
+        };
+        static const char* const categories[]{"RECENT", "FAVORITES", "ALL", "BUILTIN"};
+        auto state = GameCenterState::restore(categories[query->category],
+            string_input(query->query_utf8, query->query_utf8_length),
+            string_input(query->selected_canonical_id_utf8, query->selected_canonical_id_utf8_length),
+            query->multiplayer_only != 0);
+        MultiplayerCapabilityRegistry registry(query->registry_profile_version);
+        std::unordered_map<std::string, const fly_product_capability*> metadata;
+        for (std::uint32_t i = 0; i < query->capability_count; ++i)
+        {
+            const auto& capability = query->capabilities[i];
+            registry.put(string_input(capability.canonical_id_utf8, capability.canonical_id_utf8_length),
+                static_cast<MultiplayerEligibility>(capability.eligibility), capability.profile_version);
+            metadata[string_input(capability.canonical_id_utf8, capability.canonical_id_utf8_length)] = &capability;
+        }
+        const CatalogData& catalog = *snapshot->catalog;
+        std::unordered_map<std::string, const UserRecord*> users;
+        for (const auto& user : catalog.users) users.emplace(user.canonical_id, &user);
+        std::unordered_map<std::string, std::uint64_t> indices;
+        std::vector<GameCenterItem> items;
+        items.reserve(catalog.entries.size());
+        for (std::size_t i = 0; i < catalog.entries.size(); ++i)
+        {
+            const auto& entry = catalog.entries[i];
+            indices.emplace(entry.canonical_id, static_cast<std::uint64_t>(i));
+            const auto user = users.find(entry.canonical_id);
+            const auto sequence = user == users.end() ? 0 : user->second->last_played_sequence;
+            const auto title = flynes::catalog::game_title_index().lookup(
+                entry.payload_sha256.data(), entry.display_name);
+            GameCenterItem item{entry.canonical_id,
+                title.record ? title.record->title_en : entry.display_name,
+                title.record ? title.record->title_zh_hans : "",
+                entry.source.scope == FLY_SOURCE_SCOPE_BUILTIN,
+                user != users.end() && user->second->favorite,
+                static_cast<std::int64_t>(std::min(sequence,
+                    static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max()))),
+                entry.display_name, popularity_for_package(entry.source_relative_path, entry.display_name)};
+            if (title.record) item.search_aliases = title.record->aliases;
+            const auto facts = metadata.find(entry.canonical_id);
+            if (facts != metadata.end())
+            {
+                const auto& fact = *facts->second;
+                // Preserve title-index names as aliases when manifest display names override them.
+                item.search_aliases += "\n" + item.title_en + "\n" + item.title_zh_hans;
+                if (fact.title_en_utf8_length != 0)
+                    item.title_en = string_input(fact.title_en_utf8, fact.title_en_utf8_length);
+                if (fact.title_zh_hans_utf8_length != 0)
+                    item.title_zh_hans = string_input(fact.title_zh_hans_utf8, fact.title_zh_hans_utf8_length);
+            }
+            items.push_back(std::move(item));
+        }
+        const auto filtered = state.filtered(items, registry);
+        state.reconcile(filtered);
+        fly_product_catalog_window result{};
+        result.struct_size = window_out->struct_size;
+        result.version = window_out->version;
+        result.catalog_generation = catalog.generation;
+        result.filtered_total = static_cast<std::uint64_t>(filtered.size());
+        result.offset = query->offset;
+        result.selected_snapshot_index = FLY_PRODUCT_NO_SNAPSHOT_INDEX;
+        const std::string selected = state.selected_canonical_id();
+        if (!selected.empty())
+        {
+            if (selected.size() > FLY_CANONICAL_ID_MAX_UTF8_BYTES) return FLY_RESULT_INVALID_STATE;
+            std::memcpy(result.selected_canonical_id_utf8, selected.data(), selected.size());
+            result.selected_snapshot_index = indices.at(selected);
+        }
+        if (query->offset < result.filtered_total)
+        {
+            result.count = static_cast<std::uint32_t>(std::min(
+                static_cast<std::uint64_t>(query->limit), result.filtered_total - query->offset));
+            for (std::uint32_t i = 0; i < result.count; ++i)
+                result.snapshot_indices[i] = indices.at(filtered[static_cast<std::size_t>(query->offset + i)].canonical_id);
+        }
+        // Copy only the documented V1 prefix, including on ABIs with tail padding.
+        std::memcpy(window_out, &result, FLY_PRODUCT_CATALOG_WINDOW_V1_SIZE);
         return FLY_RESULT_OK;
     }
     catch (const std::bad_alloc&) { return FLY_RESULT_OUT_OF_MEMORY; }

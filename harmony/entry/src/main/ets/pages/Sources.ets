@@ -5,6 +5,7 @@ import nativeApp, { GameCenterRow, ScanJobStatusDto, SourceStatusDto } from 'lib
 import { HarmonyRomScan } from '../platform/HarmonyRomScan';
 import { HarmonySourceMap } from '../platform/HarmonySourceMap';
 import { debugSideloadUrls } from '../platform/DebugSideload';
+import { redirectProductRoute } from '../flutter/ProductRoutes';
 
 const SOURCE_SCOPE_USER_DIRECTORY: number = 2;
 const SOURCE_SCOPE_MANAGED_LIBRARY: number = 4;
@@ -34,6 +35,7 @@ struct Sources {
   @State private debugBuild: boolean = false;
 
   aboutToAppear(): void {
+    if (redirectProductRoute('sources')) return;
     void this.reload();
   }
 
@@ -362,7 +364,7 @@ struct Sources {
         return;
       }
       const romsDir = `${context.filesDir}/roms`;
-      const copied = this.romScan.importDocumentUris(uris, romsDir);
+      const copied = await this.romScan.importDocumentUris(uris, romsDir);
       if (copied === 0) {
         this.status = 'No compatible .nes/.zip files were imported';
         return;

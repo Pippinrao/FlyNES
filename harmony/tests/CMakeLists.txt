@@ -3,6 +3,20 @@ cmake_minimum_required(VERSION 3.22)
 project(flynes_harmony_contract_tests LANGUAGES CXX)
 
 include(CTest)
+find_package(Threads REQUIRED)
+add_executable(flynes_harmony_nearby_selection_test nearby_selection_test.cpp)
+target_include_directories(flynes_harmony_nearby_selection_test PRIVATE ../entry/src/main/cpp ../../shared/include)
+target_compile_features(flynes_harmony_nearby_selection_test PRIVATE cxx_std_17)
+target_link_libraries(flynes_harmony_nearby_selection_test PRIVATE Threads::Threads)
+add_test(NAME flynes_harmony_nearby_selection COMMAND flynes_harmony_nearby_selection_test)
+set_tests_properties(flynes_harmony_nearby_selection PROPERTIES TIMEOUT 10)
+
+add_executable(flynes_harmony_product_catalog_test product_catalog_projection_test.cpp
+    ../entry/src/main/cpp/product_catalog_projection.cpp)
+target_include_directories(flynes_harmony_product_catalog_test PRIVATE ../entry/src/main/cpp ../../shared/src)
+target_compile_features(flynes_harmony_product_catalog_test PRIVATE cxx_std_17)
+target_link_libraries(flynes_harmony_product_catalog_test PRIVATE flynes_app)
+add_test(NAME flynes_harmony_product_catalog COMMAND flynes_harmony_product_catalog_test)
 
 set(NES_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(FLYNES_BUILD_TESTS OFF CACHE BOOL "" FORCE)

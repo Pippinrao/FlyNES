@@ -32,6 +32,7 @@ import com.flynes.emu.catalog.scan.ScanLimits;
 import com.flynes.emu.catalog.source.DocumentLocatorShape;
 import com.flynes.emu.catalog.source.SourceEnumerator;
 import com.flynes.emu.catalog.source.SourceRegistry;
+import com.flynes.emu.catalog.source.SourceScanOperations;
 import com.flynes.emu.settings.ControlLayoutRepository;
 import com.flynes.emu.settings.DualSettingsStore;
 import com.flynes.emu.settings.NativeSettingsStore;
@@ -96,6 +97,14 @@ public final class AndroidCatalogRuntime implements AutoCloseable {
     private final AtomicInteger externalScanCount = new AtomicInteger();
     private final AtomicInteger bulkSnapshotCount = new AtomicInteger();
     private Startup startup;
+    private final com.flynes.emu.catalog.NativeReadyObservation nativeReadyObservation = new com.flynes.emu.catalog.NativeReadyObservation();
+    public com.flynes.emu.catalog.NativeReadyObservation.Ready nativeReadyObservation() { return nativeReadyObservation.snapshot(); }
+    private final SourceScanOperations scanOperations=new SourceScanOperations();
+    public record ProductSource(String id,String uuid,RomSource source,int count) {}
+    private volatile List<ProductSource> productSources=java.util.Collections.emptyList();
+    public List<ProductSource> productSourcesSnapshot(){return productSources;}
+    public SourceScanOperations scanOperations(){return scanOperations;}
+    public record ScanStarted(String operationId,Future<SourceScanResult> completion) {}
 
     interface NativeAppFactory {
         FlyNesApp open(File dataRoot, File cacheRoot);
@@ -173,8 +182,12 @@ public final class AndroidCatalogRuntime implements AutoCloseable {
                     UUID_PREFS, Context.MODE_PRIVATE);
             uuidMap = new AndroidUuidSafMap(
                     key -> uuidPrefs.getString(key, null),
-                    (key, value) -> uuidPrefs.edit().putString(key, value).commit(),
-                    key -> uuidPrefs.edit().remove(key).commit());
+                    (writes, removals) -> {
+                        SharedPreferences.Editor edit = uuidPrefs.edit();
+                        for (String key : removals) edit.remove(key);
+                        for (var entry : writes.entrySet()) edit.putString(entry.getKey(), entry.getValue());
+                        return edit.commit();
+                    });
             SharedPreferences logPrefs = this.context.getSharedPreferences(
                     MIGRATION_PREFS, Context.MODE_PRIVATE);
             migrationLog = new AndroidRetryableMigrationLog(
@@ -276,9 +289,15 @@ public final class AndroidCatalogRuntime implements AutoCloseable {
                     BootstrapResult result = nativeCatalog
                             ? bootstrapNative(nativeSnapshot, nativeStatus)
                             : bootstrapLegacy();
+                    publishProductSources();
                     if (nativeStatus != CacheStatus.HIT || !nativeCatalog) {
                         GameCenterStartupTrace.event("CATALOG_PROJECTION_AVAILABLE",
                                 "count=" + gameCenterSnapshot.rows().size() + " source=native");
+                    }
+                    if (nativeReadyObservation.completed(gameCenterSnapshot.nativeGeneration(), android.os.Process.myPid(), android.os.SystemClock.elapsedRealtime())) {
+                        var ready = nativeReadyObservation.snapshot();
+                        GameCenterStartupTrace.event("NATIVE_OWNER_READY", "status=OK pid=" + ready.pid()
+                                + " generation=" + ready.generation() + " completedElapsedRealtimeMs=" + ready.elapsedRealtimeMs());
                     }
                     nativeReady.complete(result);
                 } catch (Throwable failure) {
@@ -341,6 +360,58 @@ public final class AndroidCatalogRuntime implements AutoCloseable {
         });
     }
 
+    /** Product identity is the persisted native UUID, independent of a regranted URI. */
+    public String productSourceUuid(String sourceId) {
+        var source=repository.state().sources().get(sourceId);
+        if(source==null)throw new IllegalArgumentException("unknown source");
+        if(source.source().type()==RomSource.Type.BUILTIN)return "builtin";
+        byte[] uuid=uuidMap.uuidForLocator(source.source().uri());
+        if(uuid==null)throw new IllegalStateException("source identity unavailable");
+        return AndroidUuidSafMap.toHex(uuid);
+    }
+    public String productSourceId(String uuid) {
+        for(var source:repository.state().sources().values())if(productSourceUuid(source.source().id()).equals(uuid))return source.source().id();
+        throw new IllegalArgumentException("unknown source");
+    }
+    public Future<RomSource> addOrReauthorizeProductSource(String locator,int flags,String uuid) {
+        if(uuid==null||uuid.isEmpty())return addOrReauthorizeTree(locator,flags);
+        start();
+        return submit(()->{
+            String id=productSourceId(uuid);var old=repository.state().sources().get(id).source();
+            if(old.type()==RomSource.Type.BUILTIN)throw new IllegalArgumentException("builtin source");
+            byte[] identity=AndroidUuidSafMap.parseHex(uuid);
+            byte[] assigned=uuidMap.uuidForLocator(locator);
+            if(assigned!=null&&!java.util.Arrays.equals(assigned,identity))throw new IllegalArgumentException("source already registered");
+            CatalogState previousState = repository.state();
+            GameCenterSnapshot previousSnapshot = gameCenterSnapshot;
+            long previousEpoch = sourceEpoch();
+            ProductSourceTransactions.regrant(uuidMap, locators, permissions, identity, locator, flags,
+                    new ProductSourceTransactions.Projection() {
+                        @Override public void publish() throws Exception {
+                            incrementSourceEpoch();
+                            rebuildProjectionAndCache();
+                        }
+                        @Override public void restore() throws Exception {
+                            var restored = repository.loadProjection(previousState);
+                            gameCenterSnapshot = previousSnapshot;
+                            publishProductSources();
+                            if (restored.status() != CatalogRepository.LoadStatus.LOADED)
+                                throw new IOException("source_projection_restore_failed");
+                            Exception failure = null;
+                            if (!projectionPreferences.edit().putLong(SOURCE_EPOCH_KEY, previousEpoch).commit())
+                                failure = new IOException("source_epoch_restore_failed");
+                            try { writeSnapshotCaches(previousSnapshot); }
+                            catch (Exception cacheFailure) {
+                                if (failure == null) failure = cacheFailure;
+                                else failure.addSuppressed(cacheFailure);
+                            }
+                            if (failure != null) throw failure;
+                        }
+                    });
+            return repository.state().sources().get(productSourceId(uuid)).source();
+        });
+    }
+
     public Future<Void> removeSource(String sourceId) {
         if (nativeCatalog) start();
         return submit(() -> {
@@ -348,16 +419,15 @@ public final class AndroidCatalogRuntime implements AutoCloseable {
                 SourceCatalogState existing = repository.state().sources().get(sourceId);
                 if (existing != null && existing.source().type() == RomSource.Type.SAF_TREE) {
                     byte[] uuid = uuidMap.uuidForLocator(existing.source().uri());
-                    if (uuid != null) {
-                        int begun = nativeApp.scanBegin(
-                                uuid, FlyCatalogCommands.SOURCE_SCOPE_USER_DIRECTORY);
-                        if (begun == FlyCatalogCommands.OK) {
-                            nativeApp.scanCommit(FlyCatalogCommands.SCAN_FULL);
-                        } else {
-                            nativeApp.scanAbort();
-                        }
+                    if (uuid == null) throw new ProductSourceTransactions.Failure("source_write_failed", null);
+                    ProductSourceTransactions.remove(nativeApp, uuid, () -> {
                         uuidMap.remove(uuid);
-                    }
+                        sources.remove(sourceId);
+                    }, () -> {
+                        try { incrementSourceEpoch(); }
+                        finally { rebuildProjectionAndCache(); }
+                    });
+                    return null;
                 }
             }
             sources.remove(sourceId);
@@ -370,12 +440,23 @@ public final class AndroidCatalogRuntime implements AutoCloseable {
     }
 
     public Future<SourceScanResult> scanSource(String sourceId) {
+        return startSourceScan(sourceId).completion();
+    }
+    public ScanStarted startSourceScan(String sourceId) {
+        return startSourceScan(sourceId,this::scanSourceOnCatalogThread);
+    }
+    @FunctionalInterface interface ScanAction {
+        SourceScanResult run(String sourceId,SourceScanOperations.Operation operation) throws Exception;
+    }
+    ScanStarted startSourceScan(String sourceId,ScanAction scan) {
         if (nativeCatalog) start();
-        return submit(() -> {
-            SourceScanResult result = scanSourceOnCatalogThread(sourceId);
+        var operation=scanOperations.begin(sourceId);
+        CompletableFuture<SourceScanResult> completion=new CompletableFuture<>();
+        try {executor.execute(()->{try {
+            operation.checkpoint();
+            SourceScanResult result = scan.run(sourceId,operation);
             if (nativeCatalog) {
-                incrementSourceEpoch();
-                rebuildProjectionAndCache();
+                reconcileCommittedScan(this::incrementSourceEpoch,this::rebuildProjectionAndCache);
                 SourceCatalogState projected = repository.state().sources().get(sourceId);
                 if (projected != null) {
                     ArrayList<PhysicalPackage> indexedPackages = new ArrayList<>();
@@ -390,8 +471,34 @@ public final class AndroidCatalogRuntime implements AutoCloseable {
                             result.issues(), result.candidateCount());
                 }
             }
-            return result;
-        });
+            String phase=result.completeness()==SourceScanResult.Completeness.FATAL?"failed":
+                    result.completeness()==SourceScanResult.Completeness.PARTIAL
+                    ||result.packageOutcomes().stream().anyMatch(p->p.status()==PackageOutcome.Status.ERROR)
+                    ||!result.issues().isEmpty()?"partial":"completed";
+            operation.finish(phase,phase.equals("completed")?"":phase.equals("partial")?"scan_partial":"scan_failed");
+            completion.complete(result);
+        }catch(java.util.concurrent.CancellationException|android.os.OperationCanceledException cancelled){
+            operation.finish("cancelled","");completion.completeExceptionally(new java.util.concurrent.CancellationException());
+        }catch(Exception failure){
+            operation.finish("failed",failure instanceof ProductSourceTransactions.Failure f?f.code():"scan_failed");
+            completion.completeExceptionally(failure);
+        }});}catch(java.util.concurrent.RejectedExecutionException unavailable){
+            operation.finish("failed","native_unavailable");completion.completeExceptionally(unavailable);
+        }
+        return new ScanStarted(operation.id(),completion);
+    }
+    static void reconcileCommittedScan(ProductSourceTransactions.Action epoch,
+            ProductSourceTransactions.Action publish) throws Exception {
+        ProductSourceTransactions.Failure failure=null;
+        try {epoch.run();}
+        catch(Exception cause){failure=new ProductSourceTransactions.Failure("scan_committed_refresh_failed",cause);}
+        // A native commit cannot be undone by preferences/cache failure. Always publish its rows.
+        try {publish.run();}
+        catch(Exception cause){
+            if(failure==null)failure=new ProductSourceTransactions.Failure("scan_committed_refresh_failed",cause);
+            else failure.addSuppressed(cause);
+        }
+        if(failure!=null)throw failure;
     }
 
     public Future<Boolean> setFavorite(String canonicalId, boolean favorite) {
@@ -421,6 +528,14 @@ public final class AndroidCatalogRuntime implements AutoCloseable {
     }
 
     public CatalogState stateSnapshot() { return repository.state(); }
+    public record ProductCapture(FlyNesApp.ProductSnapshot nativeSnapshot, GameCenterSnapshot rows) { }
+    public Future<ProductCapture> captureProduct() {
+        start();
+        return submit(() -> new ProductCapture(nativeApp.productSnapshot(), gameCenterSnapshot));
+    }
+    public Future<Void> releaseProduct(ProductCapture capture) {
+        return submit(() -> { capture.nativeSnapshot().close(); return null; });
+    }
     public GameCatalog gameCatalog() { return catalog; }
 
     public AndroidCatalogStreamOpener streamOpener() {
@@ -471,6 +586,10 @@ public final class AndroidCatalogRuntime implements AutoCloseable {
             if (load.status() != CatalogRepository.LoadStatus.LOADED) {
                 scanBuiltinNative();
                 load = rebuildProjectionAndCache();
+            } else {
+                // Early projection intentionally omits variant facts; product snapshots must
+                // borrow the fully decoded, generation-matched state after native hydration.
+                gameCenterSnapshot = cached;
             }
         } else if (action == CatalogStartupPolicy.NativeAction.REBUILD_PROJECTION) {
             load = rebuildProjectionAndCache();
@@ -620,16 +739,19 @@ public final class AndroidCatalogRuntime implements AutoCloseable {
         }
         CatalogState projected = NativeCatalogProjector.project(
                 entries, snapshot.sources(), users, sequence, uuidMap, locators,
-                AndroidDocumentLocators::documentUriFor, builtinGames);
+                AndroidDocumentLocators::documentUriFor, builtinGames,permissions.persistedReadSnapshot()::contains);
         CatalogRepository.LoadResult loaded = repository.loadProjection(projected);
         if (loaded.status() != CatalogRepository.LoadStatus.LOADED) {
             throw new IOException("native catalog projection was rejected");
         }
+        publishProductSources();
         GameCenterSnapshot next = new GameCenterSnapshotProjector().project(
                 snapshot.generation(), builtinManifestSha256, sourceEpoch(), projected);
         if (writeCache) {
-            writeSnapshotCaches(next);
             gameCenterSnapshot = next;
+            // Native is authoritative even if an optional startup cache cannot
+            // be persisted. Never pair its new generation with old UI rows.
+            writeSnapshotCaches(next);
         }
         return loaded;
     }
@@ -639,6 +761,23 @@ public final class AndroidCatalogRuntime implements AutoCloseable {
                 nativeGeneration, builtinManifestSha256, sourceEpoch(), repository.state());
         writeSnapshotCaches(next);
         gameCenterSnapshot = next;
+        publishProductSources();
+    }
+    private void publishProductSources() {
+        ArrayList<ProductSource> rows=new ArrayList<>();
+        for(var state:repository.state().sources().values()) {
+            RomSource source=state.source();
+            byte[] uuid=source.type()==RomSource.Type.BUILTIN?null:uuidMap.uuidForLocator(source.uri());
+            if(source.type()!=RomSource.Type.BUILTIN&&uuid==null)continue;
+            rows.add(new ProductSource(source.id(),uuid==null?"builtin":AndroidUuidSafMap.toHex(uuid),source,productGameCount(state)));
+        }
+        productSources=java.util.Collections.unmodifiableList(rows);
+    }
+    public static int productGameCount(SourceCatalogState source){
+        HashSet<String> canonical=new HashSet<>();
+        for(var item:source.packages().values())for(var variant:item.physicalPackage().variants())
+            canonical.add(variant.canonicalGame().id());
+        return canonical.size();
     }
 
     private LegacyLibraryMigrator.Result migrateLegacyIfEligible(boolean newStoreAbsent)
@@ -675,16 +814,21 @@ public final class AndroidCatalogRuntime implements AutoCloseable {
                 repository, new AndroidLegacyMigrationMarker(context), newStoreAbsent);
     }
 
-    private SourceScanResult scanSourceOnCatalogThread(String sourceId) throws Exception {
+    private SourceScanResult scanSourceOnCatalogThread(String sourceId,SourceScanOperations.Operation operation) throws Exception {
+        operation.enumerating();
+        android.os.CancellationSignal signal=new android.os.CancellationSignal();
+        operation.onCancel(()->CompletableFuture.runAsync(signal::cancel));
         sources.verifyPersistedPermissions();
         SourceCatalogState current = repository.state().sources().get(sourceId);
         if (current == null) throw new IllegalArgumentException("unknown source ID");
         RomSource source = current.source();
         SourceEnumerator.Result enumeration = new SourceEnumerator(16, 20_000).enumerate(
                 source, new AndroidDocumentTreeGateway(
-                        context.getContentResolver(), source.uri()));
+                        context.getContentResolver(), source.uri(),signal),operation::checkpoint);
+        operation.checkpoint();
+        operation.ingesting(enumeration.candidateCount());
         if (nativeCatalog) {
-            return scanSourceNative(source, current, enumeration);
+            return scanSourceNative(source, current, enumeration,operation,signal);
         }
         ScanResult scanned = scanner.scan(source, enumeration.candidates());
         ArrayList<ScanIssue> issues = new ArrayList<>(scanned.issues());
@@ -696,12 +840,14 @@ public final class AndroidCatalogRuntime implements AutoCloseable {
         SourceScanResult result = SourceScanResult.from(
                 source, repository.state().revision(), Math.addExact(current.lastScanToken(), 1),
                 completeness, combined, enumeration.candidateCount());
+        operation.committing();
         repository.commitScan(result);
         return result;
     }
 
     private SourceScanResult scanSourceNative(
-            RomSource source, SourceCatalogState current, SourceEnumerator.Result enumeration)
+            RomSource source, SourceCatalogState current, SourceEnumerator.Result enumeration,
+            SourceScanOperations.Operation operation,android.os.CancellationSignal signal)
             throws Exception {
         externalScanCount.incrementAndGet();
         byte[] uuid = uuidMap.uuidForLocator(source.uri());
@@ -709,21 +855,20 @@ public final class AndroidCatalogRuntime implements AutoCloseable {
             uuid = randomUuid();
             uuidMap.put(uuid, source.uri());
         }
-        int begun = nativeApp.scanBegin(uuid, FlyCatalogCommands.SOURCE_SCOPE_USER_DIRECTORY);
-        android.util.Log.i("FlyNesSources", "scanBegin " + source.uri() + " -> " + begun
-                + " candidates=" + enumeration.candidates().size());
-        if (begun != FlyCatalogCommands.OK) {
-            nativeApp.scanAbort();
-            throw new IOException("fly_scan_begin failed: " + begun);
-        }
+        byte[] identity=uuid;
+        var previousLocators=locators.snapshot();
         HashSet<String> usedNames = new HashSet<>();
         ArrayList<PackageOutcome> outcomes = new ArrayList<>();
-        try {
+        int completeness = enumeration.completeness() == SourceEnumerator.Completeness.FATAL
+                ? FlyCatalogCommands.SCAN_FATAL : FlyCatalogCommands.SCAN_FULL;
+        try (var transaction=new SourceScanTransaction(nativeApp,operation,uuid,
+                ()->locators.restoreSource(identity,previousLocators))) {
             for (PackageCandidate candidate : enumeration.candidates()) {
+                operation.checkpoint();
                 String relative = sourceRelative(candidate, source.uri(), usedNames);
                 locators.put(uuid, relative, candidate.contentLocator());
                 try (ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(
-                        Uri.parse(candidate.contentLocator()), "r")) {
+                        Uri.parse(candidate.contentLocator()), "r",signal)) {
                     if (pfd == null) throw new IOException("provider returned no fd");
                     int[] outcome = new int[3];
                     int added = nativeApp.scanAddFile(relative, fileName(relative), pfd.getFd(), null, outcome);
@@ -746,17 +891,9 @@ public final class AndroidCatalogRuntime implements AutoCloseable {
                                 + relative + " code=" + added);
                     }
                 }
+                operation.advanced();
             }
-        } catch (Exception failure) {
-            nativeApp.scanAbort();
-            throw failure;
-        }
-        int completeness = enumeration.completeness() == SourceEnumerator.Completeness.FATAL
-                ? FlyCatalogCommands.SCAN_FATAL : FlyCatalogCommands.SCAN_FULL;
-        int committed = nativeApp.scanCommit(completeness);
-        android.util.Log.i("FlyNesSources", "scanCommit " + source.uri() + " -> " + committed);
-        if (committed != FlyCatalogCommands.OK && committed != FlyCatalogCommands.CONFLICT) {
-            throw new IOException("fly_scan_commit failed: " + committed);
+            transaction.commit(completeness);
         }
         ArrayList<PhysicalPackage> packages = new ArrayList<>();
         SourceCatalogState refreshed = repository.state().sources().get(source.id());

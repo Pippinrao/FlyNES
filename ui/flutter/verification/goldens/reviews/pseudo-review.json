@@ -1,0 +1,1236 @@
+{
+  "schemaVersion": 1,
+  "reviewType": "independent_spec_quality_visual_review",
+  "manifestSha256": "28db4024481e3e96613a22c5bd6135a2d1de1814f5ee8a668702ee4bda58bd62",
+  "reviewedUtc": "2026-09-29T19:42:34.597878+00:00",
+  "total": 18,
+  "reviewed": 18,
+  "needsfix": 0,
+  "productionIntegrationStatus": "reviewed_by_source_and_adapter_shaped_test",
+  "scope": "All 18 pseudo PNGs individually opened, 9 pages at 800x360 with safe insets and scales 100/200; code inspected, no tests/builds/devices/golden promotion.",
+  "issues": [
+    {
+      "id": "PSEUDO01",
+      "priority": "P2",
+      "kind": "native_integration",
+      "summary": "Real native bootstrap resolves system to en-XA; ProductApp treats this as explicit English and disables pseudolocalization.",
+      "paths": [
+        "app/src/main/java/com/flynes/emu/ProductBridge.java:183",
+        "harmony/entry/src/main/ets/flutter/ProductChannelHandler.ets:139",
+        "ui/flutter/lib/app/product_app.dart:275"
+      ],
+      "detail": "The renderer requires preference system plus Localizations en-XA. Native bootstrap sends the resolved tag; ProductController consumes it unchanged and ProductApp selects Locale(en) for non-zh non-system tags. New tests return system and capture uses Localizations.override, so they do not exercise native bootstrap semantics. Preserve/consume the raw preference separately and add an adapter-shaped bootstrap test.",
+      "status": "resolved",
+      "resolvedUtc": "2026-09-29T19:42:34.597878+00:00",
+      "resolution": "Both native bootstraps now expose raw localePreference; ProductController prefers it over resolved locale. Adapter-shaped en-XA/system regression covers the prior mismatch. Explicit locales and kDebugMode-only pseudo gating remain intact."
+    },
+    {
+      "id": "PSEUDO02",
+      "priority": "P2",
+      "kind": "clipped_title_and_target",
+      "states": [
+        "hall-800x360-en-XA-200"
+      ],
+      "summary": "200% wrapped hall toolbar clips the selected title and favorite hit area.",
+      "paths": [
+        "ui/flutter/lib/features/product/product_hall.dart:438"
+      ],
+      "detail": "Selected title geometry is 136x112 at y160, but scroll viewport ends y232 (72px). PNG shows a partial second line. Favorite full geometry is 48x48 but visible semantic rect is 48x40. A two-line readable title and full 48px action must fit beside the 88px Continue button; exported full box checks alone do not detect this.",
+      "status": "resolved",
+      "resolvedUtc": "2026-09-29T19:42:34.597878+00:00",
+      "resolution": "Reopened corrected 200% hall PNG: both title lines fit, Favorite visible semantic height is 48 px, primary remains 88 px. In short large-text layouts categories use a horizontal strip with fixed tools; all four category controls remain in the scrollable strip. This is an acceptable compact-layout adaptation."
+    }
+  ],
+  "limits": [
+    "No real OS en-XA activation evidence; capture explicitly overrides Localizations.",
+    "Search uses simulated IME insets, not system keyboard pixels.",
+    "Static captures do not prove every off-screen action can be reached; inspected vertical/horizontal scrolling structure and exported semantic actions.",
+    "Release debug-gating verified by source inspection, not release execution."
+  ],
+  "entries": {
+    "hall-800x360-en-XA-100": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "reviewedUtc": "2026-09-29T19:42:34.597878+00:00",
+      "ux": [
+        "U02",
+        "U26"
+      ],
+      "expectedText": [
+        "[Cóntínúé ~~~]"
+      ],
+      "expectedSemanticTextPresent": true,
+      "image": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\hall-800x360-en-XA-100.png",
+      "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\hall-800x360-en-XA-100.geometry.json",
+      "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\hall-800x360-en-XA-100.semantics.txt",
+      "sha256": {
+        "png": "e2d6ad8bb35a252e69b8fbd2d92732949362deb6d04bbdd238b5bd6c95ef2769",
+        "geometry": "edc73127e40a6cde115bcd79bef5727fed597fbc75fce46a97c55cacf619cf4b",
+        "semantics": "45efcff17abf69a65c373d006750bf29f722000360db33af6ae3a0dd8000d816"
+      },
+      "normalizedSemanticFactsSha256": "4587ac7a0f070586a24472726cff238904f4175a9f08735b4f179a8a0b6b209c",
+      "issueIds": [],
+      "notes": [
+        "Current visual review approved; original resolved finding and prior hashes preserved.",
+        "Previous individual PNG review retained after byte-identical comparison.",
+        "PSEUDO01 closed by native adapter/controller source review and adapter-shaped test; live native activation not performed by reviewer."
+      ],
+      "priorSha256": {
+        "png": "e2d6ad8bb35a252e69b8fbd2d92732949362deb6d04bbdd238b5bd6c95ef2769",
+        "geometry": "edc73127e40a6cde115bcd79bef5727fed597fbc75fce46a97c55cacf619cf4b",
+        "semantics": "ef8d2b0d97a862c12101a4aa7fa5bb8e5d93baf55405cfca6d4cade2fad2e8ff"
+      },
+      "resolvedIssueIds": [],
+      "priorNotes": [
+        "Debug accents/expansion visible; dark visual hierarchy and principal labels readable.",
+        "Scrollable list/settings/license content may be partially visible at viewport edges; this is not by itself an overflow defect.",
+        "Fixture-local visual review only; PSEUDO01 prevents approval of the actual native activation path."
+      ],
+      "semanticRecaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:10:10.601502+00:00",
+          "priorSha256": "cf4419be5700038a3d1d3da9544eee940f24f0dbee255358c57a2accdc159ec1",
+          "currentSha256": "007ebdb30dbe567736cc6ebfa0e0f30f100c1fb4a62778d1f65b7514c8fe56c8",
+          "normalizedSemanticFactsUnchanged": true,
+          "pngAndGeometryByteIdentical": true
+        },
+        {
+          "reviewedUtc": "2026-09-29T20:30:34.759653+00:00",
+          "priorSha256": {
+            "png": "e2d6ad8bb35a252e69b8fbd2d92732949362deb6d04bbdd238b5bd6c95ef2769",
+            "geometry": "edc73127e40a6cde115bcd79bef5727fed597fbc75fce46a97c55cacf619cf4b",
+            "semantics": "007ebdb30dbe567736cc6ebfa0e0f30f100c1fb4a62778d1f65b7514c8fe56c8"
+          },
+          "currentSha256": {
+            "png": "e2d6ad8bb35a252e69b8fbd2d92732949362deb6d04bbdd238b5bd6c95ef2769",
+            "geometry": "edc73127e40a6cde115bcd79bef5727fed597fbc75fce46a97c55cacf619cf4b",
+            "semantics": "45efcff17abf69a65c373d006750bf29f722000360db33af6ae3a0dd8000d816"
+          },
+          "normalizedSemanticFactsPriorSha256": "4587ac7a0f070586a24472726cff238904f4175a9f08735b4f179a8a0b6b209c",
+          "normalizedSemanticFactsCurrentSha256": "4587ac7a0f070586a24472726cff238904f4175a9f08735b4f179a8a0b6b209c",
+          "approval": "Full normalized semantics unchanged; PNG/geometry byte identical"
+        }
+      ]
+    },
+    "search-800x360-en-XA-100": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "reviewedUtc": "2026-09-29T19:42:34.597878+00:00",
+      "ux": [
+        "U05",
+        "U26"
+      ],
+      "expectedText": [
+        "[Séárch gámés ~~~~]"
+      ],
+      "expectedSemanticTextPresent": true,
+      "image": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\search-800x360-en-XA-100.png",
+      "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\search-800x360-en-XA-100.geometry.json",
+      "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\search-800x360-en-XA-100.semantics.txt",
+      "sha256": {
+        "png": "4f7e8d918b9cb6eac676b962987ddb2eedfa78f84a57610ef28d4dd23cc40e0a",
+        "geometry": "fd8dc8ec7760315fe2a292e25c51c3e2206627e67b7e8e673e35371f82337b19",
+        "semantics": "6796ae0d62dc2611f708c251be8882384f7384d53f803a2339ec1d8028adc8e5"
+      },
+      "normalizedSemanticFactsSha256": "bc64c64bd83b14f5bede26def41fb9e2d6ebad480554f5a810d0be15cd51ca0e",
+      "issueIds": [],
+      "notes": [
+        "Current visual review approved; original resolved finding and prior hashes preserved.",
+        "Previous individual PNG review retained after byte-identical comparison.",
+        "PSEUDO01 closed by native adapter/controller source review and adapter-shaped test; live native activation not performed by reviewer."
+      ],
+      "priorSha256": {
+        "png": "4f7e8d918b9cb6eac676b962987ddb2eedfa78f84a57610ef28d4dd23cc40e0a",
+        "geometry": "fd8dc8ec7760315fe2a292e25c51c3e2206627e67b7e8e673e35371f82337b19",
+        "semantics": "4d69dfbd25fda9a3b1b77816f17f6d6b7560bda9acbca673a339e396f848cb04"
+      },
+      "resolvedIssueIds": [],
+      "priorNotes": [
+        "Debug accents/expansion visible; dark visual hierarchy and principal labels readable.",
+        "Scrollable list/settings/license content may be partially visible at viewport edges; this is not by itself an overflow defect.",
+        "Fixture-local visual review only; PSEUDO01 prevents approval of the actual native activation path."
+      ],
+      "semanticRecaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:10:10.601502+00:00",
+          "priorSha256": "4da3f137c5e0e8e04aafa11ebdd425f83966d7f5bbe517b6508de32b8f09f992",
+          "currentSha256": "b7a95316cf35d51e525c193b938a67b929f9107cf501e130aa7465a5e3bf2b6b",
+          "normalizedSemanticFactsUnchanged": true,
+          "pngAndGeometryByteIdentical": true
+        },
+        {
+          "reviewedUtc": "2026-09-29T20:30:34.759653+00:00",
+          "priorSha256": {
+            "png": "4f7e8d918b9cb6eac676b962987ddb2eedfa78f84a57610ef28d4dd23cc40e0a",
+            "geometry": "fd8dc8ec7760315fe2a292e25c51c3e2206627e67b7e8e673e35371f82337b19",
+            "semantics": "b7a95316cf35d51e525c193b938a67b929f9107cf501e130aa7465a5e3bf2b6b"
+          },
+          "currentSha256": {
+            "png": "4f7e8d918b9cb6eac676b962987ddb2eedfa78f84a57610ef28d4dd23cc40e0a",
+            "geometry": "fd8dc8ec7760315fe2a292e25c51c3e2206627e67b7e8e673e35371f82337b19",
+            "semantics": "6796ae0d62dc2611f708c251be8882384f7384d53f803a2339ec1d8028adc8e5"
+          },
+          "normalizedSemanticFactsPriorSha256": "bc64c64bd83b14f5bede26def41fb9e2d6ebad480554f5a810d0be15cd51ca0e",
+          "normalizedSemanticFactsCurrentSha256": "bc64c64bd83b14f5bede26def41fb9e2d6ebad480554f5a810d0be15cd51ca0e",
+          "approval": "Full normalized semantics unchanged; PNG/geometry byte identical"
+        }
+      ]
+    },
+    "sources-800x360-en-XA-100": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "reviewedUtc": "2026-09-29T19:42:34.597878+00:00",
+      "ux": [
+        "U09",
+        "U26"
+      ],
+      "expectedText": [
+        "[Yóúr gámé sóúrcés ~~~~~~]"
+      ],
+      "expectedSemanticTextPresent": true,
+      "image": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\sources-800x360-en-XA-100.png",
+      "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\sources-800x360-en-XA-100.geometry.json",
+      "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\sources-800x360-en-XA-100.semantics.txt",
+      "sha256": {
+        "png": "462f4f0c6f985567b1294cd17f0c1c144dbbc8053df45c32e6072a38f9a23c59",
+        "geometry": "23cc437649e56cf1535988d0984ac9f610976d1b35955e01841265dde2b39843",
+        "semantics": "1dea7c08e1b3a1b4a02ec14651a286858757c22482c8b3980a348ae04996d6ff"
+      },
+      "normalizedSemanticFactsSha256": "1a433e22e77ba591aa98bc86957533bc5d38c41f76e3e215fe8fafc97a032955",
+      "issueIds": [],
+      "notes": [
+        "Current visual review approved; original resolved finding and prior hashes preserved.",
+        "Previous individual PNG review retained after byte-identical comparison.",
+        "PSEUDO01 closed by native adapter/controller source review and adapter-shaped test; live native activation not performed by reviewer."
+      ],
+      "priorSha256": {
+        "png": "462f4f0c6f985567b1294cd17f0c1c144dbbc8053df45c32e6072a38f9a23c59",
+        "geometry": "23cc437649e56cf1535988d0984ac9f610976d1b35955e01841265dde2b39843",
+        "semantics": "2af698a29417abbfc441d50b145997ff3a79d783450a1d7128c9a93315851b56"
+      },
+      "resolvedIssueIds": [],
+      "priorNotes": [
+        "Debug accents/expansion visible; dark visual hierarchy and principal labels readable.",
+        "Scrollable list/settings/license content may be partially visible at viewport edges; this is not by itself an overflow defect.",
+        "Fixture-local visual review only; PSEUDO01 prevents approval of the actual native activation path."
+      ],
+      "semanticRecaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:10:10.601502+00:00",
+          "priorSha256": "eb9317af4a878a2dfcaadb4e5a62d656fd71956fc35b97cc5b7c2150507e0534",
+          "currentSha256": "e412081519aec91df7b95a5b046d088c8c02eda0ed349b0a6f31d61735244418",
+          "normalizedSemanticFactsUnchanged": true,
+          "pngAndGeometryByteIdentical": true
+        },
+        {
+          "reviewedUtc": "2026-09-29T20:30:34.759653+00:00",
+          "priorSha256": {
+            "png": "462f4f0c6f985567b1294cd17f0c1c144dbbc8053df45c32e6072a38f9a23c59",
+            "geometry": "23cc437649e56cf1535988d0984ac9f610976d1b35955e01841265dde2b39843",
+            "semantics": "e412081519aec91df7b95a5b046d088c8c02eda0ed349b0a6f31d61735244418"
+          },
+          "currentSha256": {
+            "png": "462f4f0c6f985567b1294cd17f0c1c144dbbc8053df45c32e6072a38f9a23c59",
+            "geometry": "23cc437649e56cf1535988d0984ac9f610976d1b35955e01841265dde2b39843",
+            "semantics": "1dea7c08e1b3a1b4a02ec14651a286858757c22482c8b3980a348ae04996d6ff"
+          },
+          "normalizedSemanticFactsPriorSha256": "1a433e22e77ba591aa98bc86957533bc5d38c41f76e3e215fe8fafc97a032955",
+          "normalizedSemanticFactsCurrentSha256": "1a433e22e77ba591aa98bc86957533bc5d38c41f76e3e215fe8fafc97a032955",
+          "approval": "Full normalized semantics unchanged; PNG/geometry byte identical"
+        }
+      ]
+    },
+    "display-800x360-en-XA-100": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "reviewedUtc": "2026-09-29T19:42:34.597878+00:00",
+      "ux": [
+        "U15",
+        "U26"
+      ],
+      "expectedText": [
+        "[Séttíngs ~~~]"
+      ],
+      "expectedSemanticTextPresent": true,
+      "image": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\display-800x360-en-XA-100.png",
+      "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\display-800x360-en-XA-100.geometry.json",
+      "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\display-800x360-en-XA-100.semantics.txt",
+      "sha256": {
+        "png": "0df533a2660c41080b9a608fdaddf109ba7159cba741b4689e17b95a0548f2b9",
+        "geometry": "f59e1ace0c9e04b1c9c217b086b9c61202d98f2345bd1dbfabe2f631d3212396",
+        "semantics": "5d2c73b4764bfc2bff9c3085ea6fb4aebb1dcca44ded3c8e1f809203660bce77"
+      },
+      "normalizedSemanticFactsSha256": "2dcf04790e700ded7ffe32dc96cc5f233241549e31bbb4b3165ab31256453dbc",
+      "issueIds": [],
+      "notes": [
+        "Current visual review approved; original resolved finding and prior hashes preserved.",
+        "Previous individual PNG review retained after byte-identical comparison.",
+        "PSEUDO01 closed by native adapter/controller source review and adapter-shaped test; live native activation not performed by reviewer."
+      ],
+      "priorSha256": {
+        "png": "0df533a2660c41080b9a608fdaddf109ba7159cba741b4689e17b95a0548f2b9",
+        "geometry": "f59e1ace0c9e04b1c9c217b086b9c61202d98f2345bd1dbfabe2f631d3212396",
+        "semantics": "1270fce487427676b6fcdf7a09b13ceb38253e836b4049f345211484edf8ce20"
+      },
+      "resolvedIssueIds": [],
+      "priorNotes": [
+        "Debug accents/expansion visible; dark visual hierarchy and principal labels readable.",
+        "Scrollable list/settings/license content may be partially visible at viewport edges; this is not by itself an overflow defect.",
+        "Fixture-local visual review only; PSEUDO01 prevents approval of the actual native activation path."
+      ],
+      "semanticRecaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:10:10.601502+00:00",
+          "priorSha256": "39e23ebc7a871b423c7ab62d451df593e077f84609922bb074f92e9049d8be01",
+          "currentSha256": "28c6a2a9ad438bcc876131b954438c05a036230ecdb7c168e1805f0b62396962",
+          "normalizedSemanticFactsUnchanged": true,
+          "pngAndGeometryByteIdentical": true
+        },
+        {
+          "reviewedUtc": "2026-09-29T20:30:34.759653+00:00",
+          "priorSha256": {
+            "png": "0df533a2660c41080b9a608fdaddf109ba7159cba741b4689e17b95a0548f2b9",
+            "geometry": "f59e1ace0c9e04b1c9c217b086b9c61202d98f2345bd1dbfabe2f631d3212396",
+            "semantics": "28c6a2a9ad438bcc876131b954438c05a036230ecdb7c168e1805f0b62396962"
+          },
+          "currentSha256": {
+            "png": "0df533a2660c41080b9a608fdaddf109ba7159cba741b4689e17b95a0548f2b9",
+            "geometry": "f59e1ace0c9e04b1c9c217b086b9c61202d98f2345bd1dbfabe2f631d3212396",
+            "semantics": "5d2c73b4764bfc2bff9c3085ea6fb4aebb1dcca44ded3c8e1f809203660bce77"
+          },
+          "normalizedSemanticFactsPriorSha256": "2dcf04790e700ded7ffe32dc96cc5f233241549e31bbb4b3165ab31256453dbc",
+          "normalizedSemanticFactsCurrentSha256": "2dcf04790e700ded7ffe32dc96cc5f233241549e31bbb4b3165ab31256453dbc",
+          "approval": "Full normalized semantics unchanged; PNG/geometry byte identical"
+        }
+      ]
+    },
+    "controls-800x360-en-XA-100": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "reviewedUtc": "2026-09-29T19:42:34.597878+00:00",
+      "ux": [
+        "U16",
+        "U26"
+      ],
+      "expectedText": [
+        "[Séttíngs ~~~]"
+      ],
+      "expectedSemanticTextPresent": true,
+      "image": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\controls-800x360-en-XA-100.png",
+      "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\controls-800x360-en-XA-100.geometry.json",
+      "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\controls-800x360-en-XA-100.semantics.txt",
+      "sha256": {
+        "png": "daef1d1e19e8cec37137ab44753fe8128350e36207b414f5e0a8502f7861d961",
+        "geometry": "dde8d1673dc4e886d2899ca532b59dbd85e874cc7b24235157ecfb0bae14f07a",
+        "semantics": "60130aa5d172dd1d7e4ac579fc97497dfe55ee58df957c3da84884dd83a2ea72"
+      },
+      "normalizedSemanticFactsSha256": "46779f91fb4fca4a878ceea81c2f609c2111876969283f5805c1fe8cf67039dd",
+      "issueIds": [],
+      "notes": [
+        "Current visual review approved; original resolved finding and prior hashes preserved.",
+        "Previous individual PNG review retained after byte-identical comparison.",
+        "PSEUDO01 closed by native adapter/controller source review and adapter-shaped test; live native activation not performed by reviewer."
+      ],
+      "priorSha256": {
+        "png": "c36d8e6a46e6b87b7c1c2f658e0a7ce8093a5b36d0f9e3b260ea79ebcd5c841e",
+        "geometry": "3113f55e8ede86dc188e460025c94330d40e527ba33e2bd17f50d0c48d3fd0c7",
+        "semantics": "8096924315072105f0924ee5974a30505c604a6bb5d15cc2b4804f85351b0a33"
+      },
+      "resolvedIssueIds": [],
+      "priorNotes": [
+        "Debug accents/expansion visible; dark visual hierarchy and principal labels readable.",
+        "Scrollable list/settings/license content may be partially visible at viewport edges; this is not by itself an overflow defect.",
+        "Fixture-local visual review only; PSEUDO01 prevents approval of the actual native activation path."
+      ],
+      "semanticRecaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:10:10.601502+00:00",
+          "priorSha256": "cab4b7d24489075682bbd9e6ec71d1faed4646a11fbe3eafb4a968337b26207a",
+          "currentSha256": "a97216b0837e7739842cd12edb57540ee21af8afd05787930b81e7caa282efe0",
+          "normalizedSemanticFactsUnchanged": true,
+          "pngAndGeometryByteIdentical": true
+        },
+        {
+          "reviewedUtc": "2026-09-29T20:30:34.759653+00:00",
+          "priorSha256": {
+            "png": "c36d8e6a46e6b87b7c1c2f658e0a7ce8093a5b36d0f9e3b260ea79ebcd5c841e",
+            "geometry": "3113f55e8ede86dc188e460025c94330d40e527ba33e2bd17f50d0c48d3fd0c7",
+            "semantics": "a97216b0837e7739842cd12edb57540ee21af8afd05787930b81e7caa282efe0"
+          },
+          "currentSha256": {
+            "png": "daef1d1e19e8cec37137ab44753fe8128350e36207b414f5e0a8502f7861d961",
+            "geometry": "dde8d1673dc4e886d2899ca532b59dbd85e874cc7b24235157ecfb0bae14f07a",
+            "semantics": "60130aa5d172dd1d7e4ac579fc97497dfe55ee58df957c3da84884dd83a2ea72"
+          },
+          "normalizedSemanticFactsPriorSha256": "fb3ee1a21b91a458bc87fcbc2e1c7e17841a39a7f7493709e029bf205512bbb0",
+          "normalizedSemanticFactsCurrentSha256": "46779f91fb4fca4a878ceea81c2f609c2111876969283f5805c1fe8cf67039dd",
+          "approval": "U16/U22 summary delta independently opened in settings-delta-review"
+        }
+      ]
+    },
+    "audio-800x360-en-XA-100": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "reviewedUtc": "2026-09-29T19:42:34.597878+00:00",
+      "ux": [
+        "U17",
+        "U26"
+      ],
+      "expectedText": [
+        "[Séttíngs ~~~]"
+      ],
+      "expectedSemanticTextPresent": true,
+      "image": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\audio-800x360-en-XA-100.png",
+      "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\audio-800x360-en-XA-100.geometry.json",
+      "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\audio-800x360-en-XA-100.semantics.txt",
+      "sha256": {
+        "png": "109a15666a57aa719b9eda6c4e60fb738c64b1ef1e3216f77417f4459d5765b2",
+        "geometry": "66ca7d019946964bb11147b410b87a4f00d911635c64d9afaae0720238152729",
+        "semantics": "b4ce9f7ceacc9a918a263ef34d33a6dc301255b248481b3ebcab1c3afe2d61f8"
+      },
+      "normalizedSemanticFactsSha256": "d240afd2974bc616a7eb1b00ed9872aa97a511754b7034eb1f88b302e341aa44",
+      "issueIds": [],
+      "notes": [
+        "Current visual review approved; original resolved finding and prior hashes preserved.",
+        "Previous individual PNG review retained after byte-identical comparison.",
+        "PSEUDO01 closed by native adapter/controller source review and adapter-shaped test; live native activation not performed by reviewer."
+      ],
+      "priorSha256": {
+        "png": "109a15666a57aa719b9eda6c4e60fb738c64b1ef1e3216f77417f4459d5765b2",
+        "geometry": "66ca7d019946964bb11147b410b87a4f00d911635c64d9afaae0720238152729",
+        "semantics": "a8b17c170855eb43153fd22f3b571adae3aad2538460da45c88de5b429060e29"
+      },
+      "resolvedIssueIds": [],
+      "priorNotes": [
+        "Debug accents/expansion visible; dark visual hierarchy and principal labels readable.",
+        "Scrollable list/settings/license content may be partially visible at viewport edges; this is not by itself an overflow defect.",
+        "Fixture-local visual review only; PSEUDO01 prevents approval of the actual native activation path."
+      ],
+      "semanticRecaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:10:10.601502+00:00",
+          "priorSha256": "6ee4dfbbe8b175cd56dbc8dddab87ac800ba32d81e5e9f15268786c8685ca6df",
+          "currentSha256": "1bc7b9210f4b5bd279aa0e1cf6f2639febc5dfef3d890773c53f1033ff8e6d31",
+          "normalizedSemanticFactsUnchanged": true,
+          "pngAndGeometryByteIdentical": true
+        },
+        {
+          "reviewedUtc": "2026-09-29T20:30:34.759653+00:00",
+          "priorSha256": {
+            "png": "109a15666a57aa719b9eda6c4e60fb738c64b1ef1e3216f77417f4459d5765b2",
+            "geometry": "66ca7d019946964bb11147b410b87a4f00d911635c64d9afaae0720238152729",
+            "semantics": "1bc7b9210f4b5bd279aa0e1cf6f2639febc5dfef3d890773c53f1033ff8e6d31"
+          },
+          "currentSha256": {
+            "png": "109a15666a57aa719b9eda6c4e60fb738c64b1ef1e3216f77417f4459d5765b2",
+            "geometry": "66ca7d019946964bb11147b410b87a4f00d911635c64d9afaae0720238152729",
+            "semantics": "b4ce9f7ceacc9a918a263ef34d33a6dc301255b248481b3ebcab1c3afe2d61f8"
+          },
+          "normalizedSemanticFactsPriorSha256": "d240afd2974bc616a7eb1b00ed9872aa97a511754b7034eb1f88b302e341aa44",
+          "normalizedSemanticFactsCurrentSha256": "d240afd2974bc616a7eb1b00ed9872aa97a511754b7034eb1f88b302e341aa44",
+          "approval": "Full normalized semantics unchanged; PNG/geometry byte identical"
+        }
+      ]
+    },
+    "game-800x360-en-XA-100": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "reviewedUtc": "2026-09-29T19:42:34.597878+00:00",
+      "ux": [
+        "U18",
+        "U26"
+      ],
+      "expectedText": [
+        "[Séttíngs ~~~]"
+      ],
+      "expectedSemanticTextPresent": true,
+      "image": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\game-800x360-en-XA-100.png",
+      "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\game-800x360-en-XA-100.geometry.json",
+      "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\game-800x360-en-XA-100.semantics.txt",
+      "sha256": {
+        "png": "42798b601bf7a3c8c7691eafce5387050ec54dc377848a3cbed5d8ad2f053471",
+        "geometry": "5bd7838e075fb96daec4d1ae8c290b07159a12f76225422d1ca65a1b12b06115",
+        "semantics": "35a70283543e5f304d918e491f25cf5fe70b36036042d82a3cd0b16f759e625e"
+      },
+      "normalizedSemanticFactsSha256": "0b04313d15d8a51cb9f260aa85008e21e2a251bf20b0027babcbf3e88456c9a5",
+      "issueIds": [],
+      "notes": [
+        "Current visual review approved; original resolved finding and prior hashes preserved.",
+        "Previous individual PNG review retained after byte-identical comparison.",
+        "PSEUDO01 closed by native adapter/controller source review and adapter-shaped test; live native activation not performed by reviewer."
+      ],
+      "priorSha256": {
+        "png": "42798b601bf7a3c8c7691eafce5387050ec54dc377848a3cbed5d8ad2f053471",
+        "geometry": "5bd7838e075fb96daec4d1ae8c290b07159a12f76225422d1ca65a1b12b06115",
+        "semantics": "74be053d414dd5f3a2d99aa69883733bd71677904ee4550082c93f041add8a3f"
+      },
+      "resolvedIssueIds": [],
+      "priorNotes": [
+        "Debug accents/expansion visible; dark visual hierarchy and principal labels readable.",
+        "Scrollable list/settings/license content may be partially visible at viewport edges; this is not by itself an overflow defect.",
+        "Fixture-local visual review only; PSEUDO01 prevents approval of the actual native activation path."
+      ],
+      "semanticRecaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:10:10.601502+00:00",
+          "priorSha256": "9548aa0e2496675b69db86f3044e37135605ffa215e113f23014b213b98f9b0a",
+          "currentSha256": "172ef93c7b2327253bf82aa76e62dd34db2f77025b86f2e9ec7c66db672b7235",
+          "normalizedSemanticFactsUnchanged": true,
+          "pngAndGeometryByteIdentical": true
+        },
+        {
+          "reviewedUtc": "2026-09-29T20:30:34.759653+00:00",
+          "priorSha256": {
+            "png": "42798b601bf7a3c8c7691eafce5387050ec54dc377848a3cbed5d8ad2f053471",
+            "geometry": "5bd7838e075fb96daec4d1ae8c290b07159a12f76225422d1ca65a1b12b06115",
+            "semantics": "172ef93c7b2327253bf82aa76e62dd34db2f77025b86f2e9ec7c66db672b7235"
+          },
+          "currentSha256": {
+            "png": "42798b601bf7a3c8c7691eafce5387050ec54dc377848a3cbed5d8ad2f053471",
+            "geometry": "5bd7838e075fb96daec4d1ae8c290b07159a12f76225422d1ca65a1b12b06115",
+            "semantics": "35a70283543e5f304d918e491f25cf5fe70b36036042d82a3cd0b16f759e625e"
+          },
+          "normalizedSemanticFactsPriorSha256": "0b04313d15d8a51cb9f260aa85008e21e2a251bf20b0027babcbf3e88456c9a5",
+          "normalizedSemanticFactsCurrentSha256": "0b04313d15d8a51cb9f260aa85008e21e2a251bf20b0027babcbf3e88456c9a5",
+          "approval": "Full normalized semantics unchanged; PNG/geometry byte identical"
+        }
+      ]
+    },
+    "about-800x360-en-XA-100": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "reviewedUtc": "2026-09-29T19:42:34.597878+00:00",
+      "ux": [
+        "U19",
+        "U26"
+      ],
+      "expectedText": [
+        "[Séttíngs ~~~]"
+      ],
+      "expectedSemanticTextPresent": true,
+      "image": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\about-800x360-en-XA-100.png",
+      "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\about-800x360-en-XA-100.geometry.json",
+      "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\about-800x360-en-XA-100.semantics.txt",
+      "sha256": {
+        "png": "bccc7d870fc9e49becf50495d712b1ba9165aa0ed3a6817b2240075c667ad5a0",
+        "geometry": "7cd63eb00aadb9aca985bd96456f6dae40e6bba02c3e4fe289d71b197757b7d1",
+        "semantics": "282e93ed635664a6399ba9d70c3b052ec6bca6a57a192137707ff05d34a3e9bb"
+      },
+      "normalizedSemanticFactsSha256": "5b9096dfbd72e69bc44cef347d417a31591fc9c41c541d589b2fdc9d2bc252f3",
+      "issueIds": [],
+      "notes": [
+        "Current visual review approved; original resolved finding and prior hashes preserved.",
+        "Previous individual PNG review retained after byte-identical comparison.",
+        "PSEUDO01 closed by native adapter/controller source review and adapter-shaped test; live native activation not performed by reviewer."
+      ],
+      "priorSha256": {
+        "png": "bccc7d870fc9e49becf50495d712b1ba9165aa0ed3a6817b2240075c667ad5a0",
+        "geometry": "7cd63eb00aadb9aca985bd96456f6dae40e6bba02c3e4fe289d71b197757b7d1",
+        "semantics": "414d71d729d4860ee6cfb5318f34bf5de603f410c141fbf227cb882c123d0246"
+      },
+      "resolvedIssueIds": [],
+      "priorNotes": [
+        "Debug accents/expansion visible; dark visual hierarchy and principal labels readable.",
+        "Scrollable list/settings/license content may be partially visible at viewport edges; this is not by itself an overflow defect.",
+        "Fixture-local visual review only; PSEUDO01 prevents approval of the actual native activation path."
+      ],
+      "semanticRecaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:10:10.601502+00:00",
+          "priorSha256": "756bd40a4e7575ee89e80b697d17b78ff6f40ee650ac70dea9be0735ca4d81cf",
+          "currentSha256": "b9201271535d2701124a6f033ef333237c70a508f7f886406f2fcb33bc745f16",
+          "normalizedSemanticFactsUnchanged": true,
+          "pngAndGeometryByteIdentical": true
+        },
+        {
+          "reviewedUtc": "2026-09-29T20:30:34.759653+00:00",
+          "priorSha256": {
+            "png": "bccc7d870fc9e49becf50495d712b1ba9165aa0ed3a6817b2240075c667ad5a0",
+            "geometry": "7cd63eb00aadb9aca985bd96456f6dae40e6bba02c3e4fe289d71b197757b7d1",
+            "semantics": "b9201271535d2701124a6f033ef333237c70a508f7f886406f2fcb33bc745f16"
+          },
+          "currentSha256": {
+            "png": "bccc7d870fc9e49becf50495d712b1ba9165aa0ed3a6817b2240075c667ad5a0",
+            "geometry": "7cd63eb00aadb9aca985bd96456f6dae40e6bba02c3e4fe289d71b197757b7d1",
+            "semantics": "282e93ed635664a6399ba9d70c3b052ec6bca6a57a192137707ff05d34a3e9bb"
+          },
+          "normalizedSemanticFactsPriorSha256": "5b9096dfbd72e69bc44cef347d417a31591fc9c41c541d589b2fdc9d2bc252f3",
+          "normalizedSemanticFactsCurrentSha256": "5b9096dfbd72e69bc44cef347d417a31591fc9c41c541d589b2fdc9d2bc252f3",
+          "approval": "Full normalized semantics unchanged; PNG/geometry byte identical"
+        }
+      ]
+    },
+    "licenses-800x360-en-XA-100": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "reviewedUtc": "2026-09-29T19:42:34.597878+00:00",
+      "ux": [
+        "U20",
+        "U26"
+      ],
+      "expectedText": [
+        "[Lícénsés ~~~]"
+      ],
+      "expectedSemanticTextPresent": true,
+      "image": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\licenses-800x360-en-XA-100.png",
+      "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\licenses-800x360-en-XA-100.geometry.json",
+      "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\licenses-800x360-en-XA-100.semantics.txt",
+      "sha256": {
+        "png": "0d9dd30e48a4701abbd0f4a5a94a7d92ed6f543154fb2e33a91c7ce1c65e4f9a",
+        "geometry": "8b5ef18a0def93b11a0056936b9e499cdfd9a50cae6bc69bce996486f14f6b73",
+        "semantics": "6db6d49482c03dfd3e56c60898d007b4251d3a6d569a62f4d0b2ef7ed0474ec9"
+      },
+      "normalizedSemanticFactsSha256": "718a1a4a15935573c7f48d5f58f9d3499b39f2f5f4dc3571ae618ba1ce3ec782",
+      "issueIds": [],
+      "notes": [
+        "Current visual review approved; original resolved finding and prior hashes preserved.",
+        "Previous individual PNG review retained after byte-identical comparison.",
+        "PSEUDO01 closed by native adapter/controller source review and adapter-shaped test; live native activation not performed by reviewer."
+      ],
+      "priorSha256": {
+        "png": "0d9dd30e48a4701abbd0f4a5a94a7d92ed6f543154fb2e33a91c7ce1c65e4f9a",
+        "geometry": "8b5ef18a0def93b11a0056936b9e499cdfd9a50cae6bc69bce996486f14f6b73",
+        "semantics": "575097731ffabaaabf684819f93571256cec62fff18b171b54fc6fe171f29ccc"
+      },
+      "resolvedIssueIds": [],
+      "priorNotes": [
+        "Debug accents/expansion visible; dark visual hierarchy and principal labels readable.",
+        "Scrollable list/settings/license content may be partially visible at viewport edges; this is not by itself an overflow defect.",
+        "Fixture-local visual review only; PSEUDO01 prevents approval of the actual native activation path."
+      ],
+      "semanticRecaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:10:10.601502+00:00",
+          "priorSha256": "69e4965e487f6279cf43ffeb8082a845de6112770cb0bf2ece1ecf931a60f93d",
+          "currentSha256": "e6bdf827079fc533779a72526e0e88caaca596700e12606bc27356546774d467",
+          "normalizedSemanticFactsUnchanged": true,
+          "pngAndGeometryByteIdentical": true
+        },
+        {
+          "reviewedUtc": "2026-09-29T20:30:34.759653+00:00",
+          "priorSha256": {
+            "png": "0d9dd30e48a4701abbd0f4a5a94a7d92ed6f543154fb2e33a91c7ce1c65e4f9a",
+            "geometry": "8b5ef18a0def93b11a0056936b9e499cdfd9a50cae6bc69bce996486f14f6b73",
+            "semantics": "e6bdf827079fc533779a72526e0e88caaca596700e12606bc27356546774d467"
+          },
+          "currentSha256": {
+            "png": "0d9dd30e48a4701abbd0f4a5a94a7d92ed6f543154fb2e33a91c7ce1c65e4f9a",
+            "geometry": "8b5ef18a0def93b11a0056936b9e499cdfd9a50cae6bc69bce996486f14f6b73",
+            "semantics": "6db6d49482c03dfd3e56c60898d007b4251d3a6d569a62f4d0b2ef7ed0474ec9"
+          },
+          "normalizedSemanticFactsPriorSha256": "718a1a4a15935573c7f48d5f58f9d3499b39f2f5f4dc3571ae618ba1ce3ec782",
+          "normalizedSemanticFactsCurrentSha256": "718a1a4a15935573c7f48d5f58f9d3499b39f2f5f4dc3571ae618ba1ce3ec782",
+          "approval": "Full normalized semantics unchanged; PNG/geometry byte identical"
+        }
+      ]
+    },
+    "hall-800x360-en-XA-200": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "reviewedUtc": "2026-09-29T19:42:34.597878+00:00",
+      "ux": [
+        "U02",
+        "U26"
+      ],
+      "expectedText": [
+        "[Cóntínúé ~~~]"
+      ],
+      "expectedSemanticTextPresent": true,
+      "image": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\hall-800x360-en-XA-200.png",
+      "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\hall-800x360-en-XA-200.geometry.json",
+      "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\hall-800x360-en-XA-200.semantics.txt",
+      "sha256": {
+        "png": "47ada8608e47a5eacd8bf00a2b9bf8bd38696ef10f583d6acfce8f0c4d3cd088",
+        "geometry": "1476741cfa0a940147c546897247838b9120968e96e4dea709cffce97413fe87",
+        "semantics": "aa066f08e668bc8218402b79a18a4526cb80025e11b4f8acc5acc69bcd110905"
+      },
+      "normalizedSemanticFactsSha256": "e0016ebd3e96abd34c8d4cfc0735143420d3a9d3f57b46294a6792e5950d7caf",
+      "issueIds": [],
+      "notes": [
+        "Current visual review approved; original resolved finding and prior hashes preserved.",
+        "Reopened current PNG.",
+        "PSEUDO01 closed by native adapter/controller source review and adapter-shaped test; live native activation not performed by reviewer."
+      ],
+      "priorSha256": {
+        "png": "6fb22e73a5e62bbdc1b8bc2df4a7c7f05eed89bf342106e14c045a6ac2d2e7ba",
+        "geometry": "71ce5764f5662009ce9a5123b04cddc8a922023fad81dd19cf7f3785d84c7769",
+        "semantics": "21bdd49e126b2e008cb52e7f266022f031931d42cc96baa617ef359fd49c47cd"
+      },
+      "resolvedIssueIds": [
+        "PSEUDO02"
+      ],
+      "priorNotes": [
+        "Selected title partially clipped and favorite visible target reduced to 40px high.",
+        "Scrollable list/settings/license content may be partially visible at viewport edges; this is not by itself an overflow defect.",
+        "Fixture-local visual review only; PSEUDO01 prevents approval of the actual native activation path."
+      ],
+      "semanticRecaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:10:10.601502+00:00",
+          "priorSha256": "93e2e0869bb7e6068bfbd6c333a4cf45c66b50f8d1b497aae71c45a4f1e6971f",
+          "currentSha256": "ad674770633585788e686606bef464ad5d05d5de2c81aac67d48057d9dcbabc8",
+          "normalizedSemanticFactsUnchanged": true,
+          "pngAndGeometryByteIdentical": true
+        },
+        {
+          "reviewedUtc": "2026-09-29T20:30:34.759653+00:00",
+          "priorSha256": {
+            "png": "47ada8608e47a5eacd8bf00a2b9bf8bd38696ef10f583d6acfce8f0c4d3cd088",
+            "geometry": "1476741cfa0a940147c546897247838b9120968e96e4dea709cffce97413fe87",
+            "semantics": "ad674770633585788e686606bef464ad5d05d5de2c81aac67d48057d9dcbabc8"
+          },
+          "currentSha256": {
+            "png": "47ada8608e47a5eacd8bf00a2b9bf8bd38696ef10f583d6acfce8f0c4d3cd088",
+            "geometry": "1476741cfa0a940147c546897247838b9120968e96e4dea709cffce97413fe87",
+            "semantics": "aa066f08e668bc8218402b79a18a4526cb80025e11b4f8acc5acc69bcd110905"
+          },
+          "normalizedSemanticFactsPriorSha256": "e0016ebd3e96abd34c8d4cfc0735143420d3a9d3f57b46294a6792e5950d7caf",
+          "normalizedSemanticFactsCurrentSha256": "e0016ebd3e96abd34c8d4cfc0735143420d3a9d3f57b46294a6792e5950d7caf",
+          "approval": "Full normalized semantics unchanged; PNG/geometry byte identical"
+        }
+      ]
+    },
+    "search-800x360-en-XA-200": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "reviewedUtc": "2026-09-29T19:42:34.597878+00:00",
+      "ux": [
+        "U05",
+        "U26"
+      ],
+      "expectedText": [
+        "[Séárch gámés ~~~~]"
+      ],
+      "expectedSemanticTextPresent": true,
+      "image": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\search-800x360-en-XA-200.png",
+      "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\search-800x360-en-XA-200.geometry.json",
+      "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\search-800x360-en-XA-200.semantics.txt",
+      "sha256": {
+        "png": "97120c102073792afb4b95d2da47df4fee77a3c9b0f42bb30b3a8fbf031a1744",
+        "geometry": "62a5bfebcebb91af284568c9709a5e553c5dd4286b4c73fe83d5ae77208b856a",
+        "semantics": "5caf95a9ebf578bfb2d412af86271b872245dda79f6302b926b75b2ec302de19"
+      },
+      "normalizedSemanticFactsSha256": "9521824ba600770a8f1589103c6208734f22730bdf897e915b36c90622710287",
+      "issueIds": [],
+      "notes": [
+        "Current visual review approved; original resolved finding and prior hashes preserved.",
+        "Previous individual PNG review retained after byte-identical comparison.",
+        "PSEUDO01 closed by native adapter/controller source review and adapter-shaped test; live native activation not performed by reviewer."
+      ],
+      "priorSha256": {
+        "png": "97120c102073792afb4b95d2da47df4fee77a3c9b0f42bb30b3a8fbf031a1744",
+        "geometry": "62a5bfebcebb91af284568c9709a5e553c5dd4286b4c73fe83d5ae77208b856a",
+        "semantics": "16a9de008ea1cca53282067e5a30fc1e96ab886d1002393b508d12a0c6816cd3"
+      },
+      "resolvedIssueIds": [],
+      "priorNotes": [
+        "Debug accents/expansion visible; dark visual hierarchy and principal labels readable.",
+        "Scrollable list/settings/license content may be partially visible at viewport edges; this is not by itself an overflow defect.",
+        "Fixture-local visual review only; PSEUDO01 prevents approval of the actual native activation path."
+      ],
+      "semanticRecaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:10:10.601502+00:00",
+          "priorSha256": "1161580446885c7424708fd131494d482b13ad20a32bc860860eb8bd85a0d079",
+          "currentSha256": "6a0ca47a839cf3524997433a29f8fdee45b258336cc2f45f2e28890af4df4ad7",
+          "normalizedSemanticFactsUnchanged": true,
+          "pngAndGeometryByteIdentical": true
+        },
+        {
+          "reviewedUtc": "2026-09-29T20:30:34.759653+00:00",
+          "priorSha256": {
+            "png": "97120c102073792afb4b95d2da47df4fee77a3c9b0f42bb30b3a8fbf031a1744",
+            "geometry": "62a5bfebcebb91af284568c9709a5e553c5dd4286b4c73fe83d5ae77208b856a",
+            "semantics": "6a0ca47a839cf3524997433a29f8fdee45b258336cc2f45f2e28890af4df4ad7"
+          },
+          "currentSha256": {
+            "png": "97120c102073792afb4b95d2da47df4fee77a3c9b0f42bb30b3a8fbf031a1744",
+            "geometry": "62a5bfebcebb91af284568c9709a5e553c5dd4286b4c73fe83d5ae77208b856a",
+            "semantics": "5caf95a9ebf578bfb2d412af86271b872245dda79f6302b926b75b2ec302de19"
+          },
+          "normalizedSemanticFactsPriorSha256": "9521824ba600770a8f1589103c6208734f22730bdf897e915b36c90622710287",
+          "normalizedSemanticFactsCurrentSha256": "9521824ba600770a8f1589103c6208734f22730bdf897e915b36c90622710287",
+          "approval": "Full normalized semantics unchanged; PNG/geometry byte identical"
+        }
+      ]
+    },
+    "sources-800x360-en-XA-200": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "reviewedUtc": "2026-09-29T19:42:34.597878+00:00",
+      "ux": [
+        "U09",
+        "U26"
+      ],
+      "expectedText": [
+        "[Yóúr gámé sóúrcés ~~~~~~]"
+      ],
+      "expectedSemanticTextPresent": true,
+      "image": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\sources-800x360-en-XA-200.png",
+      "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\sources-800x360-en-XA-200.geometry.json",
+      "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\sources-800x360-en-XA-200.semantics.txt",
+      "sha256": {
+        "png": "a851b26cf1f3ed239605c680ec225f69f6e1f20fafbd5ce0aa544e558abff752",
+        "geometry": "7afc93815e109bc730095fe73fc28bf286cf6810b59683acb56e0ac71bf5c72c",
+        "semantics": "d403ea5f9a39cbdbd918bb08818d4f690731e1e89b018b4a5ebc40a29c9d4db6"
+      },
+      "normalizedSemanticFactsSha256": "3234ed6a0fbe9aa8f7abeb9976830d11e76124f9621edba5d53f1b69f20c3ea0",
+      "issueIds": [],
+      "notes": [
+        "Current visual review approved; original resolved finding and prior hashes preserved.",
+        "Previous individual PNG review retained after byte-identical comparison.",
+        "PSEUDO01 closed by native adapter/controller source review and adapter-shaped test; live native activation not performed by reviewer."
+      ],
+      "priorSha256": {
+        "png": "a851b26cf1f3ed239605c680ec225f69f6e1f20fafbd5ce0aa544e558abff752",
+        "geometry": "7afc93815e109bc730095fe73fc28bf286cf6810b59683acb56e0ac71bf5c72c",
+        "semantics": "5dec3e9442a0e97d8a9f32675ae752cd6ab5b5eaf72470c88d3deca6e4629fb2"
+      },
+      "resolvedIssueIds": [],
+      "priorNotes": [
+        "Debug accents/expansion visible; dark visual hierarchy and principal labels readable.",
+        "Scrollable list/settings/license content may be partially visible at viewport edges; this is not by itself an overflow defect.",
+        "Fixture-local visual review only; PSEUDO01 prevents approval of the actual native activation path."
+      ],
+      "semanticRecaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:10:10.601502+00:00",
+          "priorSha256": "c52f18744cd78a2ee8af4f7f24262becaef4be740e65302dbdd367c7615d8e47",
+          "currentSha256": "f7e38d7c91840a202854fbe791e34e3db8ba5a4dae7968ebd2f5733bbba84421",
+          "normalizedSemanticFactsUnchanged": true,
+          "pngAndGeometryByteIdentical": true
+        },
+        {
+          "reviewedUtc": "2026-09-29T20:30:34.759653+00:00",
+          "priorSha256": {
+            "png": "a851b26cf1f3ed239605c680ec225f69f6e1f20fafbd5ce0aa544e558abff752",
+            "geometry": "7afc93815e109bc730095fe73fc28bf286cf6810b59683acb56e0ac71bf5c72c",
+            "semantics": "f7e38d7c91840a202854fbe791e34e3db8ba5a4dae7968ebd2f5733bbba84421"
+          },
+          "currentSha256": {
+            "png": "a851b26cf1f3ed239605c680ec225f69f6e1f20fafbd5ce0aa544e558abff752",
+            "geometry": "7afc93815e109bc730095fe73fc28bf286cf6810b59683acb56e0ac71bf5c72c",
+            "semantics": "d403ea5f9a39cbdbd918bb08818d4f690731e1e89b018b4a5ebc40a29c9d4db6"
+          },
+          "normalizedSemanticFactsPriorSha256": "3234ed6a0fbe9aa8f7abeb9976830d11e76124f9621edba5d53f1b69f20c3ea0",
+          "normalizedSemanticFactsCurrentSha256": "3234ed6a0fbe9aa8f7abeb9976830d11e76124f9621edba5d53f1b69f20c3ea0",
+          "approval": "Full normalized semantics unchanged; PNG/geometry byte identical"
+        }
+      ]
+    },
+    "display-800x360-en-XA-200": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "reviewedUtc": "2026-09-29T19:42:34.597878+00:00",
+      "ux": [
+        "U15",
+        "U26"
+      ],
+      "expectedText": [
+        "[Séttíngs ~~~]"
+      ],
+      "expectedSemanticTextPresent": true,
+      "image": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\display-800x360-en-XA-200.png",
+      "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\display-800x360-en-XA-200.geometry.json",
+      "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\display-800x360-en-XA-200.semantics.txt",
+      "sha256": {
+        "png": "1cfa427126fa54fe997d5e9e3e652a12d2adfd607957bb6097595bb086518ba6",
+        "geometry": "d0cf193e89f7386bae0d44f28d4e5c363e432344c0023ff3594545ffa7c51ba9",
+        "semantics": "b0d0f39273a7184de45dba8849bcf068f17d5602974e59918e231c03ec04ccf8"
+      },
+      "normalizedSemanticFactsSha256": "5049f5a5c6887049d7a8ac6bfb8e2bf8b13a400fc539435468894c5260ff1a2c",
+      "issueIds": [],
+      "notes": [
+        "Current visual review approved; original resolved finding and prior hashes preserved.",
+        "Previous individual PNG review retained after byte-identical comparison.",
+        "PSEUDO01 closed by native adapter/controller source review and adapter-shaped test; live native activation not performed by reviewer."
+      ],
+      "priorSha256": {
+        "png": "1cfa427126fa54fe997d5e9e3e652a12d2adfd607957bb6097595bb086518ba6",
+        "geometry": "d0cf193e89f7386bae0d44f28d4e5c363e432344c0023ff3594545ffa7c51ba9",
+        "semantics": "a6d6a480e0d5bcaf0cf7cdef7987feedddb65c045bbdd915a52bf812a0221204"
+      },
+      "resolvedIssueIds": [],
+      "priorNotes": [
+        "Debug accents/expansion visible; dark visual hierarchy and principal labels readable.",
+        "Scrollable list/settings/license content may be partially visible at viewport edges; this is not by itself an overflow defect.",
+        "Fixture-local visual review only; PSEUDO01 prevents approval of the actual native activation path."
+      ],
+      "semanticRecaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:10:10.601502+00:00",
+          "priorSha256": "acda725eae2298f7356e5430c0f8123dc034fec15b8cb0ec8962f947b6a67195",
+          "currentSha256": "9b82a970eb5608475a01990ffa035df92d5933c1227f09e31f93920eb7e7e96c",
+          "normalizedSemanticFactsUnchanged": true,
+          "pngAndGeometryByteIdentical": true
+        },
+        {
+          "reviewedUtc": "2026-09-29T20:30:34.759653+00:00",
+          "priorSha256": {
+            "png": "1cfa427126fa54fe997d5e9e3e652a12d2adfd607957bb6097595bb086518ba6",
+            "geometry": "d0cf193e89f7386bae0d44f28d4e5c363e432344c0023ff3594545ffa7c51ba9",
+            "semantics": "9b82a970eb5608475a01990ffa035df92d5933c1227f09e31f93920eb7e7e96c"
+          },
+          "currentSha256": {
+            "png": "1cfa427126fa54fe997d5e9e3e652a12d2adfd607957bb6097595bb086518ba6",
+            "geometry": "d0cf193e89f7386bae0d44f28d4e5c363e432344c0023ff3594545ffa7c51ba9",
+            "semantics": "b0d0f39273a7184de45dba8849bcf068f17d5602974e59918e231c03ec04ccf8"
+          },
+          "normalizedSemanticFactsPriorSha256": "5049f5a5c6887049d7a8ac6bfb8e2bf8b13a400fc539435468894c5260ff1a2c",
+          "normalizedSemanticFactsCurrentSha256": "5049f5a5c6887049d7a8ac6bfb8e2bf8b13a400fc539435468894c5260ff1a2c",
+          "approval": "Full normalized semantics unchanged; PNG/geometry byte identical"
+        }
+      ]
+    },
+    "controls-800x360-en-XA-200": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "reviewedUtc": "2026-09-29T19:42:34.597878+00:00",
+      "ux": [
+        "U16",
+        "U26"
+      ],
+      "expectedText": [
+        "[Séttíngs ~~~]"
+      ],
+      "expectedSemanticTextPresent": true,
+      "image": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\controls-800x360-en-XA-200.png",
+      "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\controls-800x360-en-XA-200.geometry.json",
+      "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\controls-800x360-en-XA-200.semantics.txt",
+      "sha256": {
+        "png": "9c7cc0ed289511f42c9374c1b8159fe279c76ba66bc6df7409275f42680325d2",
+        "geometry": "3fcc856477b859cf8399a5086410cb0fcc96bfa36623b9f64c3b1d6ae2487a62",
+        "semantics": "89c14733d6f466a5859bc9139d5c112d3adee8f12602acc9ec1ff9ed88a1b5fb"
+      },
+      "normalizedSemanticFactsSha256": "afd233a2b08258b7081c8e6f6d184729e7e62fc498140ed99895090ff8ef28e6",
+      "issueIds": [],
+      "notes": [
+        "Current visual review approved; original resolved finding and prior hashes preserved.",
+        "Previous individual PNG review retained after byte-identical comparison.",
+        "PSEUDO01 closed by native adapter/controller source review and adapter-shaped test; live native activation not performed by reviewer."
+      ],
+      "priorSha256": {
+        "png": "48352717faa51cb2101daf52f0aef0b18f69ef22b1f9659bea057393e5fa2b33",
+        "geometry": "7820d36906f67bc1ddc8fed79adfb65d4bcd8c3037152b5a6957a11c4116d544",
+        "semantics": "66a94cc5ea622e23d9f0752499a083559ffad652ca1258a261e8ea729f7d95c4"
+      },
+      "resolvedIssueIds": [],
+      "priorNotes": [
+        "Debug accents/expansion visible; dark visual hierarchy and principal labels readable.",
+        "Scrollable list/settings/license content may be partially visible at viewport edges; this is not by itself an overflow defect.",
+        "Fixture-local visual review only; PSEUDO01 prevents approval of the actual native activation path."
+      ],
+      "semanticRecaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:10:10.601502+00:00",
+          "priorSha256": "7f173d54e1afead1f33043f2defe8a7eb5c3d746edbc85310f9faea0dc3e8d1c",
+          "currentSha256": "386a618f96baf15358fd6e6d48bd493aa53eae581a62c3cc5492c04150cc3259",
+          "normalizedSemanticFactsUnchanged": true,
+          "pngAndGeometryByteIdentical": true
+        },
+        {
+          "reviewedUtc": "2026-09-29T20:30:34.759653+00:00",
+          "priorSha256": {
+            "png": "48352717faa51cb2101daf52f0aef0b18f69ef22b1f9659bea057393e5fa2b33",
+            "geometry": "7820d36906f67bc1ddc8fed79adfb65d4bcd8c3037152b5a6957a11c4116d544",
+            "semantics": "386a618f96baf15358fd6e6d48bd493aa53eae581a62c3cc5492c04150cc3259"
+          },
+          "currentSha256": {
+            "png": "9c7cc0ed289511f42c9374c1b8159fe279c76ba66bc6df7409275f42680325d2",
+            "geometry": "3fcc856477b859cf8399a5086410cb0fcc96bfa36623b9f64c3b1d6ae2487a62",
+            "semantics": "89c14733d6f466a5859bc9139d5c112d3adee8f12602acc9ec1ff9ed88a1b5fb"
+          },
+          "normalizedSemanticFactsPriorSha256": "18001d71509f32ad8c8e934f1134695699bfc99a6147b1bfb6925b3e31f37594",
+          "normalizedSemanticFactsCurrentSha256": "afd233a2b08258b7081c8e6f6d184729e7e62fc498140ed99895090ff8ef28e6",
+          "approval": "U16/U22 summary delta independently opened in settings-delta-review"
+        }
+      ]
+    },
+    "audio-800x360-en-XA-200": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "reviewedUtc": "2026-09-29T19:42:34.597878+00:00",
+      "ux": [
+        "U17",
+        "U26"
+      ],
+      "expectedText": [
+        "[Séttíngs ~~~]"
+      ],
+      "expectedSemanticTextPresent": true,
+      "image": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\audio-800x360-en-XA-200.png",
+      "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\audio-800x360-en-XA-200.geometry.json",
+      "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\audio-800x360-en-XA-200.semantics.txt",
+      "sha256": {
+        "png": "bef257b9e746a1fce77d13619e7685f71ebc96f1fe5ccded9d3253321790e76b",
+        "geometry": "5bddb065448dd6d8fbcd05a4132752676e13730129bcd858b90397d70f84da09",
+        "semantics": "7c7b18911225ddc39af30708afbe9751bc7541f278b6096937a7be731990660d"
+      },
+      "normalizedSemanticFactsSha256": "4d3ba8793f1da00fabdb99b8566392dcb66c9f2d4318361a52744e43a081ebcd",
+      "issueIds": [],
+      "notes": [
+        "Current visual review approved; original resolved finding and prior hashes preserved.",
+        "Previous individual PNG review retained after byte-identical comparison.",
+        "PSEUDO01 closed by native adapter/controller source review and adapter-shaped test; live native activation not performed by reviewer."
+      ],
+      "priorSha256": {
+        "png": "bef257b9e746a1fce77d13619e7685f71ebc96f1fe5ccded9d3253321790e76b",
+        "geometry": "5bddb065448dd6d8fbcd05a4132752676e13730129bcd858b90397d70f84da09",
+        "semantics": "e1690f297aabc34b61658ce9c831ef37514d79586fa6ae9126ed5ee05806b771"
+      },
+      "resolvedIssueIds": [],
+      "priorNotes": [
+        "Debug accents/expansion visible; dark visual hierarchy and principal labels readable.",
+        "Scrollable list/settings/license content may be partially visible at viewport edges; this is not by itself an overflow defect.",
+        "Fixture-local visual review only; PSEUDO01 prevents approval of the actual native activation path."
+      ],
+      "semanticRecaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:10:10.601502+00:00",
+          "priorSha256": "3a969b281c3e4c27ce75e9a6ad0bf7daecd1ed681b019fd1ac9b4e8ab16444b5",
+          "currentSha256": "1d87023298b2ad2da0f91219baf77c0a1dab8870f63cbfea8ca2488bd77bdd7f",
+          "normalizedSemanticFactsUnchanged": true,
+          "pngAndGeometryByteIdentical": true
+        },
+        {
+          "reviewedUtc": "2026-09-29T20:30:34.759653+00:00",
+          "priorSha256": {
+            "png": "bef257b9e746a1fce77d13619e7685f71ebc96f1fe5ccded9d3253321790e76b",
+            "geometry": "5bddb065448dd6d8fbcd05a4132752676e13730129bcd858b90397d70f84da09",
+            "semantics": "1d87023298b2ad2da0f91219baf77c0a1dab8870f63cbfea8ca2488bd77bdd7f"
+          },
+          "currentSha256": {
+            "png": "bef257b9e746a1fce77d13619e7685f71ebc96f1fe5ccded9d3253321790e76b",
+            "geometry": "5bddb065448dd6d8fbcd05a4132752676e13730129bcd858b90397d70f84da09",
+            "semantics": "7c7b18911225ddc39af30708afbe9751bc7541f278b6096937a7be731990660d"
+          },
+          "normalizedSemanticFactsPriorSha256": "4d3ba8793f1da00fabdb99b8566392dcb66c9f2d4318361a52744e43a081ebcd",
+          "normalizedSemanticFactsCurrentSha256": "4d3ba8793f1da00fabdb99b8566392dcb66c9f2d4318361a52744e43a081ebcd",
+          "approval": "Full normalized semantics unchanged; PNG/geometry byte identical"
+        }
+      ]
+    },
+    "game-800x360-en-XA-200": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "reviewedUtc": "2026-09-29T19:42:34.597878+00:00",
+      "ux": [
+        "U18",
+        "U26"
+      ],
+      "expectedText": [
+        "[Séttíngs ~~~]"
+      ],
+      "expectedSemanticTextPresent": true,
+      "image": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\game-800x360-en-XA-200.png",
+      "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\game-800x360-en-XA-200.geometry.json",
+      "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\game-800x360-en-XA-200.semantics.txt",
+      "sha256": {
+        "png": "666a01ff6f7ad03b598beb5fe40d0b7b5465803bffcab75ceeeca57af7b69a80",
+        "geometry": "764a443b6d7158b33b9966693c9b43de6356e31cfb504bcb8dccded8fb2a2676",
+        "semantics": "ac472c943ed8e96108abf614dcc39405d5354dcb78038d54fff74d58d313fd31"
+      },
+      "normalizedSemanticFactsSha256": "9bc5044793cde8cabfec3f6c48768f7001c9888b6fc55b5c89a49f742ccfda29",
+      "issueIds": [],
+      "notes": [
+        "Current visual review approved; original resolved finding and prior hashes preserved.",
+        "Previous individual PNG review retained after byte-identical comparison.",
+        "PSEUDO01 closed by native adapter/controller source review and adapter-shaped test; live native activation not performed by reviewer."
+      ],
+      "priorSha256": {
+        "png": "666a01ff6f7ad03b598beb5fe40d0b7b5465803bffcab75ceeeca57af7b69a80",
+        "geometry": "764a443b6d7158b33b9966693c9b43de6356e31cfb504bcb8dccded8fb2a2676",
+        "semantics": "ab5241cdb160b377700426cbcfcfa2f17ae60097b0c058dcf70878274a32f342"
+      },
+      "resolvedIssueIds": [],
+      "priorNotes": [
+        "Debug accents/expansion visible; dark visual hierarchy and principal labels readable.",
+        "Scrollable list/settings/license content may be partially visible at viewport edges; this is not by itself an overflow defect.",
+        "Fixture-local visual review only; PSEUDO01 prevents approval of the actual native activation path."
+      ],
+      "semanticRecaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:10:10.601502+00:00",
+          "priorSha256": "c3e24f36f85a88d960c9c94f6ac70dcd27c570a955377eb8ed3d59af68f4c578",
+          "currentSha256": "4caf9612cc3b27da2a7dae007fca104a5e47746f7e78f56ebbb3edbeba349fab",
+          "normalizedSemanticFactsUnchanged": true,
+          "pngAndGeometryByteIdentical": true
+        },
+        {
+          "reviewedUtc": "2026-09-29T20:30:34.759653+00:00",
+          "priorSha256": {
+            "png": "666a01ff6f7ad03b598beb5fe40d0b7b5465803bffcab75ceeeca57af7b69a80",
+            "geometry": "764a443b6d7158b33b9966693c9b43de6356e31cfb504bcb8dccded8fb2a2676",
+            "semantics": "4caf9612cc3b27da2a7dae007fca104a5e47746f7e78f56ebbb3edbeba349fab"
+          },
+          "currentSha256": {
+            "png": "666a01ff6f7ad03b598beb5fe40d0b7b5465803bffcab75ceeeca57af7b69a80",
+            "geometry": "764a443b6d7158b33b9966693c9b43de6356e31cfb504bcb8dccded8fb2a2676",
+            "semantics": "ac472c943ed8e96108abf614dcc39405d5354dcb78038d54fff74d58d313fd31"
+          },
+          "normalizedSemanticFactsPriorSha256": "9bc5044793cde8cabfec3f6c48768f7001c9888b6fc55b5c89a49f742ccfda29",
+          "normalizedSemanticFactsCurrentSha256": "9bc5044793cde8cabfec3f6c48768f7001c9888b6fc55b5c89a49f742ccfda29",
+          "approval": "Full normalized semantics unchanged; PNG/geometry byte identical"
+        }
+      ]
+    },
+    "about-800x360-en-XA-200": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "reviewedUtc": "2026-09-29T19:42:34.597878+00:00",
+      "ux": [
+        "U19",
+        "U26"
+      ],
+      "expectedText": [
+        "[Séttíngs ~~~]"
+      ],
+      "expectedSemanticTextPresent": true,
+      "image": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\about-800x360-en-XA-200.png",
+      "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\about-800x360-en-XA-200.geometry.json",
+      "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\about-800x360-en-XA-200.semantics.txt",
+      "sha256": {
+        "png": "19a7498502722db87f5d9e755e298d71e7f73343094edc4bd2bc14664f366d05",
+        "geometry": "e2adf40c723abdf8bfc187cb141203cb51474d1802771b6aa0f48a81b9fdef7b",
+        "semantics": "2d06820f765a7705562d17532c63fb1246e5d850ac1a4998c273b9cbe3bcfacc"
+      },
+      "normalizedSemanticFactsSha256": "ec79a1726e71bb47549b11c2239f3d0284a8a4888a020e1c7b51618942f3e221",
+      "issueIds": [],
+      "notes": [
+        "Current visual review approved; original resolved finding and prior hashes preserved.",
+        "Previous individual PNG review retained after byte-identical comparison.",
+        "PSEUDO01 closed by native adapter/controller source review and adapter-shaped test; live native activation not performed by reviewer."
+      ],
+      "priorSha256": {
+        "png": "19a7498502722db87f5d9e755e298d71e7f73343094edc4bd2bc14664f366d05",
+        "geometry": "e2adf40c723abdf8bfc187cb141203cb51474d1802771b6aa0f48a81b9fdef7b",
+        "semantics": "bcf32c13293a81941cc09471cf09e6426c3dfc29420d9580d81de68b6de9660d"
+      },
+      "resolvedIssueIds": [],
+      "priorNotes": [
+        "Debug accents/expansion visible; dark visual hierarchy and principal labels readable.",
+        "Scrollable list/settings/license content may be partially visible at viewport edges; this is not by itself an overflow defect.",
+        "Fixture-local visual review only; PSEUDO01 prevents approval of the actual native activation path."
+      ],
+      "semanticRecaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:10:10.601502+00:00",
+          "priorSha256": "ef8f8cb4e845dfe4bd981c2c61c6fb1fc6d0e2548b91bc819616203a4d110486",
+          "currentSha256": "2bbf1820dec7eb0f3c6f82da4d397c5946c0dd10def4a57878bc18d851344c34",
+          "normalizedSemanticFactsUnchanged": true,
+          "pngAndGeometryByteIdentical": true
+        },
+        {
+          "reviewedUtc": "2026-09-29T20:30:34.759653+00:00",
+          "priorSha256": {
+            "png": "19a7498502722db87f5d9e755e298d71e7f73343094edc4bd2bc14664f366d05",
+            "geometry": "e2adf40c723abdf8bfc187cb141203cb51474d1802771b6aa0f48a81b9fdef7b",
+            "semantics": "2bbf1820dec7eb0f3c6f82da4d397c5946c0dd10def4a57878bc18d851344c34"
+          },
+          "currentSha256": {
+            "png": "19a7498502722db87f5d9e755e298d71e7f73343094edc4bd2bc14664f366d05",
+            "geometry": "e2adf40c723abdf8bfc187cb141203cb51474d1802771b6aa0f48a81b9fdef7b",
+            "semantics": "2d06820f765a7705562d17532c63fb1246e5d850ac1a4998c273b9cbe3bcfacc"
+          },
+          "normalizedSemanticFactsPriorSha256": "ec79a1726e71bb47549b11c2239f3d0284a8a4888a020e1c7b51618942f3e221",
+          "normalizedSemanticFactsCurrentSha256": "ec79a1726e71bb47549b11c2239f3d0284a8a4888a020e1c7b51618942f3e221",
+          "approval": "Full normalized semantics unchanged; PNG/geometry byte identical"
+        }
+      ]
+    },
+    "licenses-800x360-en-XA-200": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "reviewedUtc": "2026-09-29T19:42:34.597878+00:00",
+      "ux": [
+        "U20",
+        "U26"
+      ],
+      "expectedText": [
+        "[Lícénsés ~~~]"
+      ],
+      "expectedSemanticTextPresent": true,
+      "image": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\licenses-800x360-en-XA-200.png",
+      "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\licenses-800x360-en-XA-200.geometry.json",
+      "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\pseudo-actual\\licenses-800x360-en-XA-200.semantics.txt",
+      "sha256": {
+        "png": "6b795b8478748a83d05e7cf4bf3263a21049df7fe74b875235178b2055556fb5",
+        "geometry": "3b6a6588cf16a2425961e2b4c55b7257ffc8b4f0dd68cc9e1bbf7a3be7a83218",
+        "semantics": "bf58283d766082f75dba307c7f7471bfe2cab70725d2a1f29fb05c44cc37d29a"
+      },
+      "normalizedSemanticFactsSha256": "18501285d5bc3feefec9b91f78b67b56853b64d071b2267e187da500d66ee623",
+      "issueIds": [],
+      "notes": [
+        "Current visual review approved; original resolved finding and prior hashes preserved.",
+        "Previous individual PNG review retained after byte-identical comparison.",
+        "PSEUDO01 closed by native adapter/controller source review and adapter-shaped test; live native activation not performed by reviewer."
+      ],
+      "priorSha256": {
+        "png": "6b795b8478748a83d05e7cf4bf3263a21049df7fe74b875235178b2055556fb5",
+        "geometry": "3b6a6588cf16a2425961e2b4c55b7257ffc8b4f0dd68cc9e1bbf7a3be7a83218",
+        "semantics": "c9946d845e78461b03dfdb85a58f24f1696648ba6655354512fcc3aec426d890"
+      },
+      "resolvedIssueIds": [],
+      "priorNotes": [
+        "Debug accents/expansion visible; dark visual hierarchy and principal labels readable.",
+        "Scrollable list/settings/license content may be partially visible at viewport edges; this is not by itself an overflow defect.",
+        "Fixture-local visual review only; PSEUDO01 prevents approval of the actual native activation path."
+      ],
+      "semanticRecaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:10:10.601502+00:00",
+          "priorSha256": "50c64fb8735d19dbec746a64a8277e44a4838145bfb5fdbc8d90fe5a23141a47",
+          "currentSha256": "6d99a138c5728950ac9901a26d23f87b4657d3f78fe38b00b38cece31f71682e",
+          "normalizedSemanticFactsUnchanged": true,
+          "pngAndGeometryByteIdentical": true
+        },
+        {
+          "reviewedUtc": "2026-09-29T20:30:34.759653+00:00",
+          "priorSha256": {
+            "png": "6b795b8478748a83d05e7cf4bf3263a21049df7fe74b875235178b2055556fb5",
+            "geometry": "3b6a6588cf16a2425961e2b4c55b7257ffc8b4f0dd68cc9e1bbf7a3be7a83218",
+            "semantics": "6d99a138c5728950ac9901a26d23f87b4657d3f78fe38b00b38cece31f71682e"
+          },
+          "currentSha256": {
+            "png": "6b795b8478748a83d05e7cf4bf3263a21049df7fe74b875235178b2055556fb5",
+            "geometry": "3b6a6588cf16a2425961e2b4c55b7257ffc8b4f0dd68cc9e1bbf7a3be7a83218",
+            "semantics": "bf58283d766082f75dba307c7f7471bfe2cab70725d2a1f29fb05c44cc37d29a"
+          },
+          "normalizedSemanticFactsPriorSha256": "18501285d5bc3feefec9b91f78b67b56853b64d071b2267e187da500d66ee623",
+          "normalizedSemanticFactsCurrentSha256": "18501285d5bc3feefec9b91f78b67b56853b64d071b2267e187da500d66ee623",
+          "approval": "Full normalized semantics unchanged; PNG/geometry byte identical"
+        }
+      ]
+    }
+  },
+  "priorResult": {
+    "reviewed": 17,
+    "needsfix": 1,
+    "productionIntegrationStatus": "needsfix",
+    "manifestSha256": "3e72d7240d1b9af78ef5533bb42c8cc49aab3c3619bd91517bc22ba410caf82d"
+  },
+  "recaptureReview": {
+    "changedPngsReopened": 1,
+    "byteIdenticalPngReviewsCarriedForward": 17,
+    "normalMatrixReview": "Pending root normal-matrix recapture review; no claim for that follow-up.",
+    "liveNativeActivation": "Not exercised during this read-only review."
+  },
+  "evidenceRecaptureReviews": [
+    {
+      "reviewedUtc": "2026-09-29T20:10:10.601502+00:00",
+      "entries": 18,
+      "pngAndGeometryByteIdentical": true,
+      "normalizedSemanticsIdentical": true,
+      "normalization": "UTF-8 read_text with universal newline normalization; replace regex #[a-fA-F0-9]+ with #ID; SHA256 of UTF-8 result",
+      "scope": "Only evidence hashes refreshed; prior raw semantic hashes retained per entry. No visual changes or golden promotion."
+    },
+    {
+      "reviewedUtc": "2026-09-29T20:30:34.759653+00:00",
+      "entries": 18,
+      "unchangedVisualAndNormalizedSemantics": 16,
+      "approvedControlsDeltas": 2,
+      "reference": "settings-delta-review.json",
+      "scope": "No silent mismatch acceptance: 16 full normalized semantic hashes unchanged; controls2 match approved delta PNG/geometry, expected text verified; prior hashes retained. No golden promotion."
+    }
+  ]
+}

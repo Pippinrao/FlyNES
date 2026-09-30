@@ -65,7 +65,7 @@ start_body = run[start_at:start_end if start_end > start_at else start_at + 700]
 assert "this.locator" in start_body or "canonicalId" in start_body, (
     "RunGame.start must pass or branch on canonicalId")
 assert run_game_forwards_locator_and_autosave(start_body), (
-    "RunGame must forward the selected locator and autosave preference")
+    "RunGame must restore the selected head independently of the periodic autosave interval")
 assert "hitMapFromLayout" in overlay or "HitMap" in overlay
 # Canvas buffer is vp-sized while hit-map/draw use px; scale px onto the buffer.
 assert "setTransform" in overlay
@@ -134,28 +134,28 @@ assert "fileIo.stat(" in scan, "file stat must use the asynchronous API"
 assert "nativeApp.scanAddFile" not in scan, "ArkUI must not synchronously hash ROM files"
 
 pairing = Path("harmony/entry/src/main/ets/pages/NearbyPairing.ets").read_text(encoding="utf-8")
-for export in (
-    "nearbyInviteNextHostGeneration", "nearbyInviteNextJoinAttemptId",
-    "nearbyInviteHostPublish", "nearbyInviteHostRegenerate", "nearbyInviteHostCancel",
-    "nearbyInviteSubmitCode", "nearbyInviteCancelCode", "nearbyInviteTick",
-    "nearbyInviteSnapshot",
-):
+# The approved nearby direction has a single QR path. The earlier invitation
+# digits and manual-ready footer are retired product UI, not migration targets.
+host_flow = Path("harmony/entry/src/main/ets/service/NearbyMvpHostFlow.ets").read_text(encoding="utf-8")
+scan_join = Path("harmony/entry/src/main/ets/service/NearbyScanJoinService.ets").read_text(encoding="utf-8")
+for export in ("nearbyMvpHost", "nearbyMvpInvite", "nearbyMvpCancel",
+               "nearbyMvpJoin", "nearbyMvpSnapshot"):
     assert export in dts, f"{export} must be declared for ArkTS"
     assert f'"{export}"' in napi, f"{export} must be registered by N-API"
-    assert export in pairing, f"NearbyPairing must use the shared session export {export}"
-assert "Math.random" not in pairing, "invite digits must not come from the ArkUI-local PRNG"
-assert "Date.now" not in pairing, "invite expiry must use a monotonic clock"
-assert "snapshot.hostPhase === 1" in pairing, (
-    "expired/cancelled invitations must publish anew instead of regenerating an idle host")
+    assert export in pairing + host_flow + scan_join, f"QR flow must use {export}"
+assert "QRCode(this.invite)" in pairing and "scanBarcode.startScanForResult" in pairing
+assert "nearbyScanJoinService.joinScannedText" in pairing
+for retired in ("nearbyInviteSubmitCode", "nearbyInviteCancelCode", "TextInput("):
+    assert retired not in pairing, f"retired pairing-code controls must stay removed: {retired}"
+assert "Math.random" not in pairing + host_flow + scan_join
+assert "cryptoFramework.createRandom" in host_flow, "QR capability must use secure random bytes"
 for color in ("#121316", "#1B1D22", "#292B31", "#F4EFE6", "#BEB8AE", "#FF6B5E"):
     assert color in pairing, f"NearbyPairing must use acceptance token {color}"
-assert ".width(48)" in pairing and ".height(48)" in pairing, (
-    "NearbyPairing back navigation hit target must be 48vp")
+assert ".width(48)" in pairing and ".height(48)" in pairing
 lobby_page = Path("harmony/entry/src/main/ets/pages/NearbyLobby.ets").read_text(encoding="utf-8")
-scroll_end = lobby_page.find(".layoutWeight(1)", lobby_page.find("Scroll()"))
-footer_at = lobby_page.find("this.confirmFooter()")
-assert scroll_end >= 0 and footer_at > scroll_end, (
-    "NearbyLobby confirmation must be a fixed footer outside the scrolling body")
+assert "nearby_lobby_choose_game" in lobby_page and "nearby_resume_game" in lobby_page
+assert "purpose: 'nearby'" in lobby_page and "pages/FlutterFoundation" in lobby_page
+assert "confirmFooter" not in lobby_page, "host selection starts through the existing shared owner"
 appear_at = gc.find("aboutToAppear")
 appear_end = gc.find("private ensureCoverStore", appear_at)
 startup_body = gc[appear_at:appear_end]

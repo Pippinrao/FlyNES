@@ -1,0 +1,1063 @@
+[
+  {
+    "id": "source-folder-unavailable-en",
+    "ux": [
+      "U10",
+      "U12"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Folder selection is unavailable on this system. Add files or ZIP archives instead."
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "3 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-folder-unavailable-en.png",
+    "geometry": "source-folder-unavailable-en.geometry.json",
+    "semantics": "source-folder-unavailable-en.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-folder-unavailable-zh-Hans",
+    "ux": [
+      "U10",
+      "U12"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "当前系统不支持选择文件夹，请添加文件或 ZIP 压缩包。"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "3 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "zh-Hans",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-folder-unavailable-zh-Hans.png",
+    "geometry": "source-folder-unavailable-zh-Hans.geometry.json",
+    "semantics": "source-folder-unavailable-zh-Hans.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "cover-decoded",
+    "ux": [
+      "U03",
+      "A04"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Fixture Adventure"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "16 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "cover-decoded.png",
+    "geometry": "cover-decoded.geometry.json",
+    "semantics": "cover-decoded.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "cover-failed",
+    "ux": [
+      "U03",
+      "A04"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Fixture Adventure"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "16 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "cover-failed.png",
+    "geometry": "cover-failed.geometry.json",
+    "semantics": "cover-failed.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "search-populated",
+    "ux": [
+      "U05"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Fixture Adventure",
+      "Fixture"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "20 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "search-populated.png",
+    "geometry": "search-populated.geometry.json",
+    "semantics": "search-populated.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "search-cleared",
+    "ux": [
+      "U05"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Search games",
+      "Fixture Adventure"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "20 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "search-cleared.png",
+    "geometry": "search-cleared.geometry.json",
+    "semantics": "search-cleared.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "search-closed",
+    "ux": [
+      "U05"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Fixture Adventure"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "16 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "search-closed.png",
+    "geometry": "search-closed.geometry.json",
+    "semantics": "search-closed.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-builtin-cancelled",
+    "ux": [
+      "U09",
+      "U11"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Built-in",
+      "Scan cancelled. Previous library retained."
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "4 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-builtin-cancelled.png",
+    "geometry": "source-builtin-cancelled.geometry.json",
+    "semantics": "source-builtin-cancelled.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-reauthorize-failed",
+    "ux": [
+      "U12"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "My game folder",
+      "Source unavailable"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "6 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-reauthorize-failed.png",
+    "geometry": "source-reauthorize-failed.geometry.json",
+    "semantics": "source-reauthorize-failed.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-reauthorize-restored",
+    "ux": [
+      "U12"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "My game folder",
+      "12 games"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "5 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-reauthorize-restored.png",
+    "geometry": "source-reauthorize-restored.geometry.json",
+    "semantics": "source-reauthorize-restored.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-remove-failed",
+    "ux": [
+      "U13"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "My game folder",
+      "This source is unavailable"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "5 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-remove-failed.png",
+    "geometry": "source-remove-failed.geometry.json",
+    "semantics": "source-remove-failed.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-remove-completed",
+    "ux": [
+      "U13"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Add file",
+      "Add folder"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "2 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-remove-completed.png",
+    "geometry": "source-remove-completed.geometry.json",
+    "semantics": "source-remove-completed.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-add-completed",
+    "ux": [
+      "U10",
+      "U11"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Added game folder",
+      "3 games"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "4 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-add-completed.png",
+    "geometry": "source-add-completed.geometry.json",
+    "semantics": "source-add-completed.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-read-failed",
+    "ux": [
+      "U09",
+      "U21"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "This source is unavailable",
+      "Retry"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "3 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-read-failed.png",
+    "geometry": "source-read-failed.geometry.json",
+    "semantics": "source-read-failed.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-read-restored",
+    "ux": [
+      "U09"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "My game folder",
+      "12 games"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "4 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-read-restored.png",
+    "geometry": "source-read-restored.geometry.json",
+    "semantics": "source-read-restored.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "chooser-customRefreshPolicy",
+    "ux": [
+      "U15",
+      "U21"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Refresh policy"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "2 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "chooser-customRefreshPolicy.png",
+    "geometry": "chooser-customRefreshPolicy.geometry.json",
+    "semantics": "chooser-customRefreshPolicy.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "chooser-customTemporalMode",
+    "ux": [
+      "U15",
+      "U21"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Time processing"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "1 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "chooser-customTemporalMode.png",
+    "geometry": "chooser-customTemporalMode.geometry.json",
+    "semantics": "chooser-customTemporalMode.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "chooser-customSpatialMode",
+    "ux": [
+      "U15",
+      "U21"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Image scaling"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "4 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "chooser-customSpatialMode.png",
+    "geometry": "chooser-customSpatialMode.geometry.json",
+    "semantics": "chooser-customSpatialMode.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "chooser-customPostEffect",
+    "ux": [
+      "U15",
+      "U21"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Post-processing"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "2 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "chooser-customPostEffect.png",
+    "geometry": "chooser-customPostEffect.geometry.json",
+    "semantics": "chooser-customPostEffect.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "chooser-aspectMode",
+    "ux": [
+      "U15",
+      "U21"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Aspect ratio"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "3 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "chooser-aspectMode.png",
+    "geometry": "chooser-aspectMode.geometry.json",
+    "semantics": "chooser-aspectMode.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "chooser-audio-focus",
+    "ux": [
+      "U17"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Pause",
+      "Lower volume",
+      "Keep playing"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "3 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "chooser-audio-focus.png",
+    "geometry": "chooser-audio-focus.geometry.json",
+    "semantics": "chooser-audio-focus.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "language-applied-chinese",
+    "ux": [
+      "U18"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "设置",
+      "简体中文",
+      "自动保存"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "9 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "language-applied-chinese.png",
+    "geometry": "language-applied-chinese.geometry.json",
+    "semantics": "language-applied-chinese.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "about-unconfigured",
+    "ux": [
+      "U19"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "3.0.6",
+      "Unavailable",
+      "Not configured"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "6 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "about-unconfigured.png",
+    "geometry": "about-unconfigured.geometry.json",
+    "semantics": "about-unconfigured.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "reset-narrow-confirm",
+    "ux": [
+      "U16",
+      "U21"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Reset controls",
+      "Confirm",
+      "Cancel"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "2 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 420.0,
+    "height": 600.0,
+    "locale": "en",
+    "textScale": 2.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "reset-narrow-confirm.png",
+    "geometry": "reset-narrow-confirm.geometry.json",
+    "semantics": "reset-narrow-confirm.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "reset-completed",
+    "ux": [
+      "U16",
+      "U22"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Recommended layout"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "8 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 420.0,
+    "height": 600.0,
+    "locale": "en",
+    "textScale": 2.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "reset-completed.png",
+    "geometry": "reset-completed.geometry.json",
+    "semantics": "reset-completed.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "license-long-scrolled",
+    "ux": [
+      "U20"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "11 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "license-long-scrolled.png",
+    "geometry": "license-long-scrolled.geometry.json",
+    "semantics": "license-long-scrolled.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "license-list-failed",
+    "ux": [
+      "U20",
+      "U21"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Retry",
+      "This operation could not be completed. Please retry."
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "1 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "license-list-failed.png",
+    "geometry": "license-list-failed.geometry.json",
+    "semantics": "license-list-failed.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "license-list-recovered",
+    "ux": [
+      "U20"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Component A",
+      "License a"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "6 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "license-list-recovered.png",
+    "geometry": "license-list-recovered.geometry.json",
+    "semantics": "license-list-recovered.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "reset-partial-authoritative",
+    "ux": [
+      "U16",
+      "U17",
+      "U21"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Retry"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "9 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "reset-partial-authoritative.png",
+    "geometry": "reset-partial-authoritative.geometry.json",
+    "semantics": "reset-partial-authoritative.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "reset-state-unreadable",
+    "ux": [
+      "U16",
+      "U17",
+      "U21"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Retry"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "6 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "reset-state-unreadable.png",
+    "geometry": "reset-state-unreadable.geometry.json",
+    "semantics": "reset-state-unreadable.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "reset-state-recovered",
+    "ux": [
+      "U16",
+      "U17"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Interact with real product widget using deterministic owner responses"
+    ],
+    "expectedText": [
+      "Sound"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "8 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "reset-state-recovered.png",
+    "geometry": "reset-state-recovered.geometry.json",
+    "semantics": "reset-state-recovered.semantics.txt",
+    "review": "pending"
+  }
+]

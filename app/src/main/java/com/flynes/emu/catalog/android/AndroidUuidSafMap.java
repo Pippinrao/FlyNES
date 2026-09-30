@@ -8,20 +8,30 @@ import java.util.function.Function;
 
 /** Platform-only UUID hex → persistable URI map. Never written into FLYCAT01. */
 public final class AndroidUuidSafMap {
+    @FunctionalInterface public interface Committer {
+        boolean commit(java.util.Map<String,String> writes,java.util.Set<String> removals);
+    }
+    public AndroidUuidSafMap(Function<String,String> get,Committer commit) {
+        this.get=Objects.requireNonNull(get,"get");
+        this.commit=Objects.requireNonNull(commit,"commit");
+    }
     static final String BUILTIN_KEY = "builtin.uuid";
     static final String LOCATOR_PREFIX = "locator:";
 
     private final Function<String, String> get;
-    private final BiConsumer<String, String> put;
-    private final Consumer<String> remove;
+    private final Committer commit;
 
     public AndroidUuidSafMap(
             Function<String, String> get,
             BiConsumer<String, String> put,
             Consumer<String> remove) {
-        this.get = Objects.requireNonNull(get, "get");
-        this.put = Objects.requireNonNull(put, "put");
-        this.remove = Objects.requireNonNull(remove, "remove");
+        this(get,(writes,removals)->{
+            for(String key:removals)remove.accept(key);
+            for(var entry:writes.entrySet())put.accept(entry.getKey(),entry.getValue());
+            return true;
+        });
+        Objects.requireNonNull(put,"put");
+        Objects.requireNonNull(remove,"remove");
     }
 
     public void put(byte[] uuid, String persistableUri) {
@@ -32,11 +42,17 @@ public final class AndroidUuidSafMap {
         String locator = Objects.requireNonNull(persistableUri, "persistable URI").trim();
         if (locator.isEmpty()) throw new IllegalArgumentException("persistable URI");
         String previous = get.apply(hex);
+        String assigned = get.apply(LOCATOR_PREFIX + locator);
+        if(assigned!=null&&!assigned.equals(hex))throw new IllegalArgumentException("locator already assigned");
+        if(locator.equals(previous)&&hex.equals(assigned))return;
+        java.util.Map<String,String> writes=new java.util.LinkedHashMap<>();
+        java.util.Set<String> removals=new java.util.HashSet<>();
         if (previous != null && !previous.isEmpty() && !previous.equals(locator)) {
-            remove.accept(LOCATOR_PREFIX + previous);
+            removals.add(LOCATOR_PREFIX + previous);
         }
-        put.accept(hex, locator);
-        put.accept(LOCATOR_PREFIX + locator, hex);
+        writes.put(hex,locator);
+        writes.put(LOCATOR_PREFIX+locator,hex);
+        commitChecked(writes,removals);
     }
 
     public String get(byte[] uuid) {
@@ -47,8 +63,10 @@ public final class AndroidUuidSafMap {
         String hex = toHex(requireUuid(uuid));
         if (BUILTIN_KEY.equals(hex)) return;
         String locator = get.apply(hex);
-        remove.accept(hex);
-        if (locator != null && !locator.isEmpty()) remove.accept(LOCATOR_PREFIX + locator);
+        java.util.Set<String> removals=new java.util.HashSet<>();
+        removals.add(hex);
+        if(locator!=null&&!locator.isEmpty())removals.add(LOCATOR_PREFIX+locator);
+        commitChecked(java.util.Collections.emptyMap(),removals);
     }
 
     public byte[] uuidForLocator(String persistableUri) {
@@ -70,8 +88,28 @@ public final class AndroidUuidSafMap {
         String stored = get.apply(BUILTIN_KEY);
         if (stored != null && !stored.isEmpty()) return parseHex(stored);
         byte[] generated = uuidBytes(UUID.randomUUID());
-        put.accept(BUILTIN_KEY, toHex(generated));
+        commitChecked(java.util.Collections.singletonMap(BUILTIN_KEY,toHex(generated)),java.util.Collections.emptySet());
         return generated;
+    }
+
+    /** One preference transaction contains the forward and reverse locator indexes. */
+    private void commitChecked(java.util.Map<String,String> writes,java.util.Set<String> removals) {
+        java.util.Map<String,String> previous=new java.util.LinkedHashMap<>();
+        java.util.Set<String> absent=new java.util.HashSet<>();
+        java.util.Set<String> touched=new java.util.HashSet<>(writes.keySet());touched.addAll(removals);
+        for(String key:touched) {
+            String value=get.apply(key);
+            if(value==null)absent.add(key);else previous.put(key,value);
+        }
+        if(commit.commit(writes,removals))return;
+        // SharedPreferences may expose failed commits in memory. Restore that view too.
+        PersistenceFailure failure=new PersistenceFailure();
+        if(!commit.commit(previous,absent))failure.addSuppressed(new IllegalStateException("source_mapping_rollback_failed"));
+        throw failure;
+    }
+
+    public static final class PersistenceFailure extends IllegalStateException {
+        PersistenceFailure(){super("source_write_failed");}
     }
 
     public static String toHex(byte[] uuid) {

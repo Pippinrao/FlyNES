@@ -1,0 +1,188 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 600.0, 540.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 600.0, 540.0)
+   │ textDirection: ltr
+   │
+   └─SemanticsNode#2
+     │ Rect.fromLTRB(0.0, 0.0, 600.0, 540.0)
+     │ sortKey: OrdinalSortKey#71b11(order: 0.0)
+     │
+     └─SemanticsNode#3
+       │ Rect.fromLTRB(0.0, 0.0, 600.0, 540.0)
+       │ flags: scopesRoute
+       │
+       ├─SemanticsNode#4
+       │ │ Rect.fromLTRB(40.0, 40.0, 107.7, 88.0)
+       │ │ flags: hasSelectedState
+       │ │
+       │ └─SemanticsNode#5
+       │     Rect.fromLTRB(0.0, 0.0, 67.7, 48.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "Recent"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#6
+       │ │ Rect.fromLTRB(111.7, 40.0, 193.6, 88.0)
+       │ │ flags: hasSelectedState
+       │ │
+       │ └─SemanticsNode#7
+       │     Rect.fromLTRB(0.0, 0.0, 81.9, 48.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "Favorites"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#8
+       │ │ Rect.fromLTRB(197.6, 40.0, 245.6, 88.0)
+       │ │ flags: isSelected, hasSelectedState
+       │ │
+       │ └─SemanticsNode#9
+       │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "All"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#10
+       │ │ Rect.fromLTRB(249.6, 40.0, 317.2, 88.0)
+       │ │ flags: hasSelectedState
+       │ │
+       │ └─SemanticsNode#11
+       │     Rect.fromLTRB(0.0, 0.0, 67.6, 48.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "Built-in"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#12
+       │ │ Rect.fromLTRB(356.0, 40.0, 404.0, 88.0)
+       │ │ traversalParentIdentifier: _OverlayPortalState#5a2b3
+       │ │
+       │ └─SemanticsNode#13
+       │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "Search"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#14
+       │ │ Rect.fromLTRB(408.0, 40.0, 456.0, 88.0)
+       │ │ traversalParentIdentifier: _OverlayPortalState#b88c9
+       │ │
+       │ └─SemanticsNode#15
+       │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "Sources"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#16
+       │ │ Rect.fromLTRB(460.0, 40.0, 508.0, 88.0)
+       │ │ traversalParentIdentifier: _OverlayPortalState#69ac7
+       │ │
+       │ └─SemanticsNode#17
+       │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "Settings"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#18
+       │ │ Rect.fromLTRB(512.0, 40.0, 560.0, 88.0)
+       │ │ traversalParentIdentifier: _OverlayPortalState#291e4
+       │ │
+       │ └─SemanticsNode#19
+       │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "Nearby"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#28
+       │   Rect.fromLTRB(207.2, 114.0, 345.6, 134.0)
+       │   label: "1 games · swipe to browse"
+       │   textDirection: ltr
+       │
+       ├─SemanticsNode#29
+       │   Rect.fromLTRB(353.6, 114.0, 423.9, 134.0)
+       │   label: "Two-player"
+       │   textDirection: ltr
+       │
+       ├─SemanticsNode#30
+       │   Rect.fromLTRB(423.9, 100.0, 491.9, 148.0)
+       │   actions: tap
+       │   flags: hasEnabledState, isEnabled, hasToggledState
+       │   label: "Two-player"
+       │   textDirection: ltr
+       │
+       ├─SemanticsNode#20
+       │   Rect.fromLTRB(64.0, 188.0, 167.2, 228.0)
+       │   label: "Fixture Adventure"
+       │   textDirection: ltr
+       │
+       ├─SemanticsNode#21
+       │ │ Rect.fromLTRB(56.0, 316.0, 175.2, 372.0)
+       │ │ flags: hasImplicitScrolling
+       │ │ scrollExtentMin: 0.0
+       │ │ scrollPosition: 0.0
+       │ │ scrollExtentMax: 0.0
+       │ │
+       │ ├─SemanticsNode#22
+       │ │   Rect.fromLTRB(0.0, 0.0, 71.2, 56.0)
+       │ │   label: "Fixture Adventure"
+       │ │   textDirection: ltr
+       │ │
+       │ └─SemanticsNode#23
+       │   │ Rect.fromLTRB(71.2, 4.0, 119.2, 52.0)
+       │   │ traversalParentIdentifier: _OverlayPortalState#7e4db
+       │   │
+       │   └─SemanticsNode#24
+       │       Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+       │       actions: focus, tap
+       │       flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │       label: "Favorite"
+       │       textDirection: ltr
+       │
+       ├─SemanticsNode#25
+       │   Rect.fromLTRB(56.0, 380.0, 175.2, 400.0)
+       │   label: "测试冒险"
+       │   textDirection: ltr
+       │
+       ├─SemanticsNode#26
+       │   Rect.fromLTRB(56.0, 400.0, 175.2, 420.0)
+       │   label: "2 version(s)"
+       │   textDirection: ltr
+       │
+       ├─SemanticsNode#27
+       │   Rect.fromLTRB(56.0, 436.0, 175.2, 492.0)
+       │   actions: focus, tap
+       │   flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │   label: "Start"
+       │   textDirection: ltr
+       │
+       └─SemanticsNode#31
+         │ Rect.fromLTRB(207.2, 156.0, 560.0, 508.0)
+         │
+         └─SemanticsNode#33
+           │ Rect.fromLTRB(0.0, 0.0, 352.8, 352.0)
+           │ flags: hasImplicitScrolling
+           │ scrollChildren: 1
+           │ scrollIndex: 0
+           │ scrollExtentMin: 0.0
+           │ scrollPosition: 0.0
+           │ scrollExtentMax: 0.0
+           │
+           └─SemanticsNode#32
+               Rect.fromLTRB(0.0, 0.0, 220.0, 170.0)
+               tags: RenderViewport.twoPane
+               actions: focus, tap
+               flags: isSelected, isButton, isFocusable, hasSelectedState
+               label:
+                 "Fixture Adventure
+                 Fixture Adventure
+                 Fixture Adventure"
+               textDirection: ltr
+               indexInParent: 0

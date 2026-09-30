@@ -1,7 +1,13 @@
 import nativePlay, { HistoryInput, HistoryRow } from 'libentry.so';
 
+export interface HistoryClockSnapshot { playedMs: number; sinceSaveMs: number; }
+
 /** Platform adapter: captures the emulator; the standalone library stores opaque bytes. */
 export class SaveHistoryService {
+  /** Read-only lifecycle evidence; never samples/steps the emulator or saves. */
+  clockSnapshot(): HistoryClockSnapshot {
+    return { playedMs: this.playedMs, sinceSaveMs: this.sinceSave };
+  }
   playedMs: number = 0;
   intervalMs: number = 60000;
   private path: string;

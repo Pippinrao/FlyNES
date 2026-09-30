@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "reviewedUtc": "2026-09-29T22:32:24.077046+00:00",
+  "scope": "Two new deterministic unsupported-folder states and one actual OH image; unchanged prior24 PNG/geometry hash verification only. No golden promotion.",
+  "status": "reviewed",
+  "manifestCount": 26,
+  "entries": {
+    "source-folder-unavailable-en": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "sha256": {
+        "png": "7d3c79eacc4dd4125abf3bdffdba22203ffaaf839f3a8b637cd81bcb752b59d2",
+        "geometry": "8c3b47ff866ccf9d83a75ced61db8d78905f701c9f5cfef5bc23b67e4674843e",
+        "semantics": "a5c37fdf33546cdd9a21f4d2d40ca4d5a1d260753caa2a8acca2d712699038e7"
+      },
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-folder-unavailable-en.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-folder-unavailable-en.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-folder-unavailable-en.semantics.txt"
+      },
+      "notes": [
+        "Disabled folder action exports hasEnabledState without isEnabled or tap; file action remains enabled. Localized explanation fully visible. Targets 48dp or larger."
+      ]
+    },
+    "source-folder-unavailable-zh-Hans": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "sha256": {
+        "png": "60e69bf576f5a329cc7bb230ab52a694bfbfe9b21898f8cc005035eda643d07b",
+        "geometry": "92ee1e3938bc73129d4bbcdc78914399d572da7a422e016cfc8413efbb2d913f",
+        "semantics": "4bcd2aed137015682b2b1fd7a1efb5c86513728385ed57e7c0fe00fb2106309f"
+      },
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-folder-unavailable-zh-Hans.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-folder-unavailable-zh-Hans.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-folder-unavailable-zh-Hans.semantics.txt"
+      },
+      "notes": [
+        "Disabled folder action exports hasEnabledState without isEnabled or tap; file action remains enabled. Localized explanation fully visible. Targets 48dp or larger."
+      ]
+    },
+    "harmony-unsupported-folder-zh": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "sha256": {
+        "png": "5c3148b174780e72b198e563ab0a9498567997eb7a465fc5510cf4dfcefa9d19",
+        "tree": "0208ce938d7f4601bc83b39aabbce44b27d963740eac9337fb281f0c80a2a5fc",
+        "context": "974a0da43638761277da4204049507db7d56abbb5b74aa12a8d0e8d1c995d9f9"
+      },
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\harmony\\source-capability\\unsupported-folder-zh.png",
+        "tree": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\harmony\\source-capability\\unsupported-folder-zh.tree.json",
+        "context": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\harmony\\source-capability\\unsupported-folder-zh.json"
+      },
+      "notes": [
+        "Actual OH screenshot: clear disabled folder action, localized explanation wraps without clipping; Add file and Back remain visible. Does not prove folder support or reauthorization."
+      ]
+    }
+  },
+  "prior24ChecksAgainst": "icon-label-review.json",
+  "prior24Checks": {
+    "cover-decoded": {
+      "png": true,
+      "geometry": true
+    },
+    "cover-failed": {
+      "png": true,
+      "geometry": true
+    },
+    "search-populated": {
+      "png": true,
+      "geometry": true
+    },
+    "search-cleared": {
+      "png": true,
+      "geometry": true
+    },
+    "search-closed": {
+      "png": true,
+      "geometry": true
+    },
+    "source-builtin-cancelled": {
+      "png": true,
+      "geometry": true
+    },
+    "source-reauthorize-failed": {
+      "png": true,
+      "geometry": true
+    },
+    "source-reauthorize-restored": {
+      "png": true,
+      "geometry": true
+    },
+    "source-remove-failed": {
+      "png": true,
+      "geometry": true
+    },
+    "source-remove-completed": {
+      "png": true,
+      "geometry": true
+    },
+    "source-add-completed": {
+      "png": true,
+      "geometry": true
+    },
+    "source-read-failed": {
+      "png": true,
+      "geometry": true
+    },
+    "source-read-restored": {
+      "png": true,
+      "geometry": true
+    },
+    "chooser-customRefreshPolicy": {
+      "png": true,
+      "geometry": true
+    },
+    "chooser-customTemporalMode": {
+      "png": true,
+      "geometry": true
+    },
+    "chooser-customSpatialMode": {
+      "png": true,
+      "geometry": true
+    },
+    "chooser-customPostEffect": {
+      "png": true,
+      "geometry": true
+    },
+    "chooser-aspectMode": {
+      "png": true,
+      "geometry": true
+    },
+    "chooser-audio-focus": {
+      "png": true,
+      "geometry": true
+    },
+    "language-applied-chinese": {
+      "png": true,
+      "geometry": true
+    },
+    "about-unconfigured": {
+      "png": true,
+      "geometry": true
+    },
+    "reset-narrow-confirm": {
+      "png": true,
+      "geometry": true
+    },
+    "reset-completed": {
+      "png": true,
+      "geometry": true
+    },
+    "license-long-scrolled": {
+      "png": true,
+      "geometry": true
+    }
+  },
+  "issues": [],
+  "limitations": [
+    "Old raw semantic hashes change on recapture; this delta review does not blanket approve those raw differences. Prior semantic review remains icon-label-review.json."
+  ]
+}

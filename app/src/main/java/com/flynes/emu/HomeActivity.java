@@ -127,6 +127,7 @@ public final class HomeActivity extends android.app.Activity {
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if(ProductRoutes.redirect(this,ACTION_SHOW_SOURCES.equals(getIntent().getAction())?"sources":"hall"))return;
         systemLocaleTags = android.content.res.Resources.getSystem()
                 .getConfiguration().getLocales().toLanguageTags();
         appliedLocaleTags = AppCompatDelegate.getApplicationLocales().toLanguageTags();
@@ -205,6 +206,7 @@ public final class HomeActivity extends android.app.Activity {
     @Override protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        if(ProductRoutes.redirect(this,ACTION_SHOW_SOURCES.equals(intent.getAction())?"sources":"hall"))return;
         if (ACTION_SHOW_SOURCES.equals(intent.getAction())) {
             if (!fullUiInstalled) installFullHome();
             showSources(true);
@@ -213,6 +215,7 @@ public final class HomeActivity extends android.app.Activity {
 
     @Override protected void onSaveInstanceState(Bundle out) {
         super.onSaveInstanceState(out);
+        if(navigation==null)return;
         out.putString("category", navigation.category().name());
         out.putString("query", navigation.query());
         out.putString("selected", navigation.selectedCanonicalId());
@@ -220,7 +223,7 @@ public final class HomeActivity extends android.app.Activity {
 
     @Override protected void onStop() {
         main.removeCallbacks(nearbyResumeMonitor);
-        persistNavigation();
+        if(preferences!=null&&navigation!=null)persistNavigation();
         super.onStop();
     }
 
@@ -350,7 +353,7 @@ public final class HomeActivity extends android.app.Activity {
         findViewById(R.id.open_sources).setOnClickListener(view -> showSources(true));
         findViewById(R.id.close_sources).setOnClickListener(view -> showSources(false));
         findViewById(R.id.open_settings).setOnClickListener(
-                view -> startActivity(new Intent(this, SettingsActivity.class)));
+                view -> startActivity(ProductRoutes.nativeIntent(this, SettingsActivity.class)));
         findViewById(R.id.open_nearby).setOnClickListener(view -> {
             FlyNesApplication app = (FlyNesApplication) getApplication();
             NearbyMvpSession session = app.nearbyMvpOwner().session();
@@ -729,7 +732,7 @@ public final class HomeActivity extends android.app.Activity {
                 canonicalId, result -> {
                     setBusy(false);
                     if (result.sessionCommitted()) {
-                        Intent play = new Intent(this, MainActivity.class);
+                        Intent play = ProductRoutes.nativeIntent(this, MainActivity.class);
                         startActivity(play);
                     } else {
                         showStatus(R.string.launch_failed);

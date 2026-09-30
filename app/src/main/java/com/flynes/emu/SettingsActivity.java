@@ -28,6 +28,7 @@ public final class SettingsActivity extends AppCompatActivity {
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
+        if(ProductRoutes.redirect(this,"settings"))return;
         setContentView(R.layout.activity_settings);
         MaterialToolbar toolbar = findViewById(R.id.settings_toolbar);
         toolbar.setNavigationOnClickListener(view -> finish());
@@ -57,7 +58,7 @@ public final class SettingsActivity extends AppCompatActivity {
     private SettingsSection selected = SettingsSection.DISPLAY;
 
     @Override protected void onSaveInstanceState(Bundle outState) {
-        outState.putString(STATE_SECTION, selected.name());
+        if(selected!=null)outState.putString(STATE_SECTION, selected.name());
         super.onSaveInstanceState(outState);
     }
 

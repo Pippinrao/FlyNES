@@ -16,6 +16,8 @@ struct GameCenterItem final
     std::int64_t last_played_sequence = 0;
     std::string original_filename;
     int popularity_score = -1;
+    // Newline-separated names from the shared title index; search only, never rank.
+    std::string search_aliases;
 
     GameCenterItem(std::string canonical_id_value,
                    std::string title_en_value,

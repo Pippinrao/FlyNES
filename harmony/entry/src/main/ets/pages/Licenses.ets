@@ -5,6 +5,7 @@ import { util } from '@kit.ArkTS';
 import { LicenseEntry, LicenseModel } from './LicenseModel';
 import { builtinGamesSync } from '../service/PlayService';
 import { BuiltinGames } from '../service/BuiltinGames';
+import { redirectProductRoute } from '../flutter/ProductRoutes';
 
 const COLOR_BACKGROUND: string = '#121316';
 const COLOR_SURFACE: string = '#1B1D22';
@@ -32,6 +33,7 @@ struct Licenses {
   }
 
   aboutToAppear(): void {
+    if (redirectProductRoute('licenses')) return;
     this.entries = LicenseModel.all(this.bundledGames());
     if (this.entries.length > 0) {
       void this.selectEntry(this.entries[0].fileName);

@@ -14,6 +14,15 @@ import java.util.List;
 import java.util.Map;
 
 public final class SourceEnumeratorTest {
+    @Test public void cancellationEscapesWithoutProducingFatalReconciliation() {
+        DocumentTreeGateway gateway = new DocumentTreeGateway() {
+            public String rootDocumentId() { throw new java.util.concurrent.CancellationException(); }
+            public ChildrenBatch listChildren(String id,int budget) { throw new AssertionError(); }
+            public InputStream open(String locator) { throw new AssertionError(); }
+        };
+        org.junit.Assert.assertThrows(java.util.concurrent.CancellationException.class,
+                () -> new SourceEnumerator(16,20_000).enumerate(source(),gateway));
+    }
     @Test
     public void recursivelyEnumeratesInStableOrderAndKeepsOpaqueLocators() {
         FakeTree tree = new FakeTree("root");

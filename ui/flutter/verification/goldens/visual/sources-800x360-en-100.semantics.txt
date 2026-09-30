@@ -1,0 +1,114 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 2400.0, 1080.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0) scaled by 3.0x
+   │ textDirection: ltr
+   │
+   └─SemanticsNode#2
+     │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+     │ sortKey: OrdinalSortKey#de093(order: 0.0)
+     │
+     └─SemanticsNode#3
+       │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+       │ flags: scopesRoute
+       │
+       ├─SemanticsNode#10
+       │ │ Rect.fromLTRB(0.0, 0.0, 800.0, 56.0)
+       │ │
+       │ └─SemanticsNode#11
+       │     Rect.fromLTRB(16.0, 14.0, 95.5, 42.0)
+       │     flags: isHeader, namesRoute
+       │     label: "Sources"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#4
+       │ │ Rect.fromLTRB(16.0, 72.0, 269.0, 344.0)
+       │ │ flags: hasImplicitScrolling
+       │ │ scrollExtentMin: 0.0
+       │ │ scrollPosition: 0.0
+       │ │ scrollExtentMax: 0.0
+       │ │
+       │ ├─SemanticsNode#5
+       │ │   Rect.fromLTRB(0.0, 0.0, 253.0, 32.0)
+       │ │   label: "Your game sources"
+       │ │   textDirection: ltr
+       │ │
+       │ ├─SemanticsNode#6
+       │ │   Rect.fromLTRB(0.0, 48.0, 253.0, 108.0)
+       │ │   label: "Add your own NES games. Removing a source keeps your
+       │ │     original files and saved progress."
+       │ │   textDirection: ltr
+       │ │
+       │ ├─SemanticsNode#7
+       │ │   Rect.fromLTRB(0.0, 132.0, 253.0, 188.0)
+       │ │   actions: focus, tap
+       │ │   flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │ │   label: "Add file"
+       │ │   textDirection: ltr
+       │ │
+       │ └─SemanticsNode#8
+       │     Rect.fromLTRB(0.0, 200.0, 253.0, 248.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "Add folder"
+       │     textDirection: ltr
+       │
+       └─SemanticsNode#12
+         │ Rect.fromLTRB(293.0, 72.0, 784.0, 344.0)
+         │
+         └─SemanticsNode#20
+           │ Rect.fromLTRB(0.0, 0.0, 491.0, 272.0)
+           │ actions: scrollToOffset, scrollUp
+           │ flags: hasImplicitScrolling
+           │ scrollIndex: 0
+           │ scrollExtentMin: 0.0
+           │ scrollPosition: 0.0
+           │ scrollExtentMax: 16.0
+           │
+           ├─SemanticsNode#13
+           │ │ Rect.fromLTRB(0.0, 0.0, 491.0, 120.0)
+           │ │ tags: RenderViewport.twoPane
+           │ │ indexInParent: 0
+           │ │
+           │ └─SemanticsNode#14
+           │     Rect.fromLTRB(0.0, 0.0, 491.0, 120.0)
+           │     label:
+           │       "Built-in
+           │       Built-in · cannot be removed
+           │       7 games"
+           │     textDirection: ltr
+           │
+           └─SemanticsNode#15
+             │ Rect.fromLTRB(0.0, 120.0, 491.0, 272.0)
+             │ tags: RenderViewport.twoPane
+             │ indexInParent: 1
+             │
+             └─SemanticsNode#16
+               │ Rect.fromLTRB(0.0, 0.0, 491.0, 152.0)
+               │ label:
+               │   "My games
+               │   Folder
+               │   12 games"
+               │ textDirection: ltr
+               │
+               ├─SemanticsNode#17
+               │   Rect.fromLTRB(20.0, 100.0, 75.4, 148.0)
+               │   actions: focus, tap
+               │   flags: isButton, hasEnabledState, isEnabled, isFocusable
+               │   label: "Scan"
+               │   textDirection: ltr
+               │
+               ├─SemanticsNode#18
+               │   Rect.fromLTRB(83.4, 100.0, 182.5, 148.0)
+               │   actions: focus, tap
+               │   flags: isButton, hasEnabledState, isEnabled, isFocusable
+               │   label: "Reauthorize"
+               │   textDirection: ltr
+               │
+               └─SemanticsNode#19
+                   Rect.fromLTRB(190.5, 100.0, 265.4, 148.0)
+                   actions: focus, tap
+                   flags: isButton, hasEnabledState, isEnabled, isFocusable
+                   label: "Remove"
+                   textDirection: ltr

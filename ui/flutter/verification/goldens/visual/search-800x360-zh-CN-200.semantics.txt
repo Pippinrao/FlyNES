@@ -1,0 +1,143 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 2400.0, 1080.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0) scaled by 3.0x
+   │ textDirection: ltr
+   │
+   └─SemanticsNode#2
+     │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+     │ sortKey: OrdinalSortKey#de093(order: 0.0)
+     │
+     └─SemanticsNode#3
+       │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+       │ flags: scopesRoute
+       │
+       ├─SemanticsNode#4
+       │ │ Rect.fromLTRB(16.0, 8.0, 580.0, 56.0)
+       │ │ flags: hasImplicitScrolling
+       │ │ scrollExtentMin: 0.0
+       │ │ scrollPosition: 0.0
+       │ │ scrollExtentMax: 0.0
+       │ │
+       │ ├─SemanticsNode#5
+       │ │ │ Rect.fromLTRB(0.0, 0.0, 72.2, 48.0)
+       │ │ │ flags: hasSelectedState
+       │ │ │
+       │ │ └─SemanticsNode#6
+       │ │     Rect.fromLTRB(0.0, 0.0, 72.2, 48.0)
+       │ │     actions: focus, tap
+       │ │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │ │     label: "最近"
+       │ │     textDirection: ltr
+       │ │
+       │ ├─SemanticsNode#7
+       │ │ │ Rect.fromLTRB(76.2, 0.0, 148.4, 48.0)
+       │ │ │ flags: hasSelectedState
+       │ │ │
+       │ │ └─SemanticsNode#8
+       │ │     Rect.fromLTRB(0.0, 0.0, 72.2, 48.0)
+       │ │     actions: focus, tap
+       │ │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │ │     label: "收藏"
+       │ │     textDirection: ltr
+       │ │
+       │ ├─SemanticsNode#9
+       │ │ │ Rect.fromLTRB(152.4, 0.0, 224.6, 48.0)
+       │ │ │ flags: isSelected, hasSelectedState
+       │ │ │
+       │ │ └─SemanticsNode#10
+       │ │     Rect.fromLTRB(0.0, 0.0, 72.2, 48.0)
+       │ │     actions: focus, tap
+       │ │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │ │     label: "全部"
+       │ │     textDirection: ltr
+       │ │
+       │ └─SemanticsNode#11
+       │   │ Rect.fromLTRB(228.6, 0.0, 300.8, 48.0)
+       │   │ flags: hasSelectedState
+       │   │
+       │   └─SemanticsNode#12
+       │       Rect.fromLTRB(0.0, 0.0, 72.2, 48.0)
+       │       actions: focus, tap
+       │       flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │       label: "内置"
+       │       textDirection: ltr
+       │
+       ├─SemanticsNode#13
+       │ │ Rect.fromLTRB(580.0, 8.0, 628.0, 56.0)
+       │ │ traversalParentIdentifier: _OverlayPortalState#38525
+       │ │
+       │ └─SemanticsNode#14
+       │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "搜索"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#15
+       │ │ Rect.fromLTRB(632.0, 8.0, 680.0, 56.0)
+       │ │ traversalParentIdentifier: _OverlayPortalState#49248
+       │ │
+       │ └─SemanticsNode#16
+       │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "来源"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#17
+       │ │ Rect.fromLTRB(684.0, 8.0, 732.0, 56.0)
+       │ │ traversalParentIdentifier: _OverlayPortalState#839d8
+       │ │
+       │ └─SemanticsNode#18
+       │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "设置"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#19
+       │ │ Rect.fromLTRB(736.0, 8.0, 784.0, 56.0)
+       │ │ traversalParentIdentifier: _OverlayPortalState#c4b49
+       │ │
+       │ └─SemanticsNode#20
+       │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "附近联机"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#21
+       │   Rect.fromLTRB(16.0, 64.0, 736.0, 144.0)
+       │   actions: focus, setSelection, setText, tap
+       │   flags: isTextField, isFocused, hasEnabledState, isEnabled,
+       │     isFocusable
+       │   label: "搜索游戏"
+       │   textDirection: ltr
+       │   text selection: [0, 0]
+       │   currentValueLength: 0
+       │   inputType: text
+       │
+       ├─SemanticsNode#23
+       │ │ Rect.fromLTRB(688.0, 80.0, 736.0, 128.0)
+       │ │ tags: _InputDecoratorState.suffixIcon
+       │ │ traversalParentIdentifier: _OverlayPortalState#caed4
+       │ │
+       │ └─SemanticsNode#22
+       │     Rect.fromLTRB(688.0, 80.0, 736.0, 128.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "清除搜索"
+       │     textDirection: ltr
+       │
+       └─SemanticsNode#24
+         │ Rect.fromLTRB(736.0, 80.0, 784.0, 128.0)
+         │ traversalParentIdentifier: _OverlayPortalState#063dc
+         │
+         └─SemanticsNode#25
+             Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+             actions: focus, tap
+             flags: isButton, hasEnabledState, isEnabled, isFocusable
+             label: "关闭搜索"
+             textDirection: ltr

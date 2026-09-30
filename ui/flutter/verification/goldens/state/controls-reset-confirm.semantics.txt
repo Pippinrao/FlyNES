@@ -1,0 +1,58 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+   │ textDirection: ltr
+   │
+   ├─SemanticsNode#32
+   │ │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+   │ │ sortKey: OrdinalSortKey#71b11(order: 0.0)
+   │ │
+   │ └─SemanticsNode#33
+   │   │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+   │   │ flags: scopesRoute
+   │   │
+   │   └─SemanticsNode#34
+   │     │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+   │     │ role: alertDialog
+   │     │
+   │     └─SemanticsNode#35
+   │       │ Rect.fromLTRB(293.6, 172.0, 666.4, 368.0)
+   │       │ flags: scopesRoute, namesRoute
+   │       │ label: "Alert"
+   │       │ textDirection: ltr
+   │       │
+   │       ├─SemanticsNode#36
+   │       │   Rect.fromLTRB(24.0, 24.0, 348.8, 56.0)
+   │       │   label: "Reset controls"
+   │       │   textDirection: ltr
+   │       │
+   │       ├─SemanticsNode#37
+   │       │ │ Rect.fromLTRB(24.0, 72.0, 348.8, 92.0)
+   │       │ │
+   │       │ └─SemanticsNode#38
+   │       │     Rect.fromLTRB(0.0, 0.0, 324.8, 20.0)
+   │       │     label: "Reset control style, haptics and your saved layout?"
+   │       │     textDirection: ltr
+   │       │
+   │       ├─SemanticsNode#39
+   │       │   Rect.fromLTRB(174.8, 120.0, 242.0, 168.0)
+   │       │   actions: focus, tap
+   │       │   flags: isButton, hasEnabledState, isEnabled, isFocusable
+   │       │   label: "Cancel"
+   │       │   textDirection: ltr
+   │       │
+   │       └─SemanticsNode#40
+   │           Rect.fromLTRB(250.0, 116.0, 348.8, 172.0)
+   │           actions: focus, tap
+   │           flags: isButton, hasEnabledState, isEnabled, isFocusable
+   │           label: "Confirm"
+   │           textDirection: ltr
+   │
+   └─SemanticsNode#31
+       Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+       actions: dismiss, tap
+       label: "Dismiss"
+       textDirection: ltr
+       sortKey: OrdinalSortKey#79cbc(order: 1.0)

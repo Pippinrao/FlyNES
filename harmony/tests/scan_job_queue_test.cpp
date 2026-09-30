@@ -59,7 +59,8 @@ void test_same_source_is_merged_and_every_fd_is_closed()
     flynes::harmony::ScanJobQueue queue(
         [&](const flynes::harmony::ScanJobRequest&,
             const flynes::harmony::ScanJobQueue::CancelCheck& cancelled,
-            const flynes::harmony::ScanJobQueue::ProgressSink& progress) {
+            const flynes::harmony::ScanJobQueue::ProgressSink& progress,
+            const flynes::harmony::ScanJobQueue::CommitGate&) {
             ++runs;
             std::unique_lock<std::mutex> lock(gate_mutex);
             gate_changed.wait(lock, [&]() { return release || cancelled(); });
@@ -109,7 +110,8 @@ void test_different_sources_are_serial_and_cancel_at_boundary()
     flynes::harmony::ScanJobQueue queue(
         [&](const flynes::harmony::ScanJobRequest& request,
             const flynes::harmony::ScanJobQueue::CancelCheck& cancelled,
-            const flynes::harmony::ScanJobQueue::ProgressSink&) {
+            const flynes::harmony::ScanJobQueue::ProgressSink&,
+            const flynes::harmony::ScanJobQueue::CommitGate&) {
             {
                 std::lock_guard<std::mutex> lock(mutex);
                 started.push_back(request.source_uuid_hex);
@@ -157,12 +159,53 @@ void test_different_sources_are_serial_and_cancel_at_boundary()
     }), "all descriptors close after completion or cancellation");
 }
 
+void test_commit_boundary_rejects_late_cancel()
+{
+    for (bool cancel_before_commit : {true, false})
+    {
+        std::atomic<bool> enter_commit{false};
+        std::atomic<bool> leave_commit{false};
+        std::atomic<bool> committed{false};
+        flynes::harmony::ScanJobQueue queue(
+            [&](const flynes::harmony::ScanJobRequest&,
+                const flynes::harmony::ScanJobQueue::CancelCheck&,
+                const flynes::harmony::ScanJobQueue::ProgressSink&,
+                const flynes::harmony::ScanJobQueue::CommitGate& begin_commit) {
+                while (!enter_commit.load()) std::this_thread::sleep_for(1ms);
+                if (!begin_commit()) return flynes::harmony::ScanExecutionResult::cancelled();
+                while (!leave_commit.load()) std::this_thread::sleep_for(1ms);
+                committed = true;
+                return flynes::harmony::ScanExecutionResult::completed(1u);
+            }, [](int) {});
+        const auto id = queue.start(request_for("cccccccccccccccccccccccccccccccc", -1));
+        expect(wait_until([&]() { return queue.status(id).phase == flynes::harmony::ScanJobPhase::RUNNING; }),
+               "scan starts before boundary test");
+        if (cancel_before_commit) expect(queue.cancel(id), "precommit cancellation accepted");
+        enter_commit = true;
+        if (!cancel_before_commit)
+        {
+            expect(wait_until([&]() { return queue.status(id).phase == flynes::harmony::ScanJobPhase::COMMITTING; }),
+                   "commit phase is observable and not terminal");
+            expect(!queue.cancel(id), "commit rejects late individual cancellation");
+            bool source_removal_rejected = false;
+            try { queue.cancel_source("cccccccccccccccccccccccccccccccc", 4u); }
+            catch (const std::runtime_error& error) { source_removal_rejected = std::string_view(error.what()) == "source_busy"; }
+            expect(source_removal_rejected, "commit rejects source removal explicitly before it can delete rows");
+            expect(!queue.status(id).cancel_requested, "late cancel does not alter transaction intent");
+        }
+        leave_commit = true;
+        expect(wait_until([&]() { return queue.status(id).terminal(); }), "boundary test finishes");
+        expect(committed.load() != cancel_before_commit, "only uncancelled transaction commits");
+    }
+}
+
 } // namespace
 
 int main()
 {
     test_same_source_is_merged_and_every_fd_is_closed();
     test_different_sources_are_serial_and_cancel_at_boundary();
+    test_commit_boundary_rejects_late_cancel();
     if (failures != 0)
     {
         std::cerr << failures << " failure(s)\n";

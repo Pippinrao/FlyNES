@@ -1,0 +1,288 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+   │ textDirection: ltr
+   │
+   └─SemanticsNode#2
+     │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+     │ sortKey: OrdinalSortKey#7d98a(order: 0.0)
+     │
+     └─SemanticsNode#3
+       │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+       │ flags: scopesRoute
+       │
+       └─SemanticsNode#4
+         │ locale: "en_XA"
+         │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+         │ textDirection: ltr
+         │
+         ├─SemanticsNode#5
+         │ │ locale: "en_XA"
+         │ │ Rect.fromLTRB(32.0, 32.0, 130.1, 80.0)
+         │ │ flags: hasSelectedState
+         │ │
+         │ └─SemanticsNode#6
+         │     locale: "en_XA"
+         │     Rect.fromLTRB(0.0, 0.0, 98.1, 48.0)
+         │     actions: focus, tap
+         │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │     label: "[Récént ~~]"
+         │     textDirection: ltr
+         │
+         ├─SemanticsNode#7
+         │ │ locale: "en_XA"
+         │ │ Rect.fromLTRB(134.1, 32.0, 256.2, 80.0)
+         │ │ flags: hasSelectedState
+         │ │
+         │ └─SemanticsNode#8
+         │     locale: "en_XA"
+         │     Rect.fromLTRB(0.0, 0.0, 122.0, 48.0)
+         │     actions: focus, tap
+         │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │     label: "[Fávórítés ~~~]"
+         │     textDirection: ltr
+         │
+         ├─SemanticsNode#9
+         │ │ locale: "en_XA"
+         │ │ Rect.fromLTRB(260.2, 32.0, 321.2, 80.0)
+         │ │ flags: isSelected, hasSelectedState
+         │ │
+         │ └─SemanticsNode#10
+         │     locale: "en_XA"
+         │     Rect.fromLTRB(0.0, 0.0, 61.0, 48.0)
+         │     actions: focus, tap
+         │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │     label: "[Áll ~]"
+         │     textDirection: ltr
+         │
+         ├─SemanticsNode#11
+         │ │ locale: "en_XA"
+         │ │ Rect.fromLTRB(325.2, 32.0, 433.0, 80.0)
+         │ │ flags: hasSelectedState
+         │ │
+         │ └─SemanticsNode#12
+         │     locale: "en_XA"
+         │     Rect.fromLTRB(0.0, 0.0, 107.8, 48.0)
+         │     actions: focus, tap
+         │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │     label: "[Búílt-ín ~~~]"
+         │     textDirection: ltr
+         │
+         ├─SemanticsNode#13
+         │ │ locale: "en_XA"
+         │ │ Rect.fromLTRB(564.0, 32.0, 612.0, 80.0)
+         │ │ traversalParentIdentifier: _OverlayPortalState#de566
+         │ │
+         │ └─SemanticsNode#14
+         │     locale: "en_XA"
+         │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+         │     actions: focus, tap
+         │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │     label: "[Séárch ~~]"
+         │     textDirection: ltr
+         │
+         ├─SemanticsNode#15
+         │ │ locale: "en_XA"
+         │ │ Rect.fromLTRB(616.0, 32.0, 664.0, 80.0)
+         │ │ traversalParentIdentifier: _OverlayPortalState#70a65
+         │ │
+         │ └─SemanticsNode#16
+         │     locale: "en_XA"
+         │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+         │     actions: focus, tap
+         │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │     label: "[Sóúrcés ~~~]"
+         │     textDirection: ltr
+         │
+         ├─SemanticsNode#17
+         │ │ locale: "en_XA"
+         │ │ Rect.fromLTRB(668.0, 32.0, 716.0, 80.0)
+         │ │ traversalParentIdentifier: _OverlayPortalState#dc717
+         │ │
+         │ └─SemanticsNode#18
+         │     locale: "en_XA"
+         │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+         │     actions: focus, tap
+         │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │     label: "[Séttíngs ~~~]"
+         │     textDirection: ltr
+         │
+         ├─SemanticsNode#19
+         │ │ locale: "en_XA"
+         │ │ Rect.fromLTRB(720.0, 32.0, 768.0, 80.0)
+         │ │ traversalParentIdentifier: _OverlayPortalState#1fb38
+         │ │
+         │ └─SemanticsNode#20
+         │     locale: "en_XA"
+         │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+         │     actions: focus, tap
+         │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │     label: "[Néárby ~~]"
+         │     textDirection: ltr
+         │
+         ├─SemanticsNode#21
+         │   locale: "en_XA"
+         │   Rect.fromLTRB(101.4, 116.0, 178.6, 127.0)
+         │   label: "Adventure 1"
+         │   textDirection: ltr
+         │
+         ├─SemanticsNode#29
+         │   locale: "en_XA"
+         │   Rect.fromLTRB(264.0, 106.0, 478.0, 126.0)
+         │   label: "[6 gámés · swípé tó brówsé ~~~~~~~~]"
+         │   textDirection: ltr
+         │
+         ├─SemanticsNode#30
+         │   locale: "en_XA"
+         │   Rect.fromLTRB(486.0, 106.0, 597.2, 126.0)
+         │   label: "[Twó-pláyér ~~~]"
+         │   textDirection: ltr
+         │
+         ├─SemanticsNode#31
+         │   locale: "en_XA"
+         │   Rect.fromLTRB(597.2, 92.0, 665.2, 140.0)
+         │   actions: tap
+         │   flags: hasEnabledState, isEnabled, hasToggledState
+         │   label: "[Twó-pláyér ~~~]"
+         │   textDirection: ltr
+         │
+         ├─SemanticsNode#22
+         │ │ locale: "en_XA"
+         │ │ Rect.fromLTRB(48.0, 151.0, 232.0, 199.0)
+         │ │ flags: hasImplicitScrolling
+         │ │ scrollExtentMin: 0.0
+         │ │ scrollPosition: 0.0
+         │ │ scrollExtentMax: 0.0
+         │ │
+         │ ├─SemanticsNode#23
+         │ │   locale: "en_XA"
+         │ │   Rect.fromLTRB(9.5, 10.0, 126.5, 38.0)
+         │ │   label: "Adventure 1"
+         │ │   textDirection: ltr
+         │ │
+         │ └─SemanticsNode#24
+         │   │ locale: "en_XA"
+         │   │ Rect.fromLTRB(136.0, 0.0, 184.0, 48.0)
+         │   │ traversalParentIdentifier: _OverlayPortalState#39432
+         │   │
+         │   └─SemanticsNode#25
+         │       locale: "en_XA"
+         │       Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+         │       actions: focus, tap
+         │       flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │       label: "[Fávóríté ~~~]"
+         │       textDirection: ltr
+         │
+         ├─SemanticsNode#26
+         │   locale: "en_XA"
+         │   Rect.fromLTRB(48.0, 207.0, 232.0, 228.0)
+         │   label: "冒险游戏 1"
+         │   textDirection: ltr
+         │
+         ├─SemanticsNode#27
+         │   locale: "en_XA"
+         │   Rect.fromLTRB(48.0, 228.0, 232.0, 248.0)
+         │   label: "[1 vérsíón(s) ~~~~]"
+         │   textDirection: ltr
+         │
+         ├─SemanticsNode#28
+         │   locale: "en_XA"
+         │   Rect.fromLTRB(48.0, 264.0, 232.0, 320.0)
+         │   actions: focus, tap
+         │   flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │   label: "[Cóntínúé ~~~]"
+         │   textDirection: ltr
+         │
+         └─SemanticsNode#32
+           │ Rect.fromLTRB(264.0, 148.0, 768.0, 336.0)
+           │
+           └─SemanticsNode#39
+             │ locale: "en_XA"
+             │ Rect.fromLTRB(0.0, 0.0, 504.0, 188.0)
+             │ actions: scrollLeft, scrollToOffset
+             │ flags: hasImplicitScrolling
+             │ scrollChildren: 6
+             │ scrollIndex: 0
+             │ scrollExtentMin: 0.0
+             │ scrollPosition: 0.0
+             │ scrollExtentMax: 180.0
+             │
+             ├─SemanticsNode#33
+             │   locale: "en_XA"
+             │   Rect.fromLTRB(0.0, 0.0, 220.0, 88.0)
+             │   tags: RenderViewport.twoPane
+             │   actions: focus, tap
+             │   flags: isSelected, isButton, isFocusable, hasSelectedState
+             │   label:
+             │     "Adventure 1
+             │     Adventure 1
+             │     Adventure 1"
+             │   textDirection: ltr
+             │   indexInParent: 0
+             │
+             ├─SemanticsNode#35
+             │   locale: "en_XA"
+             │   Rect.fromLTRB(232.0, 0.0, 452.0, 88.0)
+             │   tags: RenderViewport.twoPane
+             │   actions: focus, tap
+             │   flags: isButton, isFocusable, hasSelectedState
+             │   label:
+             │     "Adventure 3
+             │     Adventure 3
+             │     Adventure 3"
+             │   textDirection: ltr
+             │   indexInParent: 2
+             │
+             ├─SemanticsNode#37
+             │   locale: "en_XA"
+             │   Rect.fromLTRB(464.0, 0.0, 504.0, 88.0)
+             │   tags: RenderViewport.twoPane
+             │   actions: focus, tap
+             │   flags: isButton, isFocusable, hasSelectedState
+             │   label:
+             │     "Adventure 5
+             │     Adventure 5
+             │     Adventure 5"
+             │   textDirection: ltr
+             │   indexInParent: 4
+             │
+             ├─SemanticsNode#34
+             │   locale: "en_XA"
+             │   Rect.fromLTRB(0.0, 100.0, 220.0, 188.0)
+             │   tags: RenderViewport.twoPane
+             │   actions: focus, tap
+             │   flags: isButton, isFocusable, hasSelectedState
+             │   label:
+             │     "Adventure 2
+             │     Adventure 2
+             │     Adventure 2"
+             │   textDirection: ltr
+             │   indexInParent: 1
+             │
+             ├─SemanticsNode#36
+             │   locale: "en_XA"
+             │   Rect.fromLTRB(232.0, 100.0, 452.0, 188.0)
+             │   tags: RenderViewport.twoPane
+             │   actions: focus, tap
+             │   flags: isButton, isFocusable, hasSelectedState
+             │   label:
+             │     "Adventure 4
+             │     Adventure 4
+             │     Adventure 4"
+             │   textDirection: ltr
+             │   indexInParent: 3
+             │
+             └─SemanticsNode#38
+                 locale: "en_XA"
+                 Rect.fromLTRB(464.0, 100.0, 504.0, 188.0)
+                 tags: RenderViewport.twoPane
+                 actions: focus, tap
+                 flags: isButton, isFocusable, hasSelectedState
+                 label:
+                   "Adventure 6
+                   Adventure 6
+                   Adventure 6"
+                 textDirection: ltr
+                 indexInParent: 5

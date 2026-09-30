@@ -4,6 +4,7 @@
 #include <flynes/flynes_app.h>
 
 #include <chrono>
+#include <atomic>
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
@@ -95,9 +96,10 @@ void test_executor_indexes_real_rom_off_caller_thread()
     flynes::harmony::ScanJobQueue queue(
         [&](const flynes::harmony::ScanJobRequest& work,
             const flynes::harmony::ScanJobQueue::CancelCheck& cancelled,
-            const flynes::harmony::ScanJobQueue::ProgressSink& progress) {
+            const flynes::harmony::ScanJobQueue::ProgressSink& progress,
+            const flynes::harmony::ScanJobQueue::CommitGate& begin_commit) {
             executor_thread = std::this_thread::get_id();
-            return flynes::harmony::execute_scan_job(*app.value, work, cancelled, progress);
+            return flynes::harmony::execute_scan_job(*app.value, work, cancelled, progress, begin_commit);
         }, close_fd);
     const std::uint64_t id = queue.start(std::move(request));
     flynes::harmony::ScanJobSnapshot status;
@@ -120,6 +122,65 @@ void test_executor_indexes_real_rom_off_caller_thread()
     expect(snapshot != nullptr && fly_catalog_snapshot_count(snapshot, &count) == FLY_RESULT_OK,
            "read catalog count");
     expect(count == 1u, "catalog publishes indexed ROM only after commit");
+    fly_catalog_snapshot_release(snapshot);
+
+    flynes::harmony::ScanJobRequest cancelled_empty;
+    cancelled_empty.source_uuid_hex = "1234567890abcdef1234567890abcdef";
+    cancelled_empty.source_scope = FLY_SOURCE_SCOPE_MANAGED_LIBRARY;
+    cancelled_empty.final_completeness = FLY_SCAN_COMPLETENESS_FULL;
+    const auto cancelled_result = flynes::harmony::execute_scan_job(
+        *app.value, cancelled_empty, []() { return true; },
+        [](std::uint64_t, std::uint64_t) {});
+    expect(cancelled_result.phase == flynes::harmony::ScanJobPhase::CANCELLED,
+           "cancellation before empty scan commit is honored");
+    expect(fly_catalog_snapshot(app.value, &snapshot) == FLY_RESULT_OK, "read retained catalog");
+    expect(fly_catalog_snapshot_count(snapshot, &count) == FLY_RESULT_OK && count == 1u,
+           "cancelled empty scan does not clear existing library");
+    fly_catalog_snapshot_release(snapshot);
+
+    std::atomic<bool> commit_entered{false};
+    std::atomic<bool> release_commit{false};
+    flynes::harmony::ScanJobQueue gated_queue(
+        [&](const flynes::harmony::ScanJobRequest& work,
+            const flynes::harmony::ScanJobQueue::CancelCheck& cancelled,
+            const flynes::harmony::ScanJobQueue::ProgressSink& progress,
+            const flynes::harmony::ScanJobQueue::CommitGate& begin_commit) {
+            return flynes::harmony::execute_scan_job(*app.value, work, cancelled, progress, [&]() {
+                if (!begin_commit()) return false;
+                commit_entered = true;
+                while (!release_commit.load()) std::this_thread::sleep_for(1ms);
+                return true;
+            });
+        }, close_fd);
+    flynes::harmony::ScanJobRequest rescan = cancelled_empty;
+    rescan.files.push_back({"thwaite.nes", "Thwaite", open_read_only(rom), std::filesystem::file_size(rom)});
+    const auto rescan_id = gated_queue.start(std::move(rescan));
+    const auto commit_deadline = std::chrono::steady_clock::now() + 3s;
+    while (!commit_entered.load() && std::chrono::steady_clock::now() < commit_deadline)
+        std::this_thread::sleep_for(1ms);
+    expect(commit_entered.load(), "real executor reaches held commit boundary");
+    const std::uint8_t uuid[16] = {0x12,0x34,0x56,0x78,0x90,0xab,0xcd,0xef,0x12,0x34,0x56,0x78,0x90,0xab,0xcd,0xef};
+    bool removal_rejected = false;
+    try
+    {
+        // Exactly the queue-before-remove order used by the exported N-API.
+        gated_queue.cancel_source(cancelled_empty.source_uuid_hex, cancelled_empty.source_scope);
+        fly_source_remove(app.value, uuid, cancelled_empty.source_scope);
+    }
+    catch (const std::runtime_error& error) { removal_rejected = std::string_view(error.what()) == "source_busy"; }
+    expect(removal_rejected, "in-flight commit prevents a successful source removal");
+    release_commit = true;
+    const auto finish_deadline = std::chrono::steady_clock::now() + 3s;
+    while (!gated_queue.status(rescan_id).terminal() && std::chrono::steady_clock::now() < finish_deadline)
+        std::this_thread::sleep_for(1ms);
+    expect(gated_queue.status(rescan_id).phase == flynes::harmony::ScanJobPhase::COMPLETED,
+           "rejected removal leaves the real scan able to finish");
+    gated_queue.cancel_source(cancelled_empty.source_uuid_hex, cancelled_empty.source_scope);
+    expect(fly_source_remove(app.value, uuid, cancelled_empty.source_scope) == FLY_RESULT_OK,
+           "source can be removed after commit finishes");
+    expect(fly_catalog_snapshot(app.value, &snapshot) == FLY_RESULT_OK, "read removed source catalog");
+    expect(fly_catalog_snapshot_count(snapshot, &count) == FLY_RESULT_OK && count == 0u,
+           "successful removal stays removed after worker finishes");
     fly_catalog_snapshot_release(snapshot);
     std::filesystem::remove_all(root);
 }

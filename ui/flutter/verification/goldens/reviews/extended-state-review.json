@@ -1,0 +1,1024 @@
+{
+  "schemaVersion": 1,
+  "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+  "scope": "24 deterministic extended product states; PNGs individually opened, geometry/semantics inspected. No native certification or golden promotion.",
+  "manifestSha256": "204ba2f87636aa149b8c4c3f99a1492827d42f0018d16491a712399ceeeb0082",
+  "total": 24,
+  "reviewed": 24,
+  "needsfix": 0,
+  "issues": [
+    {
+      "id": "EXT01",
+      "priority": "P2",
+      "states": [
+        "chooser-customPostEffect"
+      ],
+      "summary": "Neither None nor CRT has a visible radio marker in actual PNG; other chooser captures show markers. Current choice is None (fixture enum1). Requires capture/product investigation before approval.",
+      "status": "withdrawn",
+      "resolution": "Reopened exact same PNG at original detail and confirmed both coral radio markers, None selected. Reviewer first visual read was mistaken; hash dccd4872fe9cfa28dcbc44dbe14c1a29f31eb867fe362556669cd537cf729aa6."
+    },
+    {
+      "id": "EXT02",
+      "priority": "P2",
+      "states": [
+        "chooser-customRefreshPolicy",
+        "chooser-customTemporalMode",
+        "chooser-customSpatialMode",
+        "chooser-customPostEffect",
+        "chooser-aspectMode",
+        "chooser-audio-focus"
+      ],
+      "summary": "Current choice is not exposed as selected/checked in chooser semantics. Icons show state visually (except EXT01), but ListTile hasSelectedState is never isSelected and no checked state exists.",
+      "source": "ui/flutter/lib/features/product/product_settings.dart:160",
+      "status": "resolved",
+      "resolution": "Semantics checked and inMutuallyExclusiveGroup wrap each choice; all6 actual dumps identify exactly one expected checked option. All24 PNG and geometry hashes remain unchanged. Recorded10-test GREEN and17-capture GREEN inspected."
+    }
+  ],
+  "entries": {
+    "cover-decoded": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U03",
+        "A04"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\cover-decoded.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\cover-decoded.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\cover-decoded.semantics.txt"
+      },
+      "sha256": {
+        "png": "203214fc27cf66e7cf8ecbb77b41bb89163b0a81712a3ceb04bed5e653b22647",
+        "geometry": "a34f798a487fed23f60fc09d38c43b2109b182eee164698e041048b2073aead9",
+        "semantics": "65ba6449ab02b8a9dfa1d5bc2d4c1a5e7ea8937ee633308daffba86cbe73186b"
+      },
+      "normalizedSemanticTextSha256": "43f2c758c216fa58cbc7c48d80c509cc02b752ca7c5cbff69f481bd0b7f446d5",
+      "issueIds": [],
+      "notes": [
+        "Decoded cover retains aspect ratio; failure uses fixed-size title placeholder. Tiny card placeholder wraps awkwardly but adjacent title remains readable."
+      ],
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "203214fc27cf66e7cf8ecbb77b41bb89163b0a81712a3ceb04bed5e653b22647",
+            "geometry": "a34f798a487fed23f60fc09d38c43b2109b182eee164698e041048b2073aead9",
+            "semantics": "7e36183a3bf88c6de1a6f9c700088ecda1ffc9388a607cba05d84d58f542b6a3"
+          },
+          "currentSha256": {
+            "png": "203214fc27cf66e7cf8ecbb77b41bb89163b0a81712a3ceb04bed5e653b22647",
+            "geometry": "a34f798a487fed23f60fc09d38c43b2109b182eee164698e041048b2073aead9",
+            "semantics": "65ba6449ab02b8a9dfa1d5bc2d4c1a5e7ea8937ee633308daffba86cbe73186b"
+          },
+          "priorNormalizedSemanticTextSha256": "43f2c758c216fa58cbc7c48d80c509cc02b752ca7c5cbff69f481bd0b7f446d5",
+          "approval": "Full normalized semantics unchanged"
+        }
+      ]
+    },
+    "cover-failed": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U03",
+        "A04"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\cover-failed.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\cover-failed.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\cover-failed.semantics.txt"
+      },
+      "sha256": {
+        "png": "619482bc7e6c4108d8be1e24681da97fd21dd992637247331d17b36a9fd8e942",
+        "geometry": "7104dc49f8b27220d0e61633b5cdc527bea4b0b086a4a4a1d15c7331c8941006",
+        "semantics": "df31546f56da3ec339f9f3f7ec9a4ef39e2292dffad70decf0fd7edfbc0b50ad"
+      },
+      "normalizedSemanticTextSha256": "6de735c616bdc20d678b5af53a3e82a690a3bd572009734bc12072cda6a9681f",
+      "issueIds": [],
+      "notes": [
+        "Decoded cover retains aspect ratio; failure uses fixed-size title placeholder. Tiny card placeholder wraps awkwardly but adjacent title remains readable."
+      ],
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "619482bc7e6c4108d8be1e24681da97fd21dd992637247331d17b36a9fd8e942",
+            "geometry": "7104dc49f8b27220d0e61633b5cdc527bea4b0b086a4a4a1d15c7331c8941006",
+            "semantics": "6ea25848fec320447ad3d81e1809743d457ce5324d337585eb49e101717bb3e3"
+          },
+          "currentSha256": {
+            "png": "619482bc7e6c4108d8be1e24681da97fd21dd992637247331d17b36a9fd8e942",
+            "geometry": "7104dc49f8b27220d0e61633b5cdc527bea4b0b086a4a4a1d15c7331c8941006",
+            "semantics": "df31546f56da3ec339f9f3f7ec9a4ef39e2292dffad70decf0fd7edfbc0b50ad"
+          },
+          "priorNormalizedSemanticTextSha256": "6de735c616bdc20d678b5af53a3e82a690a3bd572009734bc12072cda6a9681f",
+          "approval": "Full normalized semantics unchanged"
+        }
+      ]
+    },
+    "search-populated": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U05"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\search-populated.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\search-populated.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\search-populated.semantics.txt"
+      },
+      "sha256": {
+        "png": "9b32e46d826d7289600785a0fe1ac6b8291128dd8e25a779e31f575b5868218f",
+        "geometry": "4a371dee364f42e6f5468c8e3f06bdb0435e9a0675cc6cb7b94bb72e518f82ef",
+        "semantics": "8e567be6dc71711f813290f0c24413c121d4ce3bc14592bdc9f9cadabdb5a0ae"
+      },
+      "normalizedSemanticTextSha256": "5048374714c98f65450e8e6c064d733fdb499511e9507dfcefc234158b5d82ab",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions."
+      ],
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "9b32e46d826d7289600785a0fe1ac6b8291128dd8e25a779e31f575b5868218f",
+            "geometry": "4a371dee364f42e6f5468c8e3f06bdb0435e9a0675cc6cb7b94bb72e518f82ef",
+            "semantics": "8fa9890f8f708960b6ab339590a440419988ad991883f213772e2bd410749a50"
+          },
+          "currentSha256": {
+            "png": "9b32e46d826d7289600785a0fe1ac6b8291128dd8e25a779e31f575b5868218f",
+            "geometry": "4a371dee364f42e6f5468c8e3f06bdb0435e9a0675cc6cb7b94bb72e518f82ef",
+            "semantics": "8e567be6dc71711f813290f0c24413c121d4ce3bc14592bdc9f9cadabdb5a0ae"
+          },
+          "priorNormalizedSemanticTextSha256": "5048374714c98f65450e8e6c064d733fdb499511e9507dfcefc234158b5d82ab",
+          "approval": "Full normalized semantics unchanged"
+        }
+      ]
+    },
+    "search-cleared": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U05"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\search-cleared.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\search-cleared.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\search-cleared.semantics.txt"
+      },
+      "sha256": {
+        "png": "ce60ef6acebc03b968533adba66d7769b0254384ba1fda610b31b35de88b1414",
+        "geometry": "4a371dee364f42e6f5468c8e3f06bdb0435e9a0675cc6cb7b94bb72e518f82ef",
+        "semantics": "846c72ba2d97870b1280f46b1daf7b0b75b094d0513e742476b9d343133c6d31"
+      },
+      "normalizedSemanticTextSha256": "793a1e6833a390cf4724186cd81fe4f32f72f727a44e57dd179e18a4684e1a82",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions."
+      ],
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "ce60ef6acebc03b968533adba66d7769b0254384ba1fda610b31b35de88b1414",
+            "geometry": "4a371dee364f42e6f5468c8e3f06bdb0435e9a0675cc6cb7b94bb72e518f82ef",
+            "semantics": "4e3cabf09bb7743f1bf3f500febf7c28846d8d56970dc73884538c41da8a79d3"
+          },
+          "currentSha256": {
+            "png": "ce60ef6acebc03b968533adba66d7769b0254384ba1fda610b31b35de88b1414",
+            "geometry": "4a371dee364f42e6f5468c8e3f06bdb0435e9a0675cc6cb7b94bb72e518f82ef",
+            "semantics": "846c72ba2d97870b1280f46b1daf7b0b75b094d0513e742476b9d343133c6d31"
+          },
+          "priorNormalizedSemanticTextSha256": "793a1e6833a390cf4724186cd81fe4f32f72f727a44e57dd179e18a4684e1a82",
+          "approval": "Full normalized semantics unchanged"
+        }
+      ]
+    },
+    "search-closed": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U05"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\search-closed.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\search-closed.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\search-closed.semantics.txt"
+      },
+      "sha256": {
+        "png": "619482bc7e6c4108d8be1e24681da97fd21dd992637247331d17b36a9fd8e942",
+        "geometry": "be7a28fe318756f493396d0aace33c335b3d90f6e7c6fbb49d0992110ff2d159",
+        "semantics": "ddb9e03c36b682454539112951295560d747b2766309b3c06ff53559084b2009"
+      },
+      "normalizedSemanticTextSha256": "6de735c616bdc20d678b5af53a3e82a690a3bd572009734bc12072cda6a9681f",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions."
+      ],
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "619482bc7e6c4108d8be1e24681da97fd21dd992637247331d17b36a9fd8e942",
+            "geometry": "be7a28fe318756f493396d0aace33c335b3d90f6e7c6fbb49d0992110ff2d159",
+            "semantics": "9caa623366be7865eb0ddebd3ac3017f528dbc68a2d8b8ecf9558ec9c7b21972"
+          },
+          "currentSha256": {
+            "png": "619482bc7e6c4108d8be1e24681da97fd21dd992637247331d17b36a9fd8e942",
+            "geometry": "be7a28fe318756f493396d0aace33c335b3d90f6e7c6fbb49d0992110ff2d159",
+            "semantics": "ddb9e03c36b682454539112951295560d747b2766309b3c06ff53559084b2009"
+          },
+          "priorNormalizedSemanticTextSha256": "6de735c616bdc20d678b5af53a3e82a690a3bd572009734bc12072cda6a9681f",
+          "approval": "Full normalized semantics unchanged"
+        }
+      ]
+    },
+    "source-builtin-cancelled": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U09",
+        "U11"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-builtin-cancelled.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-builtin-cancelled.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-builtin-cancelled.semantics.txt"
+      },
+      "sha256": {
+        "png": "ec25b6d7b16a4d664b7382530a82e9c5eda103f89289d6452d864a105ca42c0a",
+        "geometry": "4909e419dcdd46b36ec9647e8b2ebafaba880a30d0dbdf55bf67b319b9133dcc",
+        "semantics": "ab7c73dafb4c1f18b5ee153a55441da474107423810198a7f51f19d3c85ea074"
+      },
+      "normalizedSemanticTextSha256": "aae9648d30aea7162d39742950c10d3bb5650e410cde9d02e84439554b245c8e",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions."
+      ],
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "ec25b6d7b16a4d664b7382530a82e9c5eda103f89289d6452d864a105ca42c0a",
+            "geometry": "4909e419dcdd46b36ec9647e8b2ebafaba880a30d0dbdf55bf67b319b9133dcc",
+            "semantics": "1ae7c7b1063446f6e91a24f0b11f63ee606683cc5d4424692426aa4a2c3f4d02"
+          },
+          "currentSha256": {
+            "png": "ec25b6d7b16a4d664b7382530a82e9c5eda103f89289d6452d864a105ca42c0a",
+            "geometry": "4909e419dcdd46b36ec9647e8b2ebafaba880a30d0dbdf55bf67b319b9133dcc",
+            "semantics": "ab7c73dafb4c1f18b5ee153a55441da474107423810198a7f51f19d3c85ea074"
+          },
+          "priorNormalizedSemanticTextSha256": "aae9648d30aea7162d39742950c10d3bb5650e410cde9d02e84439554b245c8e",
+          "approval": "Full normalized semantics unchanged"
+        }
+      ]
+    },
+    "source-reauthorize-failed": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U12"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-reauthorize-failed.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-reauthorize-failed.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-reauthorize-failed.semantics.txt"
+      },
+      "sha256": {
+        "png": "c5481e6f3c9aad247be1eaf3a808f0a832b792ed71c9a177189d385c9ee6f162",
+        "geometry": "811e1e7d808abcc31eb7430c662d43b00c315eb9b28cb685af8ed807b03fe15b",
+        "semantics": "e45d34866cc014518e6689c88ecbd8a13c7a95585385246bf483fcff1650c102"
+      },
+      "normalizedSemanticTextSha256": "3fac839bbf7e8c034c57cf4f8c16d3f6528f85c8f2ab2c57e2da66a138d1301a",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions."
+      ],
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "c5481e6f3c9aad247be1eaf3a808f0a832b792ed71c9a177189d385c9ee6f162",
+            "geometry": "811e1e7d808abcc31eb7430c662d43b00c315eb9b28cb685af8ed807b03fe15b",
+            "semantics": "31fc0d6ce21841f0bebbe484d96963e59cce66531de4b5235b2470613619ec9a"
+          },
+          "currentSha256": {
+            "png": "c5481e6f3c9aad247be1eaf3a808f0a832b792ed71c9a177189d385c9ee6f162",
+            "geometry": "811e1e7d808abcc31eb7430c662d43b00c315eb9b28cb685af8ed807b03fe15b",
+            "semantics": "e45d34866cc014518e6689c88ecbd8a13c7a95585385246bf483fcff1650c102"
+          },
+          "priorNormalizedSemanticTextSha256": "3fac839bbf7e8c034c57cf4f8c16d3f6528f85c8f2ab2c57e2da66a138d1301a",
+          "approval": "Full normalized semantics unchanged"
+        }
+      ]
+    },
+    "source-reauthorize-restored": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U12"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-reauthorize-restored.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-reauthorize-restored.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-reauthorize-restored.semantics.txt"
+      },
+      "sha256": {
+        "png": "6238a47c2ace4be1cd17144b171a018382ce14a6e9cd3f55d71092c27b3f5106",
+        "geometry": "41e7ce09b30a1a1965ac4931b71b6b2ede359ac1cf50ba9df0b931fcc418e251",
+        "semantics": "c52b498124a435c1488d198e5724d316abe8da6998157f34b5b2e3732af8845c"
+      },
+      "normalizedSemanticTextSha256": "3be26af49d09e09db3adbf26912fde5f3608ed58a41e77c924140e189aa48bd1",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions."
+      ],
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "6238a47c2ace4be1cd17144b171a018382ce14a6e9cd3f55d71092c27b3f5106",
+            "geometry": "41e7ce09b30a1a1965ac4931b71b6b2ede359ac1cf50ba9df0b931fcc418e251",
+            "semantics": "a9a7291a11b603ed542a806636422497e8b200892b57305f9feddba2a675589e"
+          },
+          "currentSha256": {
+            "png": "6238a47c2ace4be1cd17144b171a018382ce14a6e9cd3f55d71092c27b3f5106",
+            "geometry": "41e7ce09b30a1a1965ac4931b71b6b2ede359ac1cf50ba9df0b931fcc418e251",
+            "semantics": "c52b498124a435c1488d198e5724d316abe8da6998157f34b5b2e3732af8845c"
+          },
+          "priorNormalizedSemanticTextSha256": "3be26af49d09e09db3adbf26912fde5f3608ed58a41e77c924140e189aa48bd1",
+          "approval": "Full normalized semantics unchanged"
+        }
+      ]
+    },
+    "source-remove-failed": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U13"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-remove-failed.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-remove-failed.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-remove-failed.semantics.txt"
+      },
+      "sha256": {
+        "png": "8d1b64984b26b885f4600270f06555dba027b3aa219a635f25b0b0ff09430396",
+        "geometry": "e689a887e30a209ff3d4c0383ca0e6799b7ab44941ffea9a20e89d49c9eaa22b",
+        "semantics": "2d6e6bfc020b0020b45df408c80cd5cc3f48fdec9dfbdfaca533851aebd29d54"
+      },
+      "normalizedSemanticTextSha256": "72b2d4a255867223871e3299a1201f4eec7c28a9efbe4931f3a637b4bc2f1f3f",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions."
+      ],
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "8d1b64984b26b885f4600270f06555dba027b3aa219a635f25b0b0ff09430396",
+            "geometry": "e689a887e30a209ff3d4c0383ca0e6799b7ab44941ffea9a20e89d49c9eaa22b",
+            "semantics": "b6b2368fb8d751a4a2ae6fd64dc2239f803233227ef4ee8c4f6f632b232334c6"
+          },
+          "currentSha256": {
+            "png": "8d1b64984b26b885f4600270f06555dba027b3aa219a635f25b0b0ff09430396",
+            "geometry": "e689a887e30a209ff3d4c0383ca0e6799b7ab44941ffea9a20e89d49c9eaa22b",
+            "semantics": "2d6e6bfc020b0020b45df408c80cd5cc3f48fdec9dfbdfaca533851aebd29d54"
+          },
+          "priorNormalizedSemanticTextSha256": "72b2d4a255867223871e3299a1201f4eec7c28a9efbe4931f3a637b4bc2f1f3f",
+          "approval": "Full normalized semantics unchanged"
+        }
+      ]
+    },
+    "source-remove-completed": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U13"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-remove-completed.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-remove-completed.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-remove-completed.semantics.txt"
+      },
+      "sha256": {
+        "png": "6edecd2c93e2b05041547179622209639cb7c0ea89dbcb8ccd4e923cc4a319ad",
+        "geometry": "9f79bdcd02b46525e4ed811596427be8c02ad0104dcccf2a00f82cf77c361d0c",
+        "semantics": "d13823658189a9ce25520e287562386ab0f6a690b78f16810a418798a1e162ed"
+      },
+      "normalizedSemanticTextSha256": "e3c83e6b96425cf2b0aa8b890e99c25d9734717ea4d7d132d1a78e507bc10d17",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions."
+      ],
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "6edecd2c93e2b05041547179622209639cb7c0ea89dbcb8ccd4e923cc4a319ad",
+            "geometry": "9f79bdcd02b46525e4ed811596427be8c02ad0104dcccf2a00f82cf77c361d0c",
+            "semantics": "c7acc2250c8579e816a8f6424c0c2ca62b727daec0f1119af7132512478647a6"
+          },
+          "currentSha256": {
+            "png": "6edecd2c93e2b05041547179622209639cb7c0ea89dbcb8ccd4e923cc4a319ad",
+            "geometry": "9f79bdcd02b46525e4ed811596427be8c02ad0104dcccf2a00f82cf77c361d0c",
+            "semantics": "d13823658189a9ce25520e287562386ab0f6a690b78f16810a418798a1e162ed"
+          },
+          "priorNormalizedSemanticTextSha256": "e3c83e6b96425cf2b0aa8b890e99c25d9734717ea4d7d132d1a78e507bc10d17",
+          "approval": "Full normalized semantics unchanged"
+        }
+      ]
+    },
+    "source-add-completed": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U10",
+        "U11"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-add-completed.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-add-completed.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-add-completed.semantics.txt"
+      },
+      "sha256": {
+        "png": "cee7637f28aac56bc4a2257874a08127b4ed0d88249ad81808e67e7f46ba901e",
+        "geometry": "2a9b93a17da617047bcbb836d38743f53f90d934994e037ee1b8076f0a865a53",
+        "semantics": "0e262beadc7d97a640c56074220a4ef8c16ec29c689afef3d82ea110228bdc16"
+      },
+      "normalizedSemanticTextSha256": "5575cd794b4411028ada32b92e5624ab6901dea68039e759e19f50ea591e7cd2",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions."
+      ],
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "cee7637f28aac56bc4a2257874a08127b4ed0d88249ad81808e67e7f46ba901e",
+            "geometry": "2a9b93a17da617047bcbb836d38743f53f90d934994e037ee1b8076f0a865a53",
+            "semantics": "6a478f7c8b458a260aa9fd97a8733be6d3c1b0e830d814488849230858808f0b"
+          },
+          "currentSha256": {
+            "png": "cee7637f28aac56bc4a2257874a08127b4ed0d88249ad81808e67e7f46ba901e",
+            "geometry": "2a9b93a17da617047bcbb836d38743f53f90d934994e037ee1b8076f0a865a53",
+            "semantics": "0e262beadc7d97a640c56074220a4ef8c16ec29c689afef3d82ea110228bdc16"
+          },
+          "priorNormalizedSemanticTextSha256": "5575cd794b4411028ada32b92e5624ab6901dea68039e759e19f50ea591e7cd2",
+          "approval": "Full normalized semantics unchanged"
+        }
+      ]
+    },
+    "source-read-failed": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U09",
+        "U21"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-read-failed.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-read-failed.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-read-failed.semantics.txt"
+      },
+      "sha256": {
+        "png": "67c771257d679648086faaf5e59256c76336c2fdf848fcc61cd25c07ae732982",
+        "geometry": "f68dd1da1805c55e78b53f3374e98140ecbd5f6186ec3c7cb956047b414209a3",
+        "semantics": "7cecbce5e6e24604a0cbac336c815fbf9baab388a70b6b9aea7275911f039b03"
+      },
+      "normalizedSemanticTextSha256": "99712f7b950acb6403f4970e607864e405c65b025600a1ee19ad6eac8152af3a",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions."
+      ],
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "67c771257d679648086faaf5e59256c76336c2fdf848fcc61cd25c07ae732982",
+            "geometry": "f68dd1da1805c55e78b53f3374e98140ecbd5f6186ec3c7cb956047b414209a3",
+            "semantics": "1a5c87e2de1a4a8cc72554a0a477d125022e53b83f15a45ad9a4f1bc3fd03773"
+          },
+          "currentSha256": {
+            "png": "67c771257d679648086faaf5e59256c76336c2fdf848fcc61cd25c07ae732982",
+            "geometry": "f68dd1da1805c55e78b53f3374e98140ecbd5f6186ec3c7cb956047b414209a3",
+            "semantics": "7cecbce5e6e24604a0cbac336c815fbf9baab388a70b6b9aea7275911f039b03"
+          },
+          "priorNormalizedSemanticTextSha256": "99712f7b950acb6403f4970e607864e405c65b025600a1ee19ad6eac8152af3a",
+          "approval": "Full normalized semantics unchanged"
+        }
+      ]
+    },
+    "source-read-restored": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U09"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-read-restored.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-read-restored.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\source-read-restored.semantics.txt"
+      },
+      "sha256": {
+        "png": "f14ae06a7d01fbe4a4415d86545327da7cdb69975d073b68497ff2b1a5b1b9cf",
+        "geometry": "8c3b47ff866ccf9d83a75ced61db8d78905f701c9f5cfef5bc23b67e4674843e",
+        "semantics": "3a983c3a71c1c3540463b59bb2836f7e3267220af9f85cba39325a855584891f"
+      },
+      "normalizedSemanticTextSha256": "2f5ff9430f563bfecfe9d63235dc809366e40ed0266479b3f18a3188b5ff595f",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions."
+      ],
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "f14ae06a7d01fbe4a4415d86545327da7cdb69975d073b68497ff2b1a5b1b9cf",
+            "geometry": "8c3b47ff866ccf9d83a75ced61db8d78905f701c9f5cfef5bc23b67e4674843e",
+            "semantics": "dcafe816adf3cc10b0d44eedccee4ce1bc0c071c705f2b6ecad0358cfbce2a3d"
+          },
+          "currentSha256": {
+            "png": "f14ae06a7d01fbe4a4415d86545327da7cdb69975d073b68497ff2b1a5b1b9cf",
+            "geometry": "8c3b47ff866ccf9d83a75ced61db8d78905f701c9f5cfef5bc23b67e4674843e",
+            "semantics": "3a983c3a71c1c3540463b59bb2836f7e3267220af9f85cba39325a855584891f"
+          },
+          "priorNormalizedSemanticTextSha256": "2f5ff9430f563bfecfe9d63235dc809366e40ed0266479b3f18a3188b5ff595f",
+          "approval": "Full normalized semantics unchanged"
+        }
+      ]
+    },
+    "chooser-customRefreshPolicy": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U15",
+        "U21"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\chooser-customRefreshPolicy.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\chooser-customRefreshPolicy.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\chooser-customRefreshPolicy.semantics.txt"
+      },
+      "sha256": {
+        "png": "b430fa8debfe11770e7bd35036661cb92af061330e51a65e696095e2558788b6",
+        "geometry": "9a2635fea52ec166865e35f70304dd0d26dd11c22b21a6acd85f98a9c8e6e9ae",
+        "semantics": "3d0aa765369b78ff152503249f0887b48034b84c4e505e3bfad93b439dd6d80a"
+      },
+      "normalizedSemanticTextSha256": "d4c03e636b3c5129fdd0407d3745e811c044f99156c27406629bd732ed1a0ebf",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions."
+      ],
+      "selectedOption": "60 Hz",
+      "semanticOptionCount": 4,
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "b430fa8debfe11770e7bd35036661cb92af061330e51a65e696095e2558788b6",
+            "geometry": "9a2635fea52ec166865e35f70304dd0d26dd11c22b21a6acd85f98a9c8e6e9ae",
+            "semantics": "5642e16b9a831c4a1e2630c0d775233104e47d268cc2401502c4b6ff02046310"
+          },
+          "currentSha256": {
+            "png": "b430fa8debfe11770e7bd35036661cb92af061330e51a65e696095e2558788b6",
+            "geometry": "9a2635fea52ec166865e35f70304dd0d26dd11c22b21a6acd85f98a9c8e6e9ae",
+            "semantics": "3d0aa765369b78ff152503249f0887b48034b84c4e505e3bfad93b439dd6d80a"
+          },
+          "priorNormalizedSemanticTextSha256": "b8712b50055e6604a27539e8c54bb01b454672bd0c8f13071a18407b1a31b1b3",
+          "approval": "EXT02 checked/radio semantics"
+        }
+      ]
+    },
+    "chooser-customTemporalMode": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U15",
+        "U21"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\chooser-customTemporalMode.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\chooser-customTemporalMode.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\chooser-customTemporalMode.semantics.txt"
+      },
+      "sha256": {
+        "png": "d5771aca3f9fe71ab2ab106c9b4d40ff09d57cf7813083625c02cc2e4080c5a7",
+        "geometry": "926e9be038d9508a44ff6c6027639e64bbe66008b762b66ced24a74bbe1b4542",
+        "semantics": "861c593b8d6a7b2eae9eb9255665e5538bb4b239c30526e65c13a51bf62c6588"
+      },
+      "normalizedSemanticTextSha256": "012809ad287e8f03d98901b1088d8174d2bdf5447c020f1931fe4d39cee98bd8",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions."
+      ],
+      "selectedOption": "Native",
+      "semanticOptionCount": 2,
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "d5771aca3f9fe71ab2ab106c9b4d40ff09d57cf7813083625c02cc2e4080c5a7",
+            "geometry": "926e9be038d9508a44ff6c6027639e64bbe66008b762b66ced24a74bbe1b4542",
+            "semantics": "fef376ae8ee4ed66c1840391a1c02676c0497991102c931d1d6ba40c14e15d88"
+          },
+          "currentSha256": {
+            "png": "d5771aca3f9fe71ab2ab106c9b4d40ff09d57cf7813083625c02cc2e4080c5a7",
+            "geometry": "926e9be038d9508a44ff6c6027639e64bbe66008b762b66ced24a74bbe1b4542",
+            "semantics": "861c593b8d6a7b2eae9eb9255665e5538bb4b239c30526e65c13a51bf62c6588"
+          },
+          "priorNormalizedSemanticTextSha256": "4f784939c00e8d2eff40b50be5e197d070562b6efb4e6d3c4b29f3c230705a4b",
+          "approval": "EXT02 checked/radio semantics"
+        }
+      ]
+    },
+    "chooser-customSpatialMode": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U15",
+        "U21"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\chooser-customSpatialMode.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\chooser-customSpatialMode.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\chooser-customSpatialMode.semantics.txt"
+      },
+      "sha256": {
+        "png": "33f59fa83098418ea748e79b381d30c272e7afa26d21a9c522dac735b9ef3cae",
+        "geometry": "fc8a9f370912f2988eac27553a74765611be39ebd4d4cb14093af3ef54091284",
+        "semantics": "f2fca83d8ab03cda0b47cc379e72eee6cf1b3ff9e1f5056cf8f0c586c3fc7ea3"
+      },
+      "normalizedSemanticTextSha256": "124df40ac691b1a327e0468d61a0d3dd83c7b5626f810ceaa01debabaf004328",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions."
+      ],
+      "selectedOption": "Sharp bilinear",
+      "semanticOptionCount": 4,
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "33f59fa83098418ea748e79b381d30c272e7afa26d21a9c522dac735b9ef3cae",
+            "geometry": "fc8a9f370912f2988eac27553a74765611be39ebd4d4cb14093af3ef54091284",
+            "semantics": "0bfd1d17c1b8ae83638c761f04b94a31cc66a80ecd469c59d1bb690cc2287ed3"
+          },
+          "currentSha256": {
+            "png": "33f59fa83098418ea748e79b381d30c272e7afa26d21a9c522dac735b9ef3cae",
+            "geometry": "fc8a9f370912f2988eac27553a74765611be39ebd4d4cb14093af3ef54091284",
+            "semantics": "f2fca83d8ab03cda0b47cc379e72eee6cf1b3ff9e1f5056cf8f0c586c3fc7ea3"
+          },
+          "priorNormalizedSemanticTextSha256": "47a18f78f65d04687411bfee316b416bec22c25b0e4373a3be4d78711364b64e",
+          "approval": "EXT02 checked/radio semantics"
+        }
+      ]
+    },
+    "chooser-customPostEffect": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U15",
+        "U21"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\chooser-customPostEffect.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\chooser-customPostEffect.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\chooser-customPostEffect.semantics.txt"
+      },
+      "sha256": {
+        "png": "dccd4872fe9cfa28dcbc44dbe14c1a29f31eb867fe362556669cd537cf729aa6",
+        "geometry": "1ce28022389c52c58e4c60817adac0164b25ffc4386dbd68e0eca30b45d6fb25",
+        "semantics": "14f89001f0c73219ac5ece4be8a9846f95fe9c4b9a3ee15ea40e7918faf8bf97"
+      },
+      "normalizedSemanticTextSha256": "e715d217b923f67efbbcc3a023b3981fd253669d08f6f531847d6cbf9431d8ed",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions.",
+        "Reopened exact same PNG at original detail and confirmed both coral radio markers, None selected. Reviewer first visual read was mistaken; hash dccd4872fe9cfa28dcbc44dbe14c1a29f31eb867fe362556669cd537cf729aa6."
+      ],
+      "selectedOption": "None",
+      "semanticOptionCount": 2,
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "dccd4872fe9cfa28dcbc44dbe14c1a29f31eb867fe362556669cd537cf729aa6",
+            "geometry": "1ce28022389c52c58e4c60817adac0164b25ffc4386dbd68e0eca30b45d6fb25",
+            "semantics": "fb54eb9c2f758ded5a48da9176c8d465903df6897f90ccebf6bb28c210f56ed7"
+          },
+          "currentSha256": {
+            "png": "dccd4872fe9cfa28dcbc44dbe14c1a29f31eb867fe362556669cd537cf729aa6",
+            "geometry": "1ce28022389c52c58e4c60817adac0164b25ffc4386dbd68e0eca30b45d6fb25",
+            "semantics": "14f89001f0c73219ac5ece4be8a9846f95fe9c4b9a3ee15ea40e7918faf8bf97"
+          },
+          "priorNormalizedSemanticTextSha256": "4d36568d1fee53ab4139346716d8ef1e167785b8a364dcf187dfe50383ef6ae9",
+          "approval": "EXT02 checked/radio semantics"
+        }
+      ]
+    },
+    "chooser-aspectMode": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U15",
+        "U21"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\chooser-aspectMode.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\chooser-aspectMode.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\chooser-aspectMode.semantics.txt"
+      },
+      "sha256": {
+        "png": "6060772cfd3b5e4af23da51147c36cc1c96460506cbb0c7780ef76510e1260c0",
+        "geometry": "f714eb0da2df43efeb4bbbb9a0b15ece044c3c75bc51bb9196a1c16974444f06",
+        "semantics": "e2e16ea53ddbeb758e39caef3a698a470f3cdf4871edf4c7f3c31a77b268037d"
+      },
+      "normalizedSemanticTextSha256": "787c52e16821682508005c058145194c4a2da4d0e6912b3fcb7de3abea7604ae",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions."
+      ],
+      "selectedOption": "4:3",
+      "semanticOptionCount": 3,
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "6060772cfd3b5e4af23da51147c36cc1c96460506cbb0c7780ef76510e1260c0",
+            "geometry": "f714eb0da2df43efeb4bbbb9a0b15ece044c3c75bc51bb9196a1c16974444f06",
+            "semantics": "3c9e39888371ae89662127d115640f3f2285cc24f0cd43f6ce5965d1f375139e"
+          },
+          "currentSha256": {
+            "png": "6060772cfd3b5e4af23da51147c36cc1c96460506cbb0c7780ef76510e1260c0",
+            "geometry": "f714eb0da2df43efeb4bbbb9a0b15ece044c3c75bc51bb9196a1c16974444f06",
+            "semantics": "e2e16ea53ddbeb758e39caef3a698a470f3cdf4871edf4c7f3c31a77b268037d"
+          },
+          "priorNormalizedSemanticTextSha256": "521d5a2d2883780d34e5b444d8e182715957668da75c7db903713573b50e0638",
+          "approval": "EXT02 checked/radio semantics"
+        }
+      ]
+    },
+    "chooser-audio-focus": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U17"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\chooser-audio-focus.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\chooser-audio-focus.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\chooser-audio-focus.semantics.txt"
+      },
+      "sha256": {
+        "png": "206860ceb87552fc2d2cc9c9a0cbdfcd93f0c3b1300dd34f312233d10cff0a6b",
+        "geometry": "6a5be696c13e979cd82dde6673f811de6fb8c4b645623cd8e074c143676dcbfa",
+        "semantics": "58c6a06286877a38ca23bc7d537a92c7d7c53cf8aa4252c19826806262b2eb8e"
+      },
+      "normalizedSemanticTextSha256": "7810c685d9e754b5ada375d14dd7e5456d633bcc221320a6fa97ac26c4a7e062",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions."
+      ],
+      "selectedOption": "Pause",
+      "semanticOptionCount": 3,
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "206860ceb87552fc2d2cc9c9a0cbdfcd93f0c3b1300dd34f312233d10cff0a6b",
+            "geometry": "6a5be696c13e979cd82dde6673f811de6fb8c4b645623cd8e074c143676dcbfa",
+            "semantics": "8a9ddb9795d6ca4904a0394874909e8b0670ddc846223ad30aaf092e82541df7"
+          },
+          "currentSha256": {
+            "png": "206860ceb87552fc2d2cc9c9a0cbdfcd93f0c3b1300dd34f312233d10cff0a6b",
+            "geometry": "6a5be696c13e979cd82dde6673f811de6fb8c4b645623cd8e074c143676dcbfa",
+            "semantics": "58c6a06286877a38ca23bc7d537a92c7d7c53cf8aa4252c19826806262b2eb8e"
+          },
+          "priorNormalizedSemanticTextSha256": "bef2cd7987888d0cf8d0969695d6e08851fc7994b15d7bcadd63bb462876f2e7",
+          "approval": "EXT02 checked/radio semantics"
+        }
+      ]
+    },
+    "language-applied-chinese": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U18"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\language-applied-chinese.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\language-applied-chinese.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\language-applied-chinese.semantics.txt"
+      },
+      "sha256": {
+        "png": "a79bb062018e9a649fe34e64281d018a2bf42db91ffaa46aada759f9a4b1b2a7",
+        "geometry": "f226b2a350944cb76c3a411e0ed38252338c554892fe22546d094833bba38eb3",
+        "semantics": "65087a461e16381b384df624a44d95005cae5f2772a39e170fe134bc0c107c22"
+      },
+      "normalizedSemanticTextSha256": "08f62694fe28df28ac2cd529c4ca42974d56ea2c3a42b89d77ac7ccc91284d63",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions."
+      ],
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "a79bb062018e9a649fe34e64281d018a2bf42db91ffaa46aada759f9a4b1b2a7",
+            "geometry": "f226b2a350944cb76c3a411e0ed38252338c554892fe22546d094833bba38eb3",
+            "semantics": "a5fbc6aec704bb8da8fbe4c65fe3bf660f4bf8d3b98b9d443a79a72880e32bfa"
+          },
+          "currentSha256": {
+            "png": "a79bb062018e9a649fe34e64281d018a2bf42db91ffaa46aada759f9a4b1b2a7",
+            "geometry": "f226b2a350944cb76c3a411e0ed38252338c554892fe22546d094833bba38eb3",
+            "semantics": "65087a461e16381b384df624a44d95005cae5f2772a39e170fe134bc0c107c22"
+          },
+          "priorNormalizedSemanticTextSha256": "08f62694fe28df28ac2cd529c4ca42974d56ea2c3a42b89d77ac7ccc91284d63",
+          "approval": "Full normalized semantics unchanged"
+        }
+      ]
+    },
+    "about-unconfigured": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U19"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\about-unconfigured.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\about-unconfigured.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\about-unconfigured.semantics.txt"
+      },
+      "sha256": {
+        "png": "9396bc9a09ceb641af542ab05f5396527de2c8e06eb3135dfa327d107ec8dd52",
+        "geometry": "382cd6356c9ef3938857322b5f43dfb40716c0f670bed82773aae45a942b0277",
+        "semantics": "49f91317119bdc8649b98304fe0abacd2214ce1fba0b29ec03053379e82eadda"
+      },
+      "normalizedSemanticTextSha256": "18244edc76a3d0f6637841585b7306a93b3b9ee31a292f26a9ae63350a8021ac",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions."
+      ],
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "9396bc9a09ceb641af542ab05f5396527de2c8e06eb3135dfa327d107ec8dd52",
+            "geometry": "382cd6356c9ef3938857322b5f43dfb40716c0f670bed82773aae45a942b0277",
+            "semantics": "d10e05661a3b9d50be50717719a17f7266e91657c164bbe500534e058ec9d5d8"
+          },
+          "currentSha256": {
+            "png": "9396bc9a09ceb641af542ab05f5396527de2c8e06eb3135dfa327d107ec8dd52",
+            "geometry": "382cd6356c9ef3938857322b5f43dfb40716c0f670bed82773aae45a942b0277",
+            "semantics": "49f91317119bdc8649b98304fe0abacd2214ce1fba0b29ec03053379e82eadda"
+          },
+          "priorNormalizedSemanticTextSha256": "18244edc76a3d0f6637841585b7306a93b3b9ee31a292f26a9ae63350a8021ac",
+          "approval": "Full normalized semantics unchanged"
+        }
+      ]
+    },
+    "reset-narrow-confirm": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U16",
+        "U21"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\reset-narrow-confirm.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\reset-narrow-confirm.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\reset-narrow-confirm.semantics.txt"
+      },
+      "sha256": {
+        "png": "9ee35a04a669ed7cf9888944a79d3dff512da17a281b2e82f2fd5d2857df8918",
+        "geometry": "f9e5a6ea9341594e48dfb13e457d5ca02a00eda4623133fad524230b8fb91152",
+        "semantics": "7616eb5ada67571ceec4fbca1bfb86aa8bc17d2a42ec999dd6d94537e6d15d99"
+      },
+      "normalizedSemanticTextSha256": "5533f2923b345ca06d00135b81fc7d7d22c56f2147e34f5f4dc086253e070e7b",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions."
+      ],
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "9ee35a04a669ed7cf9888944a79d3dff512da17a281b2e82f2fd5d2857df8918",
+            "geometry": "f9e5a6ea9341594e48dfb13e457d5ca02a00eda4623133fad524230b8fb91152",
+            "semantics": "3289613ee69bd4337dcd19f4f898b23594f2486ce2cbe7cb080a25fd3e0e93fa"
+          },
+          "currentSha256": {
+            "png": "9ee35a04a669ed7cf9888944a79d3dff512da17a281b2e82f2fd5d2857df8918",
+            "geometry": "f9e5a6ea9341594e48dfb13e457d5ca02a00eda4623133fad524230b8fb91152",
+            "semantics": "7616eb5ada67571ceec4fbca1bfb86aa8bc17d2a42ec999dd6d94537e6d15d99"
+          },
+          "priorNormalizedSemanticTextSha256": "5533f2923b345ca06d00135b81fc7d7d22c56f2147e34f5f4dc086253e070e7b",
+          "approval": "Full normalized semantics unchanged"
+        }
+      ]
+    },
+    "reset-completed": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U16",
+        "U22"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\reset-completed.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\reset-completed.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\reset-completed.semantics.txt"
+      },
+      "sha256": {
+        "png": "c775cae44cb26cc7058033ac7c706f247597ca5e45e81c323dfeddb34d09f0d3",
+        "geometry": "61b9e9d48232d6f89f307cc27eb987a61f48f18848266ce8049505fa1a33e82d",
+        "semantics": "0f4d5a67c528ca45950faad49f322a3aa872a5f2dd1cdfd4b673835af4d5fde4"
+      },
+      "normalizedSemanticTextSha256": "71d86be2910a0db7bc2219a71ef81c0f31006ca0d713b32c4994fa8dce92460d",
+      "issueIds": [],
+      "notes": [
+        "Individually opened; dark hierarchy, labels and fixed actions legible; viewport-edge clipping belongs to scroll regions."
+      ],
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "c775cae44cb26cc7058033ac7c706f247597ca5e45e81c323dfeddb34d09f0d3",
+            "geometry": "61b9e9d48232d6f89f307cc27eb987a61f48f18848266ce8049505fa1a33e82d",
+            "semantics": "c5a18967a79e306ab45b52086b90b73bdc6938f1967b482cf42f713569e8cd33"
+          },
+          "currentSha256": {
+            "png": "c775cae44cb26cc7058033ac7c706f247597ca5e45e81c323dfeddb34d09f0d3",
+            "geometry": "61b9e9d48232d6f89f307cc27eb987a61f48f18848266ce8049505fa1a33e82d",
+            "semantics": "0f4d5a67c528ca45950faad49f322a3aa872a5f2dd1cdfd4b673835af4d5fde4"
+          },
+          "priorNormalizedSemanticTextSha256": "71d86be2910a0db7bc2219a71ef81c0f31006ca0d713b32c4994fa8dce92460d",
+          "approval": "Full normalized semantics unchanged"
+        }
+      ]
+    },
+    "license-long-scrolled": {
+      "status": "reviewed",
+      "imageOpened": true,
+      "ux": [
+        "U20"
+      ],
+      "expectedTextPresent": true,
+      "files": {
+        "png": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\license-long-scrolled.png",
+        "geometry": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\license-long-scrolled.geometry.json",
+        "semantics": "E:\\workspace\\codes\\games\\FlyNES\\.worktrees\\flutter-foundation\\.artifacts\\flutter-g2\\extended-state-actual\\license-long-scrolled.semantics.txt"
+      },
+      "sha256": {
+        "png": "11d5b57553899ab6647582e4d14c58a320ab0a6c6a4d1f407906d935ea60f8c9",
+        "geometry": "8097a29da6c4ba545b5b0bd1d4dd14a0799fc5f2d213a195c41af476d0ebd660",
+        "semantics": "d8c94d9ec734c40f04649c736b56b7d71e0dd833912016c42f9d7ec11b26dc8b"
+      },
+      "normalizedSemanticTextSha256": "2b27f1330dd3ab05f63e581f142ff9c9510766eda6d0a5e1dfcaead4311d5442",
+      "issueIds": [],
+      "notes": [
+        "Real packaged-license fixture; body visibly scrolled with fixed title/copy/source actions and preserved list. Static evidence does not certify link opening or clipboard effects."
+      ],
+      "recaptureAudit": [
+        {
+          "reviewedUtc": "2026-09-29T20:45:03.500212+00:00",
+          "priorSha256": {
+            "png": "11d5b57553899ab6647582e4d14c58a320ab0a6c6a4d1f407906d935ea60f8c9",
+            "geometry": "8097a29da6c4ba545b5b0bd1d4dd14a0799fc5f2d213a195c41af476d0ebd660",
+            "semantics": "8f8965a252903926f377e8f9a2c95a0990f03c0c68cf3b669a7c649ef820327e"
+          },
+          "currentSha256": {
+            "png": "11d5b57553899ab6647582e4d14c58a320ab0a6c6a4d1f407906d935ea60f8c9",
+            "geometry": "8097a29da6c4ba545b5b0bd1d4dd14a0799fc5f2d213a195c41af476d0ebd660",
+            "semantics": "d8c94d9ec734c40f04649c736b56b7d71e0dd833912016c42f9d7ec11b26dc8b"
+          },
+          "priorNormalizedSemanticTextSha256": "2b27f1330dd3ab05f63e581f142ff9c9510766eda6d0a5e1dfcaead4311d5442",
+          "approval": "Full normalized semantics unchanged"
+        }
+      ]
+    }
+  }
+}

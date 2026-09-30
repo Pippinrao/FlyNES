@@ -17,6 +17,10 @@ public final class FlyNesApplication extends Application {
     private final NearbyUiHotspot nearbyUiHotspot = new NearbyUiHotspot();
     private io.flutter.embedding.engine.FlutterEngine foundationEngine;
     private FoundationBridge foundationBridge;
+    private ProductBridge productBridge;
+    private FlutterFoundationActivity flutterHost;
+    private final java.util.Set<FlutterFoundationActivity> flutterHosts=new java.util.HashSet<>();
+    private final ProductGameHandoff<MainActivity> gameHandoff=new ProductGameHandoff<>();
     private AndroidResumeService resumeService;
 
     /** Lazily initialized on the UI thread; the Flutter page does not own native services. */
@@ -26,12 +30,37 @@ public final class FlyNesApplication extends Application {
             foundationBridge = new FoundationBridge(this);
             new io.flutter.plugin.common.MethodChannel(foundationEngine.getDartExecutor().getBinaryMessenger(),
                     "flynes/foundation").setMethodCallHandler(foundationBridge);
+            productBridge=new ProductBridge(this,new io.flutter.plugin.common.MethodChannel(
+                    foundationEngine.getDartExecutor().getBinaryMessenger(),"flynes/product.v1"));
             foundationEngine.getDartExecutor().executeDartEntrypoint(
                     io.flutter.embedding.engine.dart.DartExecutor.DartEntrypoint.createDefault());
         }
         return foundationEngine;
     }
     FoundationBridge foundationBridge() { return foundationBridge; }
+    ProductBridge productBridge() { return productBridge; }
+    void acquireFlutterHost(FlutterFoundationActivity activity) {
+        flutterHosts.add(activity);
+        if(flutterHost!=null&&flutterHost!=activity)flutterHost.releaseEngineLease();
+        flutterHost=activity;
+    }
+    void releaseFlutterHost(FlutterFoundationActivity activity) {
+        if(!activity.isChangingConfigurations())
+            gameHandoff.abandon(activity.getIntent().getStringExtra("native_game_handoff"));
+        flutterHosts.remove(activity);if(flutterHost==activity)flutterHost=null;
+    }
+    void gameDestroyed(MainActivity game){gameHandoff.destroyed(game);}
+    android.content.Intent prepareHallHandoff(MainActivity game) {
+        return ProductRoutes.intent(game,"hall").putExtra("native_game_handoff",gameHandoff.begin(game));
+    }
+    void flutterPresented(FlutterFoundationActivity destination) {
+        if(flutterHost!=destination)return;
+        MainActivity game=gameHandoff.complete(destination.getIntent().getStringExtra("native_game_handoff"));
+        if(game==null)return;
+        // Dispose the retired hall only after its replacement has a matching raster.
+        for(var old:new java.util.ArrayList<>(flutterHosts))if(old!=destination)old.finish();
+        if(game!=null){game.finish();game.overridePendingTransition(0,0);}
+    }
     AndroidResumeService resumeService() { return resumeService; }
 
     @Override public void onCreate() {

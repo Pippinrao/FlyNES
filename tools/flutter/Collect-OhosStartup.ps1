@@ -1,20 +1,33 @@
 [CmdletBinding()]
 param(
   [string]$Serial = '127.0.0.1:5557',
+  [int]$TaskEmulatorPid = 0,
   [ValidateSet('native', 'flutter')][string]$Route = 'native',
   [switch]$CandidateApproved,
+  [ValidateSet('debug','release')][string]$BuildMode = 'debug',
   [ValidateRange(0, 10)][int]$Warmups = 2,
   [ValidateRange(1, 50)][int]$Samples = 12,
   [Parameter(Mandatory)][string]$OutputDirectory,
   [string]$Hdc = 'D:/soft/DevEco Studio/sdk/default/openharmony/toolchains/hdc.exe'
 )
 $ErrorActionPreference = 'Stop'
-if ($Serial -eq '127.0.0.1:5555') { throw 'The user HVD 5555 is not a performance target.' }
+$taskIdentity = $null
+if ($TaskEmulatorPid -gt 0) {
+  . (Join-Path $PSScriptRoot 'OhosTaskTarget.ps1')
+  $taskIdentity = Resolve-OhosTaskTarget -Serial $Serial -ExpectedProcessId $TaskEmulatorPid `
+    -ProcessRecord (Get-CimInstance Win32_Process -Filter "ProcessId=$TaskEmulatorPid") `
+    -Listeners @(Get-NetTCPConnection -State Listen)
+} elseif ($Serial -eq '127.0.0.1:5555') {
+  throw 'Port 5555 requires explicit verified task HVD process ownership; a user HVD is not a performance target.'
+}
 if ($Route -eq 'flutter' -and -not $CandidateApproved) {
   throw 'Flutter startup requires explicit confirmed numerical budget approval.'
 }
 if (Test-Path -LiteralPath $OutputDirectory) { throw 'Evidence directory already exists; choose a new path.' }
 $output = New-Item -ItemType Directory -Path $OutputDirectory
+if ($null -ne $taskIdentity) {
+  $taskIdentity | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output.FullName 'task-emulator-identity.json')
+}
 $rows = [System.Collections.Generic.List[object]]::new()
 $pids = [System.Collections.Generic.HashSet[int]]::new()
 $lastCode = 0
@@ -31,7 +44,7 @@ try {
     $log = Join-Path $output.FullName "$sample-hypium.log"
     $testArgs = @('-t', $Serial, 'shell', 'aa', 'test', '-b', 'com.flynes.emu', '-m', 'entry_test',
       '-s', 'unittest', 'OpenHarmonyTestRunner', '-s', 'g1StartupObservation', 'true',
-      '-s', 'g1Entry', $Route, '-s', 'g1BuildMode', 'debug', '-s', 'g1Sample', $sample,
+      '-s', 'g1Entry', $Route, '-s', 'g1BuildMode', $BuildMode, '-s', 'g1Sample', $sample,
       '-s', 'timeout', '60000')
     if ($CandidateApproved) { $testArgs += @('-s', 'g1CandidateApproved', 'true') }
     & $Hdc @testArgs *> $log
@@ -48,12 +61,16 @@ try {
       $report = Get-Content -LiteralPath $candidate -Raw | ConvertFrom-Json
       if ($report.sample -ne $sample) { continue }
       $received = $true
-      if (-not $report.complete -or $report.failure -or $report.route -ne $Route) {
+      if (-not $report.complete -or $report.failure -or $report.route -ne $Route -or
+          $report.buildMode -ne $BuildMode -or $report.debug -ne ($BuildMode -eq 'debug') -or
+          $report.engineCreated -ne ($Route -eq 'flutter') -or $report.nativeOwnerReadyMs -lt 0 -or
+          $report.catalogReadyMs -lt $report.nativeOwnerReadyMs) {
         throw "Incomplete/failed startup report: $candidate"
       }
       if (-not $pids.Add([int]$report.pid)) { throw 'Repeated PID; investigate fresh-process isolation.' }
       $rows.Add([pscustomobject]@{ phase=$phase; sample=$sample; pid=$report.pid;
         primaryInteractiveMs=$report.primaryInteractiveMs; firstVisibleCardMs=$report.firstVisibleCardMs;
+        nativeOwnerReadyMs=$report.nativeOwnerReadyMs; catalogReadyMs=$report.catalogReadyMs; engineCreated=$report.engineCreated;
         nativeSnapshotCount=$report.nativeSnapshotCount; projectedDirectoryCount=$report.projectedDirectoryCount;
         pssKb=$report.pssKb; debug=$report.debug; buildMode=$report.buildMode;
         json=(Split-Path -Leaf $candidate); sha256=(Get-FileHash -LiteralPath $candidate -Algorithm SHA256).Hash })

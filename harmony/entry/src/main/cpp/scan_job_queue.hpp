@@ -16,6 +16,7 @@ enum class ScanJobPhase : std::uint32_t
     COMPLETED = 3,
     CANCELLED = 4,
     FAILED = 5,
+    COMMITTING = 6,
 };
 
 struct ScanJobFile final
@@ -62,8 +63,9 @@ class ScanJobQueue final
 public:
     using CancelCheck = std::function<bool()>;
     using ProgressSink = std::function<void(std::uint64_t, std::uint64_t)>;
+    using CommitGate = std::function<bool()>;
     using Executor = std::function<ScanExecutionResult(
-        const ScanJobRequest&, const CancelCheck&, const ProgressSink&)>;
+        const ScanJobRequest&, const CancelCheck&, const ProgressSink&, const CommitGate&)>;
     using FdCloser = std::function<void(int)>;
 
     ScanJobQueue(Executor executor, FdCloser close_fd);
@@ -75,6 +77,8 @@ public:
     std::uint64_t start(ScanJobRequest request);
     ScanJobSnapshot status(std::uint64_t id) const;
     bool cancel(std::uint64_t id);
+    // Throws source_busy if the source has entered commit; a caller must not
+    // remove that source until the transaction finishes.
     std::uint64_t cancel_source(const std::string& source_uuid_hex, std::uint32_t source_scope);
 
 private:

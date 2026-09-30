@@ -2,6 +2,7 @@ import { describe, it, expect } from '@ohos/hypium';
 import { abilityDelegatorRegistry } from '@kit.TestKit';
 import { display, window } from '@kit.ArkUI';
 import { Driver, ON } from '@ohos.UiTest';
+import { fileIo } from '@kit.CoreFileKit';
 import nativePlay from 'libentry.so';
 import { BuiltinGames } from '../../../main/ets/service/BuiltinGames';
 import { PlayService, RomLaunchLocator } from '../../../main/ets/service/PlayService';
@@ -20,24 +21,7 @@ export default function nearbyMvpProductPlayTest(): void {
       const context = (await delegator.getCurrentTopAbility()).context;
       const win = await window.getLastWindow(context);
       nativePlay.appOpen(context.filesDir, context.cacheDir);
-      const locator = new RomLaunchLocator();
       const query = args['-s localGameQuery'];
-      if (typeof query === 'string' && query.length > 0) {
-        const row = nativePlay.catalogSnapshot().find((row) => row.originalFilename === query ||
-          row.sourceRelativePath === query || row.sourceRelativePath.endsWith('/' + query));
-        expect(row !== undefined).assertTrue();
-        locator.canonicalId = row!.canonicalId;
-        locator.sourceUuidHex = row!.sourceUuidHex;
-        locator.sourceRelativePath = row!.sourceRelativePath;
-        locator.packageFormat = row!.packageFormat;
-        locator.zipEntryName = row!.originalFilename;
-      } else {
-        const game = BuiltinGames.loadSync(context).all().find((game) =>
-          game.multiplayerEligibility === 'SUPPORTED' && game.multiplayerMaxPlayers === 2);
-        expect(game !== undefined).assertTrue();
-        locator.canonicalId = game!.canonicalId;
-      }
-      const rom = await new PlayService().readRom(context, locator);
       const invite = args['-s crossAppInvite'];
       expect(typeof invite === 'string').assertTrue();
       nativePlay.nearbyMvpCancel();
@@ -45,13 +29,12 @@ export default function nearbyMvpProductPlayTest(): void {
       const deadline = Date.now() + 20000;
       while (nativePlay.nearbyMvpSnapshot().state !== 3 && Date.now() < deadline) await delay(20);
       expect(nativePlay.nearbyMvpSnapshot().state).assertEqual(3);
-      expect(nativePlay.nearbyMvpSelectRom(rom)).assertTrue();
-      expect(nativePlay.nearbyMvpConfirm()).assertTrue();
+      const connectedId = nativePlay.nearbyMvpSnapshot().sessionId;
+      await win.getUIContext().getRouter().replaceUrl({ url: 'pages/NearbyLobby' });
       while (nativePlay.nearbyMvpSnapshot().state !== 6 && Date.now() < deadline) await delay(20);
       expect(nativePlay.nearbyMvpSnapshot().state).assertEqual(6);
-      await win.getUIContext().getRouter().replaceUrl({
-        url: 'pages/RunGame', params: { nearby: true, canonicalId: locator.canonicalId }
-      });
+      const firstKey = nativePlay.nearbyMvpSnapshot().peerGameKey;
+      expect(firstKey.length > 0).assertTrue();
       const driver = Driver.create();
       await delay(1200);
       expect(await driver.findComponent(ON.type('Canvas')) !== null).assertTrue();
@@ -84,6 +67,13 @@ export default function nearbyMvpProductPlayTest(): void {
       expect(status.error).assertEqual('');
       expect(status.audioStarted).assertTrue();
       expect(status.audioConsumedSamples > 0).assertTrue();
+      const render = nativePlay.renderStatus();
+      expect(render.uploadedFrames > 30 && render.presentedFrames > 30).assertTrue();
+      const frame = nativePlay.playStep();
+      const evidence = fileIo.openSync(`${context.filesDir}/nearby-g2-guest-frame.rgb565`,
+        fileIo.OpenMode.CREATE | fileIo.OpenMode.READ_WRITE | fileIo.OpenMode.TRUNC);
+      try { fileIo.writeSync(evidence.fd, frame.rgb565); } finally { fileIo.closeSync(evidence.fd); }
+      expect(await driver.screenCap(`${context.filesDir}/nearby-g2-guest-uitest.png`)).assertTrue();
       console.info(`FlyNesNearby product_audio consumed=${status.audioConsumedSamples} callbacks=${status.audioCallbackCount}`);
       // Exercise P2 movement after the host has passed the game's opening screens.
       await delay(8000);
@@ -110,7 +100,8 @@ export default function nearbyMvpProductPlayTest(): void {
       while (nativePlay.nearbyMvpSnapshot().localConfigured === 0 && Date.now() < nextDeadline)
         await delay(50);
       expect(nativePlay.nearbyMvpSnapshot().localConfigured).assertEqual(1);
-      expect(nativePlay.nearbyMvpSnapshot().peerGameKey.length > 0).assertTrue();
+      expect(nativePlay.nearbyMvpSnapshot().peerGameKey !== firstKey).assertTrue();
+      expect(nativePlay.nearbyMvpSnapshot().sessionId).assertEqual(connectedId);
       while (nativePlay.nearbyMvpSnapshot().state !== 6 && Date.now() < nextDeadline) await delay(50);
       expect(nativePlay.nearbyMvpSnapshot().state).assertEqual(6);
       await delay(3000);
@@ -123,7 +114,7 @@ export default function nearbyMvpProductPlayTest(): void {
         while (nativePlay.nearbyMvpSnapshot().localConfigured === 0 && Date.now() < thirdDeadline)
           await delay(50);
         expect(nativePlay.nearbyMvpSnapshot().localConfigured).assertEqual(1);
-        expect(nativePlay.nearbyMvpSnapshot().peerGameKey).assertEqual(locator.canonicalId);
+        expect(nativePlay.nearbyMvpSnapshot().peerGameKey).assertEqual(firstKey);
         while (nativePlay.nearbyMvpSnapshot().state !== 6 && Date.now() < thirdDeadline) await delay(50);
         expect(nativePlay.nearbyMvpSnapshot().state).assertEqual(6);
         await delay(3000);

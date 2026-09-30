@@ -1,0 +1,100 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+   │ textDirection: ltr
+   │
+   └─SemanticsNode#2
+     │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+     │ sortKey: OrdinalSortKey#c186e(order: 0.0)
+     │
+     └─SemanticsNode#3
+       │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+       │ flags: scopesRoute
+       │
+       ├─SemanticsNode#5
+       │ │ Rect.fromLTRB(0.0, 0.0, 960.0, 56.0)
+       │ │
+       │ └─SemanticsNode#6
+       │     Rect.fromLTRB(16.0, 14.0, 102.8, 42.0)
+       │     flags: isHeader, namesRoute
+       │     label: "Licenses"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#7
+       │ │ Rect.fromLTRB(16.0, 72.0, 284.8, 524.0)
+       │ │
+       │ └─SemanticsNode#17
+       │   │ Rect.fromLTRB(0.0, 0.0, 268.8, 452.0)
+       │   │ flags: hasImplicitScrolling
+       │   │ scrollChildren: 2
+       │   │ scrollIndex: 0
+       │   │ scrollExtentMin: 0.0
+       │   │ scrollPosition: 0.0
+       │   │ scrollExtentMax: 0.0
+       │   │
+       │   ├─SemanticsNode#15
+       │   │   Rect.fromLTRB(0.0, 0.0, 268.8, 56.0)
+       │   │   tags: RenderViewport.twoPane
+       │   │   actions: focus, tap
+       │   │   flags: isSelected, isButton, hasEnabledState, isEnabled,
+       │   │     isFocusable, hasSelectedState
+       │   │   label: "Component A"
+       │   │   textDirection: ltr
+       │   │   indexInParent: 0
+       │   │
+       │   └─SemanticsNode#16
+       │       Rect.fromLTRB(0.0, 56.0, 268.8, 112.0)
+       │       tags: RenderViewport.twoPane
+       │       actions: focus, tap
+       │       flags: isButton, hasEnabledState, isEnabled, isFocusable,
+       │         hasSelectedState
+       │       label: "Component B"
+       │       textDirection: ltr
+       │       indexInParent: 1
+       │
+       ├─SemanticsNode#9
+       │ │ Rect.fromLTRB(848.0, 72.0, 896.0, 120.0)
+       │ │ traversalParentIdentifier: _OverlayPortalState#04ab5
+       │ │
+       │ └─SemanticsNode#10
+       │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "Source website"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#8
+       │   Rect.fromLTRB(308.8, 84.0, 848.0, 108.0)
+       │   label: "Component A"
+       │   textDirection: ltr
+       │
+       ├─SemanticsNode#20
+       │ │ Rect.fromLTRB(308.8, 120.0, 944.0, 524.0)
+       │ │ flags: hasImplicitScrolling
+       │ │ scrollExtentMin: 0.0
+       │ │ scrollPosition: 0.0
+       │ │ scrollExtentMax: 0.0
+       │ │
+       │ └─SemanticsNode#21
+       │     Rect.fromLTRB(0.0, 16.0, 227.4, 76.0)
+       │     actions: longPress
+       │     flags: isTextField, isMultiline, isReadOnly, isFocusable
+       │     value:
+       │       "License a
+       │       Permission to use this component.
+       │       "
+       │     textDirection: ltr
+       │     inputType: text
+       │
+       └─SemanticsNode#18
+         │ Rect.fromLTRB(896.0, 72.0, 944.0, 120.0)
+         │ traversalParentIdentifier: _OverlayPortalState#5eb01
+         │
+         └─SemanticsNode#19
+             Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+             actions: focus, tap
+             flags: isButton, hasEnabledState, isEnabled, isFocusable
+             label: "Copy license"
+             textDirection: ltr

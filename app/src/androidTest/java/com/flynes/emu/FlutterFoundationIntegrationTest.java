@@ -232,8 +232,16 @@ public class FlutterFoundationIntegrationTest {
 
     static void click(AccessibilityNodeInfo node) {
         assertNotNull("Expected actionable UI node", node);
-        node.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SHOW_ON_SCREEN.getId());
-        assertTrue("UI action accepted", node.performAction(AccessibilityNodeInfo.ACTION_CLICK));
+        String selector=node.getViewIdResourceName();
+        if(selector==null||selector.isEmpty())selector=String.valueOf(node.getContentDescription());
+        if(java.util.Set.of("Start","Continue","开始","继续").contains(selector))selector="launch-selected";
+        var automation=InstrumentationRegistry.getInstrumentation().getUiAutomation();
+        try {automation.waitForIdle(200,5000);}catch(java.util.concurrent.TimeoutException busy){throw new AssertionError("UI never reached an actionable semantic frame",busy);}
+        // Flutter can replace its disabled button while head refresh completes.
+        // Resolve a fresh semantic node after quiescence, not its retired node ID.
+        node=awaitNode(selector,true);
+        assertNotNull("Current actionable node must remain available: "+selector,node);
+        assertTrue("UI action accepted for "+selector+": "+node, node.performAction(AccessibilityNodeInfo.ACTION_CLICK));
     }
     @Test public void sharedFlutterPageLoadsNativeCatalog() {
         var automation = InstrumentationRegistry.getInstrumentation().getUiAutomation();

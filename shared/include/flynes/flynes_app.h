@@ -600,6 +600,15 @@ FLYNES_API fly_result fly_catalog_favorite_set(fly_app_t* app,
                                                uint32_t canonical_id_utf8_length,
                                                uint32_t favorite);
 
+/* Identity-adapter migration: atomically copy an existing legacy user record
+ * only when the target has no record. Preserves counters/revisions exactly,
+ * retains the legacy record, and is a no-op for missing legacy or existing
+ * target (including explicit false/zero preferences). No synthetic play event.
+ */
+FLYNES_API fly_result fly_catalog_user_state_copy_if_absent(
+    fly_app_t* app, const char* legacy_id_utf8, uint32_t legacy_id_length,
+    const char* target_id_utf8, uint32_t target_id_length);
+
 /*
  * Records a play against canonical_id: increments play_count and assigns the
  * next last_played_sequence. Does not launch a session. Persists through FLYCAT01.

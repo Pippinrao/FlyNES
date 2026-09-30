@@ -1,9 +1,11 @@
+import { ProductStartupObservation } from '../service/ProductStartupObservation';
 import { common } from '@kit.AbilityKit';
 import { preferences } from '@kit.ArkData';
 import { router } from '@kit.ArkUI';
 import { image } from '@kit.ImageKit';
 import { i18n } from '@kit.LocalizationKit';
 import nativeProduct, { GameCenterRow } from 'libentry.so';
+import { redirectProductRoute } from '../flutter/ProductRoutes';
 import { applyMultiplayerFilter, CatalogProductService, multiplayerCapabilitiesFrom, MultiplayerCapabilityRegistry, localizedGameTitle } from '../service/CatalogProductService';
 import { takeRomOpenError, builtinGamesSync, PlayService, RomLaunchLocator } from '../service/PlayService';
 import { BuiltinGames } from '../service/BuiltinGames';
@@ -39,6 +41,7 @@ struct GameCenter {
   private selectingNearbyGame: boolean = false;
 
   aboutToAppear(): void {
+    if (redirectProductRoute('hall')) return;
     const params = router.getParams() as Record<string, Object> | undefined;
     this.nearbyChooseGame = params !== undefined && params['nearbyChooseGame'] === true;
     this.ensureApp();
@@ -54,6 +57,7 @@ struct GameCenter {
   }
 
   onPageShow(): void {
+    if (AppStorage.get<boolean>('ProductNativeBaseline') !== true) return;
     if (this.nearbyChooseGame && this.nearbyResumeTimer === -1) {
       this.nearbyResumeTimer = setInterval(() => {
         if (this.selectingNearbyGame) return;
@@ -545,6 +549,7 @@ struct GameCenter {
     const context = host as common.UIAbilityContext;
     try {
       nativeProduct.appOpen(context.filesDir, context.cacheDir);
+      ProductStartupObservation.ownerReady();
     } catch (error) {
       const detail = error instanceof Error ? error.message : 'appOpen failed';
       console.error(`FlyNES appOpen failed: ${detail}`);
@@ -557,7 +562,7 @@ struct GameCenter {
       ? BuiltinGames.empty()
       : builtinGamesSync(host as common.UIAbilityContext);
     this.multiplayerRegistry = multiplayerCapabilitiesFrom(games);
-    this.allRows = this.catalog.loadRows(games);
+    this.allRows = this.catalog.loadRows(games, () => ProductStartupObservation.catalogReady());
   }
 
   private readCompactPolicy(): void {

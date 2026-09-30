@@ -90,8 +90,8 @@ public final class NearbyLobbyActivity extends AppCompatActivity {
             int[] snapshot = mvpSession.snapshot();
             boolean host = snapshot[4] == NearbyMvpSession.HOST_P1;
             View.OnClickListener choose = view -> {
-                if (host && !isFinishing()) startActivity(new Intent(this, HomeActivity.class)
-                        .putExtra("nearby_choose_game", true));
+                if (host && !isFinishing()) startActivity(ProductRoutes.intent(this,"hall")
+                        .putExtra(ProductBridge.PURPOSE_EXTRA,"nearby").putExtra("product_return_token","nearby-room"));
             };
             if (host) findViewById(R.id.nearby_lobby_row_rom_identity).setOnClickListener(choose);
             findViewById(R.id.nearby_lobby_choose_game).setOnClickListener(choose);

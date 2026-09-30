@@ -1,0 +1,150 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 2880.0, 1620.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0) scaled by 3.0x
+   │ textDirection: ltr
+   │
+   └─SemanticsNode#35
+     │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+     │ sortKey: OrdinalSortKey#1ba97(order: 0.0)
+     │
+     ├─SemanticsNode#50
+     │ │ Rect.fromLTRB(0.0, 0.0, 960.0, 56.0)
+     │ │
+     │ ├─SemanticsNode#51
+     │ │ │ Rect.fromLTRB(0.0, 0.0, 56.0, 56.0)
+     │ │ │ traversalParentIdentifier: _OverlayPortalState#45f40
+     │ │ │
+     │ │ └─SemanticsNode#52
+     │ │     Rect.fromLTRB(0.0, 0.0, 56.0, 56.0)
+     │ │     actions: focus, tap
+     │ │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+     │ │     label: "Back"
+     │ │     textDirection: ltr
+     │ │
+     │ └─SemanticsNode#53
+     │     Rect.fromLTRB(72.0, 14.0, 152.2, 42.0)
+     │     flags: isHeader, namesRoute
+     │     label: "Settings"
+     │     textDirection: ltr
+     │
+     ├─SemanticsNode#36
+     │ │ Rect.fromLTRB(0.0, 56.0, 249.6, 540.0)
+     │ │
+     │ └─SemanticsNode#42
+     │   │ Rect.fromLTRB(0.0, 0.0, 249.6, 484.0)
+     │   │ flags: hasImplicitScrolling
+     │   │ scrollChildren: 5
+     │   │ scrollIndex: 0
+     │   │ scrollExtentMin: 0.0
+     │   │ scrollPosition: 0.0
+     │   │ scrollExtentMax: 0.0
+     │   │
+     │   ├─SemanticsNode#37
+     │   │   Rect.fromLTRB(8.0, 8.0, 241.6, 64.0)
+     │   │   tags: RenderViewport.twoPane
+     │   │   actions: focus, tap
+     │   │   flags: isSelected, isButton, hasEnabledState, isEnabled,
+     │   │     isFocusable, hasSelectedState
+     │   │   label: "Display"
+     │   │   textDirection: ltr
+     │   │   indexInParent: 0
+     │   │
+     │   ├─SemanticsNode#38
+     │   │   Rect.fromLTRB(8.0, 64.0, 241.6, 120.0)
+     │   │   tags: RenderViewport.twoPane
+     │   │   actions: focus, tap
+     │   │   flags: isButton, hasEnabledState, isEnabled, isFocusable,
+     │   │     hasSelectedState
+     │   │   label: "Controls"
+     │   │   textDirection: ltr
+     │   │   indexInParent: 1
+     │   │
+     │   ├─SemanticsNode#39
+     │   │   Rect.fromLTRB(8.0, 120.0, 241.6, 176.0)
+     │   │   tags: RenderViewport.twoPane
+     │   │   actions: focus, tap
+     │   │   flags: isButton, hasEnabledState, isEnabled, isFocusable,
+     │   │     hasSelectedState
+     │   │   label: "Audio"
+     │   │   textDirection: ltr
+     │   │   indexInParent: 2
+     │   │
+     │   ├─SemanticsNode#40
+     │   │   Rect.fromLTRB(8.0, 176.0, 241.6, 232.0)
+     │   │   tags: RenderViewport.twoPane
+     │   │   actions: focus, tap
+     │   │   flags: isButton, hasEnabledState, isEnabled, isFocusable,
+     │   │     hasSelectedState
+     │   │   label: "Game & language"
+     │   │   textDirection: ltr
+     │   │   indexInParent: 3
+     │   │
+     │   └─SemanticsNode#41
+     │       Rect.fromLTRB(8.0, 232.0, 241.6, 288.0)
+     │       tags: RenderViewport.twoPane
+     │       actions: focus, tap
+     │       flags: isButton, hasEnabledState, isEnabled, isFocusable,
+     │         hasSelectedState
+     │       label: "About"
+     │       textDirection: ltr
+     │       indexInParent: 4
+     │
+     └─SemanticsNode#43
+       │ Rect.fromLTRB(250.6, 56.0, 960.0, 540.0)
+       │
+       └─SemanticsNode#49
+         │ Rect.fromLTRB(0.0, 0.0, 709.4, 484.0)
+         │ flags: hasImplicitScrolling
+         │ scrollChildren: 3
+         │ scrollIndex: 0
+         │ scrollExtentMin: 0.0
+         │ scrollPosition: 0.0
+         │ scrollExtentMax: 0.0
+         │
+         ├─SemanticsNode#44
+         │   Rect.fromLTRB(16.0, 16.0, 693.4, 88.0)
+         │   tags: RenderViewport.twoPane
+         │   actions: focus, tap
+         │   flags: isButton, hasEnabledState, isEnabled, isFocusable,
+         │     hasSelectedState
+         │   label:
+         │     "Quality preset
+         │     Balanced"
+         │   textDirection: ltr
+         │   indexInParent: 0
+         │
+         ├─SemanticsNode#45
+         │   Rect.fromLTRB(16.0, 88.0, 693.4, 160.0)
+         │   tags: RenderViewport.twoPane
+         │   actions: focus, tap
+         │   flags: isButton, hasEnabledState, isEnabled, isFocusable,
+         │     hasSelectedState
+         │   label:
+         │     "Aspect ratio
+         │     Unavailable"
+         │   textDirection: ltr
+         │   indexInParent: 1
+         │
+         └─SemanticsNode#46
+           │ Rect.fromLTRB(16.0, 160.0, 693.4, 216.0)
+           │ tags: RenderViewport.twoPane
+           │ indexInParent: 2
+           │
+           └─SemanticsNode#47
+             │ merge boundary ⛔️
+             │ Rect.fromLTRB(0.0, 0.0, 677.4, 56.0)
+             │ actions: focus, tap
+             │ flags: isButton, hasEnabledState, isEnabled, isFocusable,
+             │   hasSelectedState
+             │ label: "Adaptive protection"
+             │ textDirection: ltr
+             │
+             └─SemanticsNode#48
+                 merged up ⬆️
+                 Rect.fromLTRB(585.4, 4.0, 653.4, 52.0)
+                 actions: tap
+                 flags: hasEnabledState, isEnabled, hasToggledState
+                 label: "Adaptive protection"
+                 textDirection: ltr

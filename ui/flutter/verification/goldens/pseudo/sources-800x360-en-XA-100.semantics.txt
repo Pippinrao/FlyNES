@@ -1,0 +1,136 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+   │ textDirection: ltr
+   │
+   └─SemanticsNode#2
+     │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+     │ sortKey: OrdinalSortKey#7d98a(order: 0.0)
+     │
+     └─SemanticsNode#3
+       │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+       │ flags: scopesRoute
+       │
+       └─SemanticsNode#4
+         │ locale: "en_XA"
+         │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+         │ textDirection: ltr
+         │
+         ├─SemanticsNode#11
+         │ │ locale: "en_XA"
+         │ │ Rect.fromLTRB(0.0, 0.0, 800.0, 72.0)
+         │ │
+         │ └─SemanticsNode#12
+         │     locale: "en_XA"
+         │     Rect.fromLTRB(32.0, 30.0, 173.5, 58.0)
+         │     flags: isHeader, namesRoute
+         │     label: "[Sóúrcés ~~~]"
+         │     textDirection: ltr
+         │
+         ├─SemanticsNode#5
+         │ │ locale: "en_XA"
+         │ │ Rect.fromLTRB(32.0, 88.0, 274.1, 336.0)
+         │ │ actions: scrollDown, scrollToOffset
+         │ │ flags: hasImplicitScrolling
+         │ │ scrollExtentMin: 0.0
+         │ │ scrollPosition: 52.0
+         │ │ scrollExtentMax: 52.0
+         │ │
+         │ ├─SemanticsNode#6
+         │ │   locale: "en_XA"
+         │ │   Rect.fromLTRB(0.0, 0.0, 242.1, 12.0)
+         │ │   label: "[Yóúr gámé sóúrcés ~~~~~~]"
+         │ │   textDirection: ltr
+         │ │
+         │ ├─SemanticsNode#7
+         │ │   locale: "en_XA"
+         │ │   Rect.fromLTRB(0.0, 28.0, 242.1, 108.0)
+         │ │   label: "[Ádd yóúr ówn NÉS gámés. Rémóvíng á sóúrcé kééps yóúr
+         │ │     órígínál fílés ánd sávéd prógréss.
+         │ │     ~~~~~~~~~~~~~~~~~~~~~~~~~~~]"
+         │ │   textDirection: ltr
+         │ │
+         │ ├─SemanticsNode#8
+         │ │   locale: "en_XA"
+         │ │   Rect.fromLTRB(0.0, 132.0, 242.1, 188.0)
+         │ │   actions: focus, tap
+         │ │   flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │ │   label: "[Ádd fílé ~~~]"
+         │ │   textDirection: ltr
+         │ │
+         │ └─SemanticsNode#9
+         │     locale: "en_XA"
+         │     Rect.fromLTRB(0.0, 200.0, 242.1, 248.0)
+         │     actions: focus, tap
+         │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │     label: "[Ádd fóldér ~~~]"
+         │     textDirection: ltr
+         │
+         └─SemanticsNode#13
+           │ Rect.fromLTRB(298.1, 88.0, 768.0, 336.0)
+           │
+           └─SemanticsNode#21
+             │ locale: "en_XA"
+             │ Rect.fromLTRB(0.0, 0.0, 469.9, 248.0)
+             │ actions: scrollToOffset, scrollUp
+             │ flags: hasImplicitScrolling
+             │ scrollIndex: 0
+             │ scrollExtentMin: 0.0
+             │ scrollPosition: 0.0
+             │ scrollExtentMax: 40.0
+             │
+             ├─SemanticsNode#14
+             │ │ locale: "en_XA"
+             │ │ Rect.fromLTRB(0.0, 0.0, 469.9, 120.0)
+             │ │ tags: RenderViewport.twoPane
+             │ │ indexInParent: 0
+             │ │
+             │ └─SemanticsNode#15
+             │     locale: "en_XA"
+             │     Rect.fromLTRB(0.0, 0.0, 469.9, 120.0)
+             │     label:
+             │       "[Búílt-ín ~~~]
+             │       [Búílt-ín · cánnót bé rémóvéd ~~~~~~~~~]
+             │       [7 gámés ~~~]"
+             │     textDirection: ltr
+             │
+             └─SemanticsNode#16
+               │ locale: "en_XA"
+               │ Rect.fromLTRB(0.0, 120.0, 469.9, 248.0)
+               │ tags: RenderViewport.twoPane
+               │ indexInParent: 1
+               │
+               └─SemanticsNode#17
+                 │ locale: "en_XA"
+                 │ Rect.fromLTRB(0.0, 0.0, 469.9, 128.0)
+                 │ label:
+                 │   "My games
+                 │   [Fóldér ~~]
+                 │   [12 gámés ~~~]"
+                 │ textDirection: ltr
+                 │
+                 ├─SemanticsNode#18
+                 │   locale: "en_XA"
+                 │   Rect.fromLTRB(20.0, 100.0, 105.8, 128.0)
+                 │   actions: focus, tap
+                 │   flags: isButton, hasEnabledState, isEnabled, isFocusable
+                 │   label: "[Scán ~~]"
+                 │   textDirection: ltr
+                 │
+                 ├─SemanticsNode#19
+                 │   locale: "en_XA"
+                 │   Rect.fromLTRB(113.8, 100.0, 262.7, 128.0)
+                 │   actions: focus, tap
+                 │   flags: isButton, hasEnabledState, isEnabled, isFocusable
+                 │   label: "[Réáúthórízé ~~~~]"
+                 │   textDirection: ltr
+                 │
+                 └─SemanticsNode#20
+                     locale: "en_XA"
+                     Rect.fromLTRB(270.7, 100.0, 376.0, 128.0)
+                     actions: focus, tap
+                     flags: isButton, hasEnabledState, isEnabled, isFocusable
+                     label: "[Rémóvé ~~]"
+                     textDirection: ltr

@@ -1,0 +1,1454 @@
+[
+  {
+    "id": "startup-loading",
+    "ux": [
+      "U01"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Hold bootstrap unresolved for 240ms"
+    ],
+    "expectedText": [
+      "Loading"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "13 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "startup-loading.png",
+    "geometry": "startup-loading.geometry.json",
+    "semantics": "startup-loading.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "startup-error",
+    "ux": [
+      "U01",
+      "U21"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Bootstrap fails with stable service_unavailable code"
+    ],
+    "expectedText": [
+      "Please retry",
+      "Retry"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "14 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "startup-error.png",
+    "geometry": "startup-error.geometry.json",
+    "semantics": "startup-error.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "startup-retry-success",
+    "ux": [
+      "U01"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Tap Retry; bootstrap and catalog/head succeed"
+    ],
+    "expectedText": [
+      "Fixture Adventure",
+      "Start"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "16 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "bootstrap called twice; product hall recovered"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "startup-retry-success.png",
+    "geometry": "startup-retry-success.geometry.json",
+    "semantics": "startup-retry-success.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "head-none",
+    "ux": [
+      "U04"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Bootstrap real controller with fixture head state none"
+    ],
+    "expectedText": [
+      "Start"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "16 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "Launch enabled state checked"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "head-none.png",
+    "geometry": "head-none.geometry.json",
+    "semantics": "head-none.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "head-available",
+    "ux": [
+      "U04"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Bootstrap real controller with fixture head state available"
+    ],
+    "expectedText": [
+      "Continue"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "16 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "Launch enabled state checked"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "head-available.png",
+    "geometry": "head-available.geometry.json",
+    "semantics": "head-available.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "head-querying",
+    "ux": [
+      "U04"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Bootstrap real controller with fixture head state querying"
+    ],
+    "expectedText": [
+      "Reading…"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "15 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "Launch enabled state checked"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "head-querying.png",
+    "geometry": "head-querying.geometry.json",
+    "semantics": "head-querying.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "head-unavailable",
+    "ux": [
+      "U04"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Bootstrap real controller with fixture head state unavailable"
+    ],
+    "expectedText": [
+      "Retry"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "17 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "Launch enabled state checked"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "head-unavailable.png",
+    "geometry": "head-unavailable.geometry.json",
+    "semantics": "head-unavailable.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "head-source-unavailable",
+    "ux": [
+      "U04"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Bootstrap real controller with fixture head state source-unavailable"
+    ],
+    "expectedText": [
+      "Start",
+      "Source unavailable"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "15 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "Launch enabled state checked"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "head-source-unavailable.png",
+    "geometry": "head-source-unavailable.geometry.json",
+    "semantics": "head-source-unavailable.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "head-nearby",
+    "ux": [
+      "U08"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Bootstrap real controller with fixture head state nearby"
+    ],
+    "expectedText": [
+      "Choose game"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "16 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "Launch enabled state checked",
+      "no head query in nearby purpose"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "head-nearby.png",
+    "geometry": "head-nearby.geometry.json",
+    "semantics": "head-nearby.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "hall-recent",
+    "ux": [
+      "U06"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Query recent fixture through ProductController"
+    ],
+    "expectedText": [
+      "No recently played games"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "14 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "hall-recent.png",
+    "geometry": "hall-recent.geometry.json",
+    "semantics": "hall-recent.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "hall-favorites",
+    "ux": [
+      "U06"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Query favorites fixture through ProductController"
+    ],
+    "expectedText": [
+      "No favorite games yet"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "14 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "hall-favorites.png",
+    "geometry": "hall-favorites.geometry.json",
+    "semantics": "hall-favorites.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "hall-search",
+    "ux": [
+      "U06"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Query search fixture through ProductController"
+    ],
+    "expectedText": [
+      "No matching games"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "14 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "hall-search.png",
+    "geometry": "hall-search.geometry.json",
+    "semantics": "hall-search.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "hall-two-player",
+    "ux": [
+      "U06"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Query two-player fixture through ProductController"
+    ],
+    "expectedText": [
+      "No supported two-player games"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "14 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "hall-two-player.png",
+    "geometry": "hall-two-player.geometry.json",
+    "semantics": "hall-two-player.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "hall-all",
+    "ux": [
+      "U06"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Query all fixture through ProductController"
+    ],
+    "expectedText": [
+      "Your library is empty"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "14 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "hall-all.png",
+    "geometry": "hall-all.geometry.json",
+    "semantics": "hall-all.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "hall-catalog-failure",
+    "ux": [
+      "U06"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Query catalog-failure fixture through ProductController"
+    ],
+    "expectedText": [
+      "Please retry"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "14 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "hall-catalog-failure.png",
+    "geometry": "hall-catalog-failure.geometry.json",
+    "semantics": "hall-catalog-failure.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-queued",
+    "ux": [
+      "U09",
+      "U11"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Observe fixture phase queued; fixed clock, no repeated scan"
+    ],
+    "expectedText": [
+      "Waiting to scan"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "4 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "Duplicate Scan disabled while operation remains active"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-queued.png",
+    "geometry": "source-queued.geometry.json",
+    "semantics": "source-queued.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-enumerating",
+    "ux": [
+      "U09",
+      "U11"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Observe fixture phase enumerating; fixed clock, no repeated scan"
+    ],
+    "expectedText": [
+      "Reading files"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "4 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "Duplicate Scan disabled while operation remains active"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-enumerating.png",
+    "geometry": "source-enumerating.geometry.json",
+    "semantics": "source-enumerating.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-scanning-known",
+    "ux": [
+      "U09",
+      "U11"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Observe fixture phase scanning-known; fixed clock, no repeated scan"
+    ],
+    "expectedText": [
+      "Scanning"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "4 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "Duplicate Scan disabled while operation remains active",
+      "authoritative 7/20 progress=.35"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-scanning-known.png",
+    "geometry": "source-scanning-known.geometry.json",
+    "semantics": "source-scanning-known.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-scanning-unknown",
+    "ux": [
+      "U09",
+      "U11"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Observe fixture phase scanning-unknown; fixed clock, no repeated scan"
+    ],
+    "expectedText": [
+      "Scanning"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "4 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "Duplicate Scan disabled while operation remains active",
+      "No fake numeric progress"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-scanning-unknown.png",
+    "geometry": "source-scanning-unknown.geometry.json",
+    "semantics": "source-scanning-unknown.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-cancelling",
+    "ux": [
+      "U09",
+      "U11"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Observe fixture phase cancelling; fixed clock, no repeated scan"
+    ],
+    "expectedText": [
+      "Cancelling"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "3 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "Duplicate Scan disabled while operation remains active"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-cancelling.png",
+    "geometry": "source-cancelling.geometry.json",
+    "semantics": "source-cancelling.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-committing",
+    "ux": [
+      "U09",
+      "U11"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Observe fixture phase committing; fixed clock, no repeated scan"
+    ],
+    "expectedText": [
+      "Finishing"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "3 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "Duplicate Scan disabled while operation remains active",
+      "No cancel action while committing"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-committing.png",
+    "geometry": "source-committing.geometry.json",
+    "semantics": "source-committing.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-completed",
+    "ux": [
+      "U09",
+      "U11"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Observe fixture phase completed; fixed clock, no repeated scan"
+    ],
+    "expectedText": [
+      "12 games"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "4 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-completed.png",
+    "geometry": "source-completed.geometry.json",
+    "semantics": "source-completed.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-partial",
+    "ux": [
+      "U09",
+      "U11"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Observe fixture phase partial; fixed clock, no repeated scan"
+    ],
+    "expectedText": [
+      "Some files"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "4 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-partial.png",
+    "geometry": "source-partial.geometry.json",
+    "semantics": "source-partial.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-failed",
+    "ux": [
+      "U09",
+      "U11"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Observe fixture phase failed; fixed clock, no repeated scan"
+    ],
+    "expectedText": [
+      "Scan failed"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "4 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-failed.png",
+    "geometry": "source-failed.geometry.json",
+    "semantics": "source-failed.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-permission-lost",
+    "ux": [
+      "U09",
+      "U11",
+      "U12"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Observe fixture phase permission-lost; fixed clock, no repeated scan"
+    ],
+    "expectedText": [
+      "Source unavailable"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "5 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-permission-lost.png",
+    "geometry": "source-permission-lost.geometry.json",
+    "semantics": "source-permission-lost.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-committed-refresh-failure",
+    "ux": [
+      "U09",
+      "U11"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Observe fixture phase committed-refresh-failure; fixed clock, no repeated scan"
+    ],
+    "expectedText": [
+      "scan was saved"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "5 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-committed-refresh-failure.png",
+    "geometry": "source-committed-refresh-failure.geometry.json",
+    "semantics": "source-committed-refresh-failure.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-remove-confirm",
+    "ux": [
+      "U13",
+      "U21"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Tap Remove; capture real shared confirmation"
+    ],
+    "expectedText": [
+      "Remove source",
+      "will be kept"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "2 named controls hit-testable",
+      "2 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-remove-confirm.png",
+    "geometry": "source-remove-confirm.geometry.json",
+    "semantics": "source-remove-confirm.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "source-picker-cancelled",
+    "ux": [
+      "U10",
+      "U13"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Cancel remove, request platform picker, fixture returns cancelled; no native screen fabricated"
+    ],
+    "expectedText": [
+      "My game folder"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "4 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "No removeSource or scanSource call; original source retained"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "source-picker-cancelled.png",
+    "geometry": "source-picker-cancelled.geometry.json",
+    "semantics": "source-picker-cancelled.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "settings-custom-axes",
+    "ux": [
+      "U15"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Open settings with authoritative Custom preset"
+    ],
+    "expectedText": [
+      "Refresh policy",
+      "Time processing",
+      "Image scaling",
+      "Post-processing"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "13 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "settings-custom-axes.png",
+    "geometry": "settings-custom-axes.geometry.json",
+    "semantics": "settings-custom-axes.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "settings-locked-option",
+    "ux": [
+      "U15",
+      "U21"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Open Quality preset; no verified capability supplied"
+    ],
+    "expectedText": [
+      "Extreme",
+      "requires verified device support"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "3 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "Extreme option disabled"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "settings-locked-option.png",
+    "geometry": "settings-locked-option.geometry.json",
+    "semantics": "settings-locked-option.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "controls-bottom",
+    "ux": [
+      "U16"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Scroll Controls to reset action"
+    ],
+    "expectedText": [
+      "Distinct A/B haptics",
+      "Reset controls"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "12 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "controls-bottom.png",
+    "geometry": "controls-bottom.geometry.json",
+    "semantics": "controls-bottom.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "controls-reset-confirm",
+    "ux": [
+      "U16",
+      "U21"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Open reset confirmation"
+    ],
+    "expectedText": [
+      "saved layout?"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "2 named controls hit-testable",
+      "2 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "controls-reset-confirm.png",
+    "geometry": "controls-reset-confirm.geometry.json",
+    "semantics": "controls-reset-confirm.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "audio-write-failure",
+    "ux": [
+      "U17",
+      "U21"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Owner rejects sound patch; acknowledged value retained"
+    ],
+    "expectedText": [
+      "previous value is retained"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "9 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "Sound remains on after failed write"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "audio-write-failure.png",
+    "geometry": "audio-write-failure.geometry.json",
+    "semantics": "audio-write-failure.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "locale-chooser",
+    "ux": [
+      "U18",
+      "U21"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Open application language chooser"
+    ],
+    "expectedText": [
+      "Follow system",
+      "English",
+      "Simplified Chinese"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "3 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "locale-chooser.png",
+    "geometry": "locale-chooser.geometry.json",
+    "semantics": "locale-chooser.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "license-read-failure",
+    "ux": [
+      "U20",
+      "U21"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "License body owner returns stable failure"
+    ],
+    "expectedText": [
+      "Please retry",
+      "Fixture component"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "4 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "license-read-failure.png",
+    "geometry": "license-read-failure.geometry.json",
+    "semantics": "license-read-failure.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "license-copy-confirmation",
+    "ux": [
+      "U20",
+      "U21"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "Retry body succeeds; copy adapter acknowledges"
+    ],
+    "expectedText": [
+      "License copied",
+      "Fixture license text"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "5 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 960.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image": "license-copy-confirmation.png",
+    "geometry": "license-copy-confirmation.geometry.json",
+    "semantics": "license-copy-confirmation.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "narrow-safe-settings-list",
+    "ux": [
+      "U14",
+      "U26"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "600x540 with 24px side/top and 16px bottom safe area; settings-list",
+      "English fixture only; not pseudolocalization evidence"
+    ],
+    "expectedText": [
+      "Display"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "5 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 600.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      24.0,
+      24.0,
+      24.0,
+      16.0
+    ],
+    "image": "narrow-safe-settings-list.png",
+    "geometry": "narrow-safe-settings-list.geometry.json",
+    "semantics": "narrow-safe-settings-list.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "narrow-safe-settings-detail",
+    "ux": [
+      "U14",
+      "U26"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "600x540 with 24px side/top and 16px bottom safe area; settings-detail",
+      "English fixture only; not pseudolocalization evidence"
+    ],
+    "expectedText": [
+      "Audio focus"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "5 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 600.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      24.0,
+      24.0,
+      24.0,
+      16.0
+    ],
+    "image": "narrow-safe-settings-detail.png",
+    "geometry": "narrow-safe-settings-detail.geometry.json",
+    "semantics": "narrow-safe-settings-detail.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "narrow-safe-licenses-list",
+    "ux": [
+      "U20",
+      "U26"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "600x540 with 24px side/top and 16px bottom safe area; licenses-list",
+      "English fixture only; not pseudolocalization evidence"
+    ],
+    "expectedText": [
+      "Fixture component"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "1 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 600.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      24.0,
+      24.0,
+      24.0,
+      16.0
+    ],
+    "image": "narrow-safe-licenses-list.png",
+    "geometry": "narrow-safe-licenses-list.geometry.json",
+    "semantics": "narrow-safe-licenses-list.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "narrow-safe-licenses-detail",
+    "ux": [
+      "U20",
+      "U26"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "600x540 with 24px side/top and 16px bottom safe area; licenses-detail",
+      "English fixture only; not pseudolocalization evidence"
+    ],
+    "expectedText": [
+      "Fixture license text"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "6 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 600.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      24.0,
+      24.0,
+      24.0,
+      16.0
+    ],
+    "image": "narrow-safe-licenses-detail.png",
+    "geometry": "narrow-safe-licenses-detail.geometry.json",
+    "semantics": "narrow-safe-licenses-detail.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "narrow-safe-sources",
+    "ux": [
+      "U09",
+      "U26"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "600x540 with 24px side/top and 16px bottom safe area; sources",
+      "English fixture only; not pseudolocalization evidence"
+    ],
+    "expectedText": [
+      "Your game sources"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "4 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 600.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      24.0,
+      24.0,
+      24.0,
+      16.0
+    ],
+    "image": "narrow-safe-sources.png",
+    "geometry": "narrow-safe-sources.geometry.json",
+    "semantics": "narrow-safe-sources.semantics.txt",
+    "review": "pending"
+  },
+  {
+    "id": "narrow-safe-hall",
+    "ux": [
+      "U02",
+      "U26"
+    ],
+    "fixture": "deterministic-service-no-rom-no-native-page",
+    "steps": [
+      "600x540 with 24px side/top and 16px bottom safe area; hall",
+      "English fixture only; not pseudolocalization evidence"
+    ],
+    "expectedText": [
+      "Fixture Adventure"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "0 named controls hit-testable",
+      "16 visible enabled controls",
+      "visible ProductButton targets at least 48x48"
+    ],
+    "width": 600.0,
+    "height": 540.0,
+    "locale": "en",
+    "textScale": 1.0,
+    "safeArea": [
+      24.0,
+      24.0,
+      24.0,
+      16.0
+    ],
+    "image": "narrow-safe-hall.png",
+    "geometry": "narrow-safe-hall.geometry.json",
+    "semantics": "narrow-safe-hall.semantics.txt",
+    "review": "pending"
+  }
+]

@@ -5,7 +5,8 @@ import java.io.IOException;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-/** Called only while the activity owns a quiescent core. No core call is made by SQLite. */
+/** Capture requires a quiescent core. The AUTO hook may resume after capture;
+ * SQLite only receives independent bytes and never calls the live core. */
 public final class HistorySession {
     private final NesCore core;
     private final HistoryStore store;
@@ -64,15 +65,24 @@ public final class HistorySession {
         }
     }
     public long save(int kind, String label) {
+        return save(kind,label,null);
+    }
+    private long save(int kind,String label,Runnable afterCapture) {
         if (kind == HistoryStore.AUTO && !clock.changed())
             return parent;
-        byte[] state = capture();
-        byte[] image = image();
+        long capturedMicros=clock.captureMicros();
+        byte[] state = SavePhaseTrace.measure("save.capture",this::capture);
+        byte[] image = SavePhaseTrace.measure("save.thumbnail",this::image);
+        if(afterCapture!=null)afterCapture.run();
         long id =
-            store.put(key, state, image, kind, label, clock.playedMs(), session, parent, true);
+            SavePhaseTrace.measure("save.store",()->store.put(key, state, image, kind, label, capturedMicros/1000, session, parent, true));
         parent = id;
-        clock.saved();
+        clock.savedAt(capturedMicros);
         return id;
+    }
+    /** Resume only the captured core; do not reenter session/storage from this hook. */
+    public long saveAutomatic(Runnable afterCapture) {
+        return save(HistoryStore.AUTO,"",java.util.Objects.requireNonNull(afterCapture));
     }
     public void restore(long target) {
         HistoryStore.Entry targetEntry = metadata(target);

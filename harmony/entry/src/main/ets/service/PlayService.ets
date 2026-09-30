@@ -58,6 +58,22 @@ export class RomLaunchLocator {
 }
 
 export class PlayService {
+  private static activeOwner: PlayService | undefined = undefined;
+  private static activeOwners: number = 0;
+  private static ownerGeneration: number = 0;
+
+  /** In-process observation only: no native call, state transition or ROM access. */
+  static lifecycleSnapshot(): PlayLifecycleSnapshot {
+    const clock = PlayService.activeOwner?.history?.clockSnapshot();
+    return { activeOwners: PlayService.activeOwners, generation: PlayService.ownerGeneration,
+      playedMs: clock?.playedMs ?? 0, sinceSaveMs: clock?.sinceSaveMs ?? 0 };
+  }
+
+  private recordOpen(): void {
+    if (!this.opened) { PlayService.activeOwners++; PlayService.ownerGeneration++; }
+    this.opened = true;
+    PlayService.activeOwner = this;
+  }
   private buttons: number = 0;
   private audioMuted: boolean = false;
   private outputPaused: boolean = false;
@@ -73,9 +89,14 @@ export class PlayService {
     lastRomOpenError = '';
     const rom = await this.readRom(context, locator);
     nativePlay.playOpen(rom);
-    this.opened = true;
+    this.recordOpen();
     this.checkpointStore = new CheckpointStore(context.filesDir);
     this.checkpointId = locator.canonicalId;
+    const bundledRow = nativePlay.catalogSnapshot().find((entry) => entry.builtin && entry.canonicalId === locator.canonicalId &&
+      entry.sourceUuidHex === locator.sourceUuidHex && entry.sourceRelativePath === locator.sourceRelativePath);
+    if (bundledRow !== undefined) {
+      this.checkpointId = builtinGamesSync(context).all().find((game) => game.assetFilename === bundledRow.sourceRelativePath)?.canonicalId ?? locator.canonicalId;
+    }
     nativePlay.playSetPaused(true);
     this.history = new SaveHistoryService(`${context.filesDir}/save-history.db`, nativePlay.historyContentKey(rom));
     const options = preferences.getPreferencesSync(context, { name: 'save_history' });
@@ -96,7 +117,15 @@ export class PlayService {
   async readRom(context: common.UIAbilityContext, locator: RomLaunchLocator): Promise<Uint8Array | ArrayBuffer> {
     let rom: Uint8Array | ArrayBuffer;
     const games = builtinGamesSync(context);
-    const bundled = games.byCanonicalId(locator.canonicalId);
+    let bundled = games.byCanonicalId(locator.canonicalId);
+    if (bundled === undefined) {
+      // G2 uses the scanned content identity. Only a catalog-confirmed bundled
+      // locator may resolve into packaged resources; user filenames are not trusted.
+      const row = nativePlay.catalogSnapshot().find((entry) => entry.builtin &&
+        entry.canonicalId === locator.canonicalId && entry.sourceUuidHex === locator.sourceUuidHex &&
+        entry.sourceRelativePath === locator.sourceRelativePath);
+      if (row !== undefined) bundled = games.all().find((game) => game.assetFilename === row.sourceRelativePath);
+    }
     if (bundled !== undefined) {
       try {
         rom = context.resourceManager.getRawFileContentSync(bundled.assetPath());
@@ -118,7 +147,7 @@ export class PlayService {
   openNearby(): void {
     if (!nativePlay.nearbyMvpOpenPlay()) throw new Error('LAN session is not running');
     this.nearby = true;
-    this.opened = true;
+    this.recordOpen();
     nativePlay.playSetAudioMuted(this.audioMuted);
   }
 
@@ -175,6 +204,8 @@ export class PlayService {
         nativePlay.playClose();
       }
     } finally {
+      if (this.opened) PlayService.activeOwners--;
+      if (PlayService.activeOwner === this) PlayService.activeOwner = undefined;
       this.opened = false;
       this.nearby = false;
       this.history = undefined;
@@ -211,4 +242,11 @@ export class PlayService {
     }
   }
 
+}
+
+export interface PlayLifecycleSnapshot {
+  activeOwners: number;
+  generation: number;
+  playedMs: number;
+  sinceSaveMs: number;
 }

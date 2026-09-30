@@ -67,7 +67,7 @@ public final class NativeCatalogProjector {
             AndroidUuidSafMap uuidMap,
             AndroidPackageLocatorMap locators,
             LocatorResolver locatorResolver,
-            BuiltinGames builtinGames) {
+            BuiltinGames builtinGames, java.util.function.Predicate<String> persistedRead) {
         Objects.requireNonNull(entries, "entries");
         Objects.requireNonNull(sources, "sources");
         Objects.requireNonNull(users, "users");
@@ -75,6 +75,7 @@ public final class NativeCatalogProjector {
         Objects.requireNonNull(locators, "locators");
         Objects.requireNonNull(locatorResolver, "locator resolver");
         Objects.requireNonNull(builtinGames, "builtin games");
+        Objects.requireNonNull(persistedRead, "persisted read grants");
         LinkedHashMap<String, SourceBuilder> builders = new LinkedHashMap<>();
         RomSource builtin = AndroidBuiltinCatalogAdapter.SOURCE;
         builders.put(builtin.id(), new SourceBuilder(builtin, SourceScanResult.Completeness.FULL));
@@ -83,12 +84,12 @@ public final class NativeCatalogProjector {
                     && uuidMap.get(status.sourceUuid()) == null) {
                 continue;
             }
-            RomSource source = sourceFor(status.sourceUuid(), status.sourceScope(), uuidMap);
+            RomSource source = sourceFor(status.sourceUuid(), status.sourceScope(), uuidMap,persistedRead);
             builders.putIfAbsent(source.id(), new SourceBuilder(source, completeness(status.lastCompleteness())));
             builders.get(source.id()).completeness = completeness(status.lastCompleteness());
         }
         for (NativeCatalogEntry entry : entries) {
-            RomSource source = sourceFor(entry.sourceUuid(), entry.sourceScope(), uuidMap);
+            RomSource source = sourceFor(entry.sourceUuid(), entry.sourceScope(), uuidMap,persistedRead);
             SourceBuilder builder = builders.computeIfAbsent(
                     source.id(), ignored -> new SourceBuilder(source, SourceScanResult.Completeness.FULL));
             addVariant(builder, source, entry, locators, locatorResolver, builtinGames);
@@ -208,13 +209,14 @@ public final class NativeCatalogProjector {
         return new CanonicalGame(entry.canonicalId(), titles, metadata.aliases());
     }
 
-    private static RomSource sourceFor(byte[] uuid, int scope, AndroidUuidSafMap map) {
+    private static RomSource sourceFor(byte[] uuid, int scope, AndroidUuidSafMap map,
+            java.util.function.Predicate<String> persistedRead) {
         if (scope == FlyCatalogCommands.SOURCE_SCOPE_BUILTIN) {
             return AndroidBuiltinCatalogAdapter.SOURCE;
         }
         String uri = map.get(uuid);
         if (uri == null || uri.trim().isEmpty()) uri = "missing://" + AndroidUuidSafMap.toHex(uuid);
-        boolean granted = !uri.startsWith("missing://");
+        boolean granted = !uri.startsWith("missing://")&&persistedRead.test(uri);
         return new RomSource(
                 StableIds.safSourceId(uri), RomSource.Type.SAF_TREE, uri,
                 granted ? RomSource.PermissionState.GRANTED

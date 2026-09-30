@@ -35,6 +35,8 @@ public final class AndroidDocumentLocators {
     /** Returns an openable document locator, or {@code null} when none can be derived. */
     public static String documentUriFor(String treeLocator, String relativePath) {
         if (relativePath == null || !SourceRelativePath.isCanonical(relativePath)) return null;
+        if(DocumentLocatorShape.isOpenableDocumentLocator(treeLocator)
+                && !DocumentsContract.isTreeUri(Uri.parse(treeLocator)))return treeLocator;
         Uri tree = treeUri(treeLocator);
         String rootDocumentId = treeDocumentId(treeLocator);
         if (tree == null || rootDocumentId == null) return null;

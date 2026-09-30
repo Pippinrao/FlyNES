@@ -13,6 +13,15 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class AndroidUuidSafMapTest {
+    @Test public void rejectedPersistenceCannotSilentlySucceedOrChangeTheOldMapping() {
+        Map<String,String> backing = new LinkedHashMap<>();
+        byte[] uuid = uuidBytes("11111111-2222-4333-8444-555555555555");
+        new AndroidUuidSafMap(backing::get,backing::put,backing::remove).put(uuid,"content://old");
+        var before = new LinkedHashMap<>(backing);
+        AndroidUuidSafMap map = new AndroidUuidSafMap(backing::get,(writes,removals)->false);
+        assertThrows(IllegalStateException.class,()->map.put(uuid,"content://new"));
+        assertEquals(before,backing);
+    }
     @Test
     public void storesPersistableUriByUuidHexAndNeverAcceptsAllZeroUuid() {
         Map<String, String> backing = new LinkedHashMap<>();

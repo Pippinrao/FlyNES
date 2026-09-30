@@ -184,7 +184,7 @@ public final class AndroidCatalogLaunchRegressionTest {
                     restarted.sourceStatuses(), Map.of(), 0, map, new AndroidPackageLocatorMap(),
                     AndroidDocumentLocators::documentUriFor,
                     // This projection only carries the user-directory row created above.
-                    com.flynes.emu.catalog.BuiltinGames.empty());
+                    com.flynes.emu.catalog.BuiltinGames.empty(),uri->true);
             GameCatalog catalog = new GameCatalog();
             new CatalogRepository(state, new MemoryStateStore(), catalog);
             var variant = catalog.canonicalEntries().get(0).variants().get(0);
@@ -293,7 +293,7 @@ public final class AndroidCatalogLaunchRegressionTest {
                 AndroidDocumentLocators::documentUriFor,
                 // This projection only carries user-directory rows, so no bundled
                 // game needs a trusted title here.
-                com.flynes.emu.catalog.BuiltinGames.empty());
+                com.flynes.emu.catalog.BuiltinGames.empty(),uri->true);
     }
 
     private static NativeCatalogEntry nativeEntry(byte[] uuid) {

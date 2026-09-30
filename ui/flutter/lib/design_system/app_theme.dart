@@ -12,13 +12,24 @@ abstract final class AppTheme {
     useMaterial3: true,
     brightness: Brightness.dark,
     scaffoldBackgroundColor: background,
+    appBarTheme: const AppBarTheme(
+      backgroundColor: surface,
+      surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: 0,
+      elevation: 0,
+    ),
     colorScheme: const ColorScheme.dark(
       primary: accent,
       onPrimary: background,
       surface: surface,
       onSurface: text,
       onSurfaceVariant: muted,
-      error: accent,
+      error: Color(0xFFFF6B6B),
+    ),
+    progressIndicatorTheme: const ProgressIndicatorThemeData(
+      color: accent,
+      linearTrackColor: selected,
+      circularTrackColor: selected,
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(

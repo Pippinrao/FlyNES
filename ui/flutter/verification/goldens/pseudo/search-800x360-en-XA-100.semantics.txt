@@ -1,0 +1,169 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+   │ textDirection: ltr
+   │
+   └─SemanticsNode#2
+     │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+     │ sortKey: OrdinalSortKey#7d98a(order: 0.0)
+     │
+     └─SemanticsNode#3
+       │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+       │ flags: scopesRoute
+       │
+       └─SemanticsNode#4
+         │ locale: "en_XA"
+         │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+         │ textDirection: ltr
+         │
+         ├─SemanticsNode#5
+         │ │ locale: "en_XA"
+         │ │ Rect.fromLTRB(32.0, 24.0, 564.0, 72.0)
+         │ │ flags: hasImplicitScrolling
+         │ │ scrollExtentMin: 0.0
+         │ │ scrollPosition: 0.0
+         │ │ scrollExtentMax: 0.0
+         │ │
+         │ ├─SemanticsNode#6
+         │ │ │ locale: "en_XA"
+         │ │ │ Rect.fromLTRB(0.0, 0.0, 98.1, 48.0)
+         │ │ │ flags: hasSelectedState
+         │ │ │
+         │ │ └─SemanticsNode#7
+         │ │     locale: "en_XA"
+         │ │     Rect.fromLTRB(0.0, 0.0, 98.1, 48.0)
+         │ │     actions: focus, tap
+         │ │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │ │     label: "[Récént ~~]"
+         │ │     textDirection: ltr
+         │ │
+         │ ├─SemanticsNode#8
+         │ │ │ locale: "en_XA"
+         │ │ │ Rect.fromLTRB(102.1, 0.0, 224.2, 48.0)
+         │ │ │ flags: hasSelectedState
+         │ │ │
+         │ │ └─SemanticsNode#9
+         │ │     locale: "en_XA"
+         │ │     Rect.fromLTRB(0.0, 0.0, 122.0, 48.0)
+         │ │     actions: focus, tap
+         │ │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │ │     label: "[Fávórítés ~~~]"
+         │ │     textDirection: ltr
+         │ │
+         │ ├─SemanticsNode#10
+         │ │ │ locale: "en_XA"
+         │ │ │ Rect.fromLTRB(228.2, 0.0, 289.2, 48.0)
+         │ │ │ flags: isSelected, hasSelectedState
+         │ │ │
+         │ │ └─SemanticsNode#11
+         │ │     locale: "en_XA"
+         │ │     Rect.fromLTRB(0.0, 0.0, 61.0, 48.0)
+         │ │     actions: focus, tap
+         │ │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │ │     label: "[Áll ~]"
+         │ │     textDirection: ltr
+         │ │
+         │ └─SemanticsNode#12
+         │   │ locale: "en_XA"
+         │   │ Rect.fromLTRB(293.2, 0.0, 401.0, 48.0)
+         │   │ flags: hasSelectedState
+         │   │
+         │   └─SemanticsNode#13
+         │       locale: "en_XA"
+         │       Rect.fromLTRB(0.0, 0.0, 107.8, 48.0)
+         │       actions: focus, tap
+         │       flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │       label: "[Búílt-ín ~~~]"
+         │       textDirection: ltr
+         │
+         ├─SemanticsNode#14
+         │ │ locale: "en_XA"
+         │ │ Rect.fromLTRB(564.0, 24.0, 612.0, 72.0)
+         │ │ traversalParentIdentifier: _OverlayPortalState#e5189
+         │ │
+         │ └─SemanticsNode#15
+         │     locale: "en_XA"
+         │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+         │     actions: focus, tap
+         │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │     label: "[Séárch ~~]"
+         │     textDirection: ltr
+         │
+         ├─SemanticsNode#16
+         │ │ locale: "en_XA"
+         │ │ Rect.fromLTRB(616.0, 24.0, 664.0, 72.0)
+         │ │ traversalParentIdentifier: _OverlayPortalState#91649
+         │ │
+         │ └─SemanticsNode#17
+         │     locale: "en_XA"
+         │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+         │     actions: focus, tap
+         │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │     label: "[Sóúrcés ~~~]"
+         │     textDirection: ltr
+         │
+         ├─SemanticsNode#18
+         │ │ locale: "en_XA"
+         │ │ Rect.fromLTRB(668.0, 24.0, 716.0, 72.0)
+         │ │ traversalParentIdentifier: _OverlayPortalState#0e33b
+         │ │
+         │ └─SemanticsNode#19
+         │     locale: "en_XA"
+         │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+         │     actions: focus, tap
+         │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │     label: "[Séttíngs ~~~]"
+         │     textDirection: ltr
+         │
+         ├─SemanticsNode#20
+         │ │ locale: "en_XA"
+         │ │ Rect.fromLTRB(720.0, 24.0, 768.0, 72.0)
+         │ │ traversalParentIdentifier: _OverlayPortalState#46729
+         │ │
+         │ └─SemanticsNode#21
+         │     locale: "en_XA"
+         │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+         │     actions: focus, tap
+         │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │     label: "[Néárby ~~]"
+         │     textDirection: ltr
+         │
+         ├─SemanticsNode#22
+         │   locale: "en_XA"
+         │   Rect.fromLTRB(32.0, 80.0, 720.0, 136.0)
+         │   actions: focus, setSelection, setText, tap
+         │   flags: isTextField, isFocused, hasEnabledState, isEnabled,
+         │     isFocusable
+         │   label: "[Séárch gámés ~~~~]"
+         │   textDirection: ltr
+         │   text selection: [0, 0]
+         │   currentValueLength: 0
+         │   inputType: text
+         │
+         ├─SemanticsNode#24
+         │ │ Rect.fromLTRB(672.0, 84.0, 720.0, 132.0)
+         │ │ tags: _InputDecoratorState.suffixIcon
+         │ │ traversalParentIdentifier: _OverlayPortalState#22842
+         │ │
+         │ └─SemanticsNode#23
+         │     locale: "en_XA"
+         │     Rect.fromLTRB(672.0, 84.0, 720.0, 132.0)
+         │     actions: focus, tap
+         │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+         │     label: "[Cléár séárch ~~~~]"
+         │     textDirection: ltr
+         │
+         └─SemanticsNode#25
+           │ locale: "en_XA"
+           │ Rect.fromLTRB(720.0, 84.0, 768.0, 132.0)
+           │ traversalParentIdentifier: _OverlayPortalState#1823d
+           │
+           └─SemanticsNode#26
+               locale: "en_XA"
+               Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+               actions: focus, tap
+               flags: isButton, hasEnabledState, isEnabled, isFocusable
+               label: "[Clósé séárch ~~~~]"
+               textDirection: ltr

@@ -679,7 +679,12 @@ struct HarmonyRenderer::Impl final
                                static_cast<GLsizei>(output_height));
                     glClear(GL_COLOR_BUFFER_BIT);
                     glUseProgram(program);
-                    glActiveTexture(GL_TEXTURE0);
+                    // Keep presentation sampling separate from the upload/filter unit.
+                    // On the API 20 OH emulator, unit 0 can sample stale/black pixels
+                    // after Flutter/native handoff despite a valid uploaded texture.
+                    // Unit 1 is rebound here after any filtering passes; actual
+                    // compositor pixels are checked over repeated game sessions.
+                    glActiveTexture(GL_TEXTURE1);
                     glBindTexture(GL_TEXTURE_2D, draw_texture);
                     const GLint filter = effective_spatial == 2 || effective_spatial >= 3 ||
                         wanted_post == 2
@@ -687,7 +692,7 @@ struct HarmonyRenderer::Impl final
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
                     const GLint sampler = glGetUniformLocation(program, "uTexture");
-                    if (sampler >= 0) glUniform1i(sampler, 0);
+                    if (sampler >= 0) glUniform1i(sampler, 1);
                     const GLint texture_size = glGetUniformLocation(program, "uTextureSize");
                     if (texture_size >= 0)
                     {

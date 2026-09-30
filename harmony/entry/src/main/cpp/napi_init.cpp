@@ -5,9 +5,11 @@
 #include "play_session.hpp"
 #include "native_play_runtime.hpp"
 #include "product_bridge.hpp"
+#include "product_catalog_napi.hpp"
 #include "scan_job_executor.hpp"
 #include "scan_job_queue.hpp"
 #include "nearby_lan_interface_selector.hpp"
+#include "nearby_selection.hpp"
 
 #include <flynes/flynes_app.h>
 #include <flynes/flynes_session.h>
@@ -43,8 +45,38 @@ void mvp_diagnostic(void*, const char* line) {
 struct MvpDeleter {
     void operator()(fly_lan_mvp_session* session) const { fly_lan_mvp_destroy(session); }
 };
-std::unique_ptr<fly_lan_mvp_session, MvpDeleter> g_mvp_session;
+std::shared_ptr<fly_lan_mvp_session> g_mvp_session;
 flynes::harmony::SourceTiming g_mvp_timing;
+std::uint64_t g_mvp_generation = 1;
+struct MvpSelectionWork {
+    napi_async_work handle{};
+    napi_deferred deferred{};
+    flynes::harmony::NearbySelection selection;
+    flynes::harmony::NearbyRetirement* retirement = nullptr;
+    flynes::harmony::NearbyRetirement::Reservation retirement_slot;
+#ifndef NDEBUG
+    std::uint32_t delay_ms = 0;
+    std::uint32_t failure_mode = 0;
+    bool handle_counted = false;
+#endif
+};
+std::shared_ptr<MvpSelectionWork> g_mvp_selection; // N-API event thread only.
+#ifndef NDEBUG
+std::uint32_t g_mvp_test_selection_delay_ms = 0;
+std::uint32_t g_mvp_test_selection_failure = 0;
+std::uint32_t g_mvp_test_work_handles = 0;
+#endif
+bool mvp_selection_busy() { return g_mvp_selection != nullptr; }
+flynes::harmony::NearbyRetirement& mvp_retirement() {
+    static flynes::harmony::NearbyRetirement retirement;
+    return retirement;
+}
+void retire_mvp_session() {
+    mvp_retirement().retire(g_mvp_session);
+    if (g_mvp_selection) g_mvp_selection->selection.cancelled.store(true);
+    g_mvp_selection.reset();
+    ++g_mvp_generation;
+}
 
 std::string nearby_local_ipv4(bool guest = false)
 {
@@ -231,7 +263,7 @@ struct SnapshotDeleter final
     }
 };
 
-std::unique_ptr<fly_app_t, AppDeleter> g_app;
+std::shared_ptr<fly_app_t> g_app;
 std::unique_ptr<fly_scan_t, ScanDeleter> g_scan;
 std::unique_ptr<flynes::harmony::ScanJobQueue> g_scan_jobs;
 std::unique_ptr<fly_session_t, SessionDeleter> g_nearby_session;
@@ -409,12 +441,13 @@ void open_app(const std::string& data_root, const std::string& cache_root)
     {
         throw FlyCallError("fly_app_create invariant", FLY_RESULT_INTERNAL_ERROR);
     }
-    g_app.reset(raw_app);
+    g_app.reset(raw_app, AppDeleter{});
     g_scan_jobs = std::make_unique<flynes::harmony::ScanJobQueue>(
         [raw_app](const flynes::harmony::ScanJobRequest& request,
                   const flynes::harmony::ScanJobQueue::CancelCheck& cancelled,
-                  const flynes::harmony::ScanJobQueue::ProgressSink& progress) {
-            return flynes::harmony::execute_scan_job(*raw_app, request, cancelled, progress);
+                  const flynes::harmony::ScanJobQueue::ProgressSink& progress,
+                  const flynes::harmony::ScanJobQueue::CommitGate& begin_commit) {
+            return flynes::harmony::execute_scan_job(*raw_app, request, cancelled, progress, begin_commit);
         },
         [](int fd) { if (fd >= 0) close(fd); });
 }
@@ -1747,6 +1780,7 @@ napi_value AppClose(napi_env env, napi_callback_info info)
     {
         (void)info;
         g_scan_jobs.reset();
+        flynes::harmony::clear_product_catalog_views();
         g_play.reset();
         g_scan.reset();
         g_app.reset();
@@ -2751,12 +2785,13 @@ napi_value NearbyMvpJoin(napi_env env, napi_callback_info info)
         const std::string local = nearby_local_ipv4(wifi_only);
         if (local.empty()) return create_bool(env, false, "no LAN address");
         g_play.reset();
-        g_mvp_session.reset(fly_lan_mvp_create());
+        retire_mvp_session();
+        g_mvp_session = std::shared_ptr<fly_lan_mvp_session>(fly_lan_mvp_create(), MvpDeleter{});
         if (!g_mvp_session) return create_bool(env, false, "create LAN session");
         fly_lan_mvp_set_diagnostic_sink(g_mvp_session.get(), mvp_diagnostic, nullptr);
         const bool started = fly_lan_mvp_join(g_mvp_session.get(), local.c_str(),
                                               qr.data(), qr.size()) == 1;
-        if (!started) g_mvp_session.reset();
+        if (!started) retire_mvp_session();
         return create_bool(env, started, "join LAN session");
     });
 }
@@ -2771,12 +2806,13 @@ napi_value NearbyMvpHost(napi_env env, napi_callback_info info)
         const std::string local = nearby_local_ipv4();
         if (local.empty()) return create_bool(env, false, "no LAN address");
         g_play.reset();
-        g_mvp_session.reset(fly_lan_mvp_create());
+        retire_mvp_session();
+        g_mvp_session = std::shared_ptr<fly_lan_mvp_session>(fly_lan_mvp_create(), MvpDeleter{});
         if (!g_mvp_session) return create_bool(env, false, "create LAN session");
         fly_lan_mvp_set_diagnostic_sink(g_mvp_session.get(), mvp_diagnostic, nullptr);
         const bool started = fly_lan_mvp_host(
             g_mvp_session.get(), local.c_str(), token.data()) == 1;
-        if (!started) g_mvp_session.reset();
+        if (!started) retire_mvp_session();
         return create_bool(env, started, "host LAN session");
     });
 }
@@ -2784,7 +2820,7 @@ napi_value NearbyMvpHost(napi_env env, napi_callback_info info)
 napi_value NearbyMvpInvite(napi_env env, napi_callback_info)
 {
     return nearby_call(env, "nearbyMvpInvite", [&]() {
-        if (!g_mvp_session) return create_string(env, "", "empty LAN invite");
+        if (!g_mvp_session || mvp_selection_busy()) return create_string(env, "", "empty LAN invite");
         const std::size_t size = fly_lan_mvp_copy_invite(g_mvp_session.get(), nullptr, 0);
         if (size == 0u || size > 256u) return create_string(env, "", "pending LAN invite");
         std::string value(size, '\0');
@@ -2798,10 +2834,15 @@ napi_value NearbyMvpSnapshot(napi_env env, napi_callback_info)
 {
     return nearby_call(env, "nearbyMvpSnapshot", [&]() {
         fly_lan_mvp_snapshot snapshot{};
-        if (g_mvp_session && !fly_lan_mvp_snapshot_read(g_mvp_session.get(), &snapshot))
+        if (mvp_selection_busy()) {
+            snapshot = g_mvp_selection->selection.frozen;
+            snapshot.local_configured = 0; snapshot.local_ready = 0;
+        } else if (g_mvp_session && !fly_lan_mvp_snapshot_read(g_mvp_session.get(), &snapshot))
             throw NapiCallError("read LAN session", napi_generic_failure);
         napi_value result = nullptr;
         require_napi(napi_create_object(env, &result), "create LAN snapshot");
+        require_napi(napi_set_named_property(env, result, "roomGeneration", create_int64(env, static_cast<std::int64_t>(g_mvp_generation), "room generation")), "set room generation");
+        require_napi(napi_set_named_property(env, result, "selectionPending", create_bool(env, mvp_selection_busy(), "selection pending")), "set selection pending");
         require_napi(napi_set_named_property(env, result, "state",
             create_uint32(env, snapshot.state, "LAN state")), "set LAN state");
         require_napi(napi_set_named_property(env, result, "reason",
@@ -2835,7 +2876,8 @@ napi_value NearbyMvpSnapshot(napi_env env, napi_callback_info)
             create_string(env, snapshot.peer_game_key, "LAN peer game key")), "set LAN peer game key");
         std::uint8_t peer_config_hash[32]{};
         std::string peer_config_token;
-        if (g_mvp_session &&
+        if (mvp_selection_busy()) peer_config_token = g_mvp_selection->selection.peer_config_token;
+        else if (g_mvp_session &&
             fly_lan_mvp_copy_peer_config_hash_v1(g_mvp_session.get(), peer_config_hash))
             peer_config_token = uuid_to_hex(peer_config_hash) + uuid_to_hex(peer_config_hash + 16);
         require_napi(napi_set_named_property(env, result, "peerConfigToken",
@@ -2853,7 +2895,7 @@ napi_value NearbyMvpSelectRom(napi_env env, napi_callback_info info)
     return nearby_call(env, "nearbyMvpSelectRom", [&]() {
         napi_value argument = nullptr;
         nearby_arguments(env, info, 1u, &argument, "nearbyMvpSelectRom");
-        if (!g_mvp_session) return create_bool(env, false, "no LAN session");
+        if (!g_mvp_session || mvp_selection_busy()) return create_bool(env, false, "LAN unavailable or busy");
         const std::vector<std::uint8_t> rom = read_buffer(env, argument, "rom");
         g_mvp_timing = flynes::harmony::detect_source_timing(rom.data(), rom.size());
         return create_bool(env, fly_lan_mvp_select_rom(
@@ -2866,7 +2908,7 @@ napi_value NearbyMvpSelectGame(napi_env env, napi_callback_info info)
     return nearby_call(env, "nearbyMvpSelectGame", [&]() {
         napi_value arguments[2] = {nullptr, nullptr};
         nearby_arguments(env, info, 2u, arguments, "nearbyMvpSelectGame");
-        if (!g_mvp_session) return create_bool(env, false, "no LAN session");
+        if (!g_mvp_session || mvp_selection_busy()) return create_bool(env, false, "LAN unavailable or busy");
         const std::vector<std::uint8_t> rom = read_buffer(env, arguments[0], "rom");
         const std::string game_key = read_utf8_string(env, arguments[1], "gameKey");
         g_mvp_timing = flynes::harmony::detect_source_timing(rom.data(), rom.size());
@@ -2875,10 +2917,160 @@ napi_value NearbyMvpSelectGame(napi_env env, napi_callback_info info)
     });
 }
 
+napi_value mvp_selection_result(napi_env env, bool selected, std::uint64_t generation, const char* status) {
+    napi_value result{};
+    require_napi(napi_create_object(env, &result), "selection result");
+    require_napi(napi_set_named_property(env, result, "selected", create_bool(env, selected, "selected")), "set selected");
+    require_napi(napi_set_named_property(env, result, "roomGeneration", create_int64(env, static_cast<std::int64_t>(generation), "room generation")), "set room generation");
+    require_napi(napi_set_named_property(env, result, "status", create_string(env, status, "selection status")), "set selection status");
+    return result;
+}
+void reject_mvp_selection(napi_env env, napi_deferred deferred, const char* code) {
+    napi_value text{}, error{};
+    if (napi_create_string_utf8(env, code, NAPI_AUTO_LENGTH, &text) == napi_ok &&
+        napi_create_error(env, text, text, &error) == napi_ok) napi_reject_deferred(env, deferred, error);
+}
+void delete_mvp_selection_work(napi_env env, MvpSelectionWork& work) noexcept {
+    if (work.handle == nullptr) return;
+    napi_delete_async_work(env, work.handle);
+    work.handle = nullptr;
+#ifndef NDEBUG
+    if (work.handle_counted) { --g_mvp_test_work_handles; work.handle_counted = false; }
+#endif
+}
+void execute_mvp_selection(napi_env, void* data) {
+    auto& work = **static_cast<std::shared_ptr<MvpSelectionWork>*>(data);
+    flynes::harmony::execute_nearby_selection(work.selection,
+        [&work](const std::uint8_t* bytes, std::size_t size) {
+#ifndef NDEBUG
+            if (work.delay_ms != 0) std::this_thread::sleep_for(std::chrono::milliseconds(work.delay_ms));
+#else
+            (void)work;
+#endif
+            return flynes::harmony::detect_source_timing(bytes, size);
+        }, fly_lan_mvp_select_game);
+}
+void complete_mvp_selection(napi_env env, napi_status status, void* data) {
+    std::unique_ptr<std::shared_ptr<MvpSelectionWork>> holder(static_cast<std::shared_ptr<MvpSelectionWork>*>(data));
+    const auto work = *holder;
+    const bool current = g_mvp_selection == work && work->selection.generation == g_mvp_generation && !work->selection.cancelled.load();
+    if (g_mvp_selection == work) g_mvp_selection.reset();
+    // A cancelled-before-execute N-API work item still owns its room; retire it
+    // rather than allowing its final reference to destroy a room on ArkUI.
+    flynes::harmony::finish_nearby_selection([&] {
+#ifndef NDEBUG
+        if (work->failure_mode == 4) throw std::bad_alloc();
+#endif
+        if (work->selection.owner) work->retirement->retire(work->selection.owner);
+    }, [&] {
+        const bool selected = current && status == napi_ok && work->selection.selected && work->selection.error.empty();
+        if (selected) g_mvp_timing = work->selection.timing;
+        const char* result_status = !current ? "stale_room" : selected ? "selected" : "selection_failed";
+        require_napi(napi_resolve_deferred(env, work->deferred,
+            mvp_selection_result(env, selected, work->selection.generation, result_status)), "resolve selection");
+    }, [&] {
+        work->retirement->retire_reserved(work->selection.owner, work->retirement_slot);
+        reject_mvp_selection(env, work->deferred, "selection_failed");
+    },
+        [&] { delete_mvp_selection_work(env, *work); });
+}
+napi_value NearbyMvpSelectGameAsync(napi_env env, napi_callback_info info) {
+    return nearby_call(env, "nearbyMvpSelectGameAsync", [&]() {
+        napi_value arguments[3]{};
+        nearby_arguments(env, info, 3u, arguments, "nearbyMvpSelectGameAsync");
+        const auto generation = read_int64(env, arguments[2], "roomGeneration");
+        if (generation <= 0) throw NapiTypeError("roomGeneration must be positive");
+        const auto work = std::make_shared<MvpSelectionWork>();
+        work->selection.generation = static_cast<std::uint64_t>(generation);
+        napi_value promise{};
+        require_napi(napi_create_promise(env, &work->deferred, &promise), "create selection promise");
+        if (!g_mvp_session || work->selection.generation != g_mvp_generation || mvp_selection_busy()) {
+            require_napi(napi_resolve_deferred(env, work->deferred, mvp_selection_result(env, false,
+                work->selection.generation, mvp_selection_busy() ? "nearby_busy" : "stale_room")), "reject unavailable room");
+            return promise;
+        }
+        try {
+#ifndef NDEBUG
+            work->failure_mode = g_mvp_test_selection_failure;
+            g_mvp_test_selection_failure = 0;
+            if (work->failure_mode == 5) throw std::runtime_error("retirement executor unavailable");
+#endif
+            // All potentially throwing retirement setup occurs while the current
+            // room still owns its reference and before N-API work is submitted.
+            work->retirement = &mvp_retirement();
+            work->retirement_slot = flynes::harmony::NearbyRetirement::reserve();
+            work->selection.rom = read_buffer(env, arguments[0], "rom");
+            work->selection.key = read_utf8_string(env, arguments[1], "gameKey");
+            if (work->selection.rom.empty() || work->selection.key.size() >= 256u) throw NapiTypeError("invalid selection");
+            work->selection.owner = g_mvp_session;
+            if (!fly_lan_mvp_snapshot_read(g_mvp_session.get(), &work->selection.frozen)) throw std::runtime_error("room unavailable");
+            std::uint8_t hash[32]{};
+            if (fly_lan_mvp_copy_peer_config_hash_v1(g_mvp_session.get(), hash))
+                work->selection.peer_config_token = uuid_to_hex(hash) + uuid_to_hex(hash + 16);
+#ifndef NDEBUG
+            work->delay_ms = g_mvp_test_selection_delay_ms;
+            g_mvp_test_selection_delay_ms = 0;
+#endif
+            auto holder = std::make_unique<std::shared_ptr<MvpSelectionWork>>(work);
+#ifndef NDEBUG
+            if (work->failure_mode == 1) throw std::bad_alloc();
+#endif
+            require_napi(napi_create_async_work(env, nullptr, create_string(env, "FlyNES nearby selection", "selection task"),
+                execute_mvp_selection, complete_mvp_selection, holder.get(), &work->handle), "create selection task");
+#ifndef NDEBUG
+            work->handle_counted = true; ++g_mvp_test_work_handles;
+            if (work->failure_mode == 3 || work->failure_mode == 4) {
+                g_mvp_selection = work;
+                retire_mvp_session();
+                complete_mvp_selection(env, napi_cancelled, holder.release());
+                return promise;
+            }
+            const auto queued = work->failure_mode == 2 ? napi_generic_failure : napi_queue_async_work(env, work->handle);
+#else
+            const auto queued = napi_queue_async_work(env, work->handle);
+#endif
+            if (queued != napi_ok) {
+                delete_mvp_selection_work(env, *work);
+                throw std::runtime_error("selection queue unavailable");
+            }
+            g_mvp_selection = work;
+            holder.release();
+        } catch (...) {
+            delete_mvp_selection_work(env, *work);
+            reject_mvp_selection(env, work->deferred, "selection_failed");
+        }
+        return promise;
+    });
+}
+#ifndef NDEBUG
+napi_value NearbyMvpTestSelectionFailure(napi_env env, napi_callback_info info) {
+    return nearby_call(env, "nearbyMvpTestSelectionFailure", [&]() {
+        napi_value argument{}; nearby_arguments(env, info, 1u, &argument, "nearbyMvpTestSelectionFailure");
+        const auto mode = read_int32(env, argument, "mode");
+        if (mode < 0 || mode > 5) throw NapiTypeError("invalid failure mode");
+        g_mvp_test_selection_failure = static_cast<std::uint32_t>(mode);
+        return create_uint32(env, g_mvp_test_work_handles, "live selection work handles");
+    });
+}
+// Debug Hypium fixture: a real idle session and a bounded executor delay. It
+// cannot confirm/play or bypass the shared session state machine.
+napi_value NearbyMvpTestSelectionRoom(napi_env env, napi_callback_info info) {
+    return nearby_call(env, "nearbyMvpTestSelectionRoom", [&]() {
+        napi_value argument{}; nearby_arguments(env, info, 1u, &argument, "nearbyMvpTestSelectionRoom");
+        const auto delay = read_int32(env, argument, "delayMs");
+        if (delay < 0 || delay > 1000) throw NapiTypeError("invalid delay");
+        g_play.reset(); retire_mvp_session();
+        g_mvp_session = std::shared_ptr<fly_lan_mvp_session>(fly_lan_mvp_create(), MvpDeleter{});
+        if (!g_mvp_session) throw std::runtime_error("room unavailable");
+        g_mvp_test_selection_delay_ms = static_cast<std::uint32_t>(delay);
+        return create_int64(env, static_cast<std::int64_t>(g_mvp_generation), "fixture generation");
+    });
+}
+#endif
 napi_value NearbyMvpConfirm(napi_env env, napi_callback_info)
 {
     return nearby_call(env, "nearbyMvpConfirm", [&]() {
-        return create_bool(env, g_mvp_session &&
+        return create_bool(env, !mvp_selection_busy() && g_mvp_session &&
             fly_lan_mvp_confirm(g_mvp_session.get()) == 1, "confirm LAN session");
     });
 }
@@ -2886,6 +3078,7 @@ napi_value NearbyMvpConfirm(napi_env env, napi_callback_info)
 napi_value NearbyMvpStep(napi_env env, napi_callback_info info)
 {
     return nearby_call(env, "nearbyMvpStep", [&]() {
+        if (mvp_selection_busy()) throw std::runtime_error("nearby_busy");
         napi_value argument = nullptr;
         nearby_arguments(env, info, 1u, &argument, "nearbyMvpStep");
         std::uint32_t buttons = 0;
@@ -2946,14 +3139,17 @@ napi_value NearbyMvpStep(napi_env env, napi_callback_info info)
 napi_value NearbyMvpOpenPlay(napi_env env, napi_callback_info)
 {
     return nearby_call(env, "nearbyMvpOpenPlay", [&]() {
+        if (mvp_selection_busy()) throw std::runtime_error("nearby_busy");
         fly_lan_mvp_snapshot snapshot{};
-        auto* session = g_mvp_session.get();
+        const auto owner = g_mvp_session;
+        auto* session = owner.get();
         if (!session || !fly_lan_mvp_snapshot_read(session, &snapshot) ||
             snapshot.state != FLY_LAN_MVP_RUNNING)
             throw std::runtime_error("LAN session is not running");
         g_play.reset();
         auto source = flynes::harmony::PlaySession::from_frame_source(
-            [session](std::uint32_t buttons) {
+            [owner](std::uint32_t buttons) {
+                auto* session = owner.get();
                 (void)fly_lan_mvp_submit_input(session, buttons);
                 fly_lan_mvp_snapshot state{};
                 if (!fly_lan_mvp_snapshot_read(session, &state) ||
@@ -2998,19 +3194,20 @@ napi_value NearbyMvpCancel(napi_env env, napi_callback_info)
 {
     return nearby_call(env, "nearbyMvpCancel", [&]() {
         g_play.reset(); // Stop the frame consumer before destroying its LAN owner.
-        g_mvp_session.reset();
+        retire_mvp_session();
         return create_bool(env, true, "cancel LAN session");
     });
 }
 
 napi_value NearbyMvpResumeGame(napi_env env, napi_callback_info) {
     return nearby_call(env, "nearbyMvpResumeGame", [&]() {
-        return create_bool(env, g_mvp_session && fly_lan_mvp_resume_game(g_mvp_session.get()), "resume LAN game");
+        return create_bool(env, !mvp_selection_busy() && g_mvp_session && fly_lan_mvp_resume_game(g_mvp_session.get()), "resume LAN game");
     });
 }
 
 napi_value NearbyMvpReturnLobby(napi_env env, napi_callback_info) {
     return nearby_call(env, "nearbyMvpReturnLobby", [&]() {
+        if (mvp_selection_busy()) return create_bool(env, false, "nearby_busy");
         g_play.reset();
         return create_bool(env, g_mvp_session && fly_lan_mvp_return_lobby(g_mvp_session.get()), "return LAN lobby");
     });
@@ -3021,7 +3218,7 @@ napi_value NearbyMvpSetPaused(napi_env env, napi_callback_info info) {
         nearby_arguments(env, info, 1, &argument, "nearbyMvpSetPaused");
         bool paused = false;
         require_napi(napi_get_value_bool(env, argument, &paused), "read paused");
-        return create_bool(env, g_mvp_session && fly_lan_mvp_set_paused(g_mvp_session.get(), paused), "pause LAN");
+        return create_bool(env, !mvp_selection_busy() && g_mvp_session && fly_lan_mvp_set_paused(g_mvp_session.get(), paused), "pause LAN");
     });
 }
 
@@ -3336,6 +3533,14 @@ napi_value Init(napi_env env, napi_value exports)
              napi_default, nullptr},
             {"nearbyMvpSelectGame", nullptr, NearbyMvpSelectGame, nullptr, nullptr, nullptr,
              napi_default, nullptr},
+            {"nearbyMvpSelectGameAsync", nullptr, NearbyMvpSelectGameAsync, nullptr, nullptr, nullptr,
+             napi_default, nullptr},
+#ifndef NDEBUG
+            {"nearbyMvpTestSelectionRoom", nullptr, NearbyMvpTestSelectionRoom, nullptr, nullptr, nullptr,
+             napi_default, nullptr},
+            {"nearbyMvpTestSelectionFailure", nullptr, NearbyMvpTestSelectionFailure, nullptr, nullptr, nullptr,
+             napi_default, nullptr},
+#endif
             {"nearbyMvpConfirm", nullptr, NearbyMvpConfirm, nullptr, nullptr, nullptr,
              napi_default, nullptr},
             {"nearbyMvpStep", nullptr, NearbyMvpStep, nullptr, nullptr, nullptr,
@@ -3414,6 +3619,7 @@ napi_value Init(napi_env env, napi_value exports)
                      "define entry exports");
         flynes::harmony::harmony_renderer().bind_component(env, exports);
         register_save_history(env, exports);
+        flynes::harmony::register_product_catalog(env, exports, []() { return g_app; });
         return exports;
     }
     catch (const std::exception& error)

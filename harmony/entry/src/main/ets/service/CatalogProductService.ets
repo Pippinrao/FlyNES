@@ -128,15 +128,19 @@ export function multiplayerCapabilitiesFrom(games: BuiltinGames): MultiplayerCap
  * row for it, and the manifest owns the trusted bilingual titles.
  */
 export class CatalogProductService {
-  loadRows(games: BuiltinGames): GameCenterRow[] {
+  loadRows(games: BuiltinGames, onVerified?: () => void): GameCenterRow[] {
     let snapshot: GameCenterRow[] = [];
+    let verified = false;
     try {
       snapshot = nativeProduct.catalogSnapshot();
+      verified = true;
     } catch (error) {
       snapshot = [];
     }
 
-    return this.loadRowsFromSnapshot(games, snapshot);
+    const rows = this.loadRowsFromSnapshot(games, snapshot);
+    if (verified && onVerified !== undefined) onVerified();
+    return rows;
   }
 
   /** Projects an already verified snapshot without querying the owner again. */

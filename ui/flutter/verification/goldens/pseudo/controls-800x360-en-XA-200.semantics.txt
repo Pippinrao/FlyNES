@@ -1,0 +1,194 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+   │ textDirection: ltr
+   │
+   └─SemanticsNode#2
+     │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+     │ sortKey: OrdinalSortKey#7d98a(order: 0.0)
+     │
+     └─SemanticsNode#3
+       │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+       │ flags: scopesRoute
+       │
+       └─SemanticsNode#4
+         │ locale: "en_XA"
+         │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+         │ textDirection: ltr
+         │
+         ├─SemanticsNode#13
+         │ │ locale: "en_XA"
+         │ │ Rect.fromLTRB(0.0, 0.0, 800.0, 72.0)
+         │ │
+         │ └─SemanticsNode#14
+         │     locale: "en_XA"
+         │     Rect.fromLTRB(32.0, 25.5, 222.7, 62.5)
+         │     flags: isHeader, namesRoute
+         │     label: "[Séttíngs ~~~]"
+         │     textDirection: ltr
+         │
+         ├─SemanticsNode#5
+         │ │ Rect.fromLTRB(16.0, 72.0, 224.0, 352.0)
+         │ │
+         │ └─SemanticsNode#11
+         │   │ locale: "en_XA"
+         │   │ Rect.fromLTRB(0.0, 0.0, 208.0, 280.0)
+         │   │ actions: scrollDown, scrollToOffset, scrollUp
+         │   │ flags: hasImplicitScrolling
+         │   │ scrollChildren: 5
+         │   │ scrollIndex: 1
+         │   │ scrollExtentMin: 0.0
+         │   │ scrollPosition: 120.0
+         │   │ scrollExtentMax: 344.0
+         │   │
+         │   ├─SemanticsNode#6
+         │   │   locale: "en_XA"
+         │   │   Rect.fromLTRB(8.0, -112.0, 200.0, 0.0)
+         │   │   tags: RenderViewport.twoPane
+         │   │   actions: focus, tap
+         │   │   flags: isButton, hasEnabledState, isEnabled, isHidden,
+         │   │     isFocusable, hasSelectedState
+         │   │   HIDDEN
+         │   │   label: "[Díspláy ~~~]"
+         │   │   textDirection: ltr
+         │   │   indexInParent: 0
+         │   │
+         │   ├─SemanticsNode#7
+         │   │   locale: "en_XA"
+         │   │   Rect.fromLTRB(8.0, 0.0, 200.0, 112.0)
+         │   │   tags: RenderViewport.twoPane
+         │   │   actions: focus, tap
+         │   │   flags: isSelected, isButton, hasEnabledState, isEnabled,
+         │   │     isFocusable, hasSelectedState
+         │   │   label: "[Cóntróls ~~~]"
+         │   │   textDirection: ltr
+         │   │   indexInParent: 1
+         │   │
+         │   ├─SemanticsNode#8
+         │   │   locale: "en_XA"
+         │   │   Rect.fromLTRB(8.0, 112.0, 200.0, 224.0)
+         │   │   tags: RenderViewport.twoPane
+         │   │   actions: focus, tap
+         │   │   flags: isButton, hasEnabledState, isEnabled, isFocusable,
+         │   │     hasSelectedState
+         │   │   label: "[Áúdíó ~~]"
+         │   │   textDirection: ltr
+         │   │   indexInParent: 2
+         │   │
+         │   ├─SemanticsNode#9
+         │   │   locale: "en_XA"
+         │   │   Rect.fromLTRB(8.0, 224.0, 200.0, 280.0)
+         │   │   tags: RenderViewport.twoPane
+         │   │   actions: focus, tap
+         │   │   flags: isButton, hasEnabledState, isEnabled, isFocusable,
+         │   │     hasSelectedState
+         │   │   label: "[Gámé & lángúágé ~~~~~]"
+         │   │   textDirection: ltr
+         │   │   indexInParent: 3
+         │   │
+         │   └─SemanticsNode#10
+         │       locale: "en_XA"
+         │       Rect.fromLTRB(8.0, 384.0, 200.0, 496.0)
+         │       tags: RenderViewport.twoPane
+         │       actions: focus, tap
+         │       flags: isButton, hasEnabledState, isEnabled, isHidden,
+         │         isFocusable, hasSelectedState
+         │       HIDDEN
+         │       label: "[Ábóút ~~]"
+         │       textDirection: ltr
+         │       indexInParent: 4
+         │
+         └─SemanticsNode#22
+           │ Rect.fromLTRB(225.0, 72.0, 784.0, 352.0)
+           │
+           └─SemanticsNode#30
+             │ locale: "en_XA"
+             │ Rect.fromLTRB(0.0, 0.0, 559.0, 280.0)
+             │ actions: scrollToOffset, scrollUp
+             │ flags: hasImplicitScrolling
+             │ scrollChildren: 6
+             │ scrollIndex: 0
+             │ scrollExtentMin: 0.0
+             │ scrollPosition: 0.0
+             │ scrollExtentMax: 385.6
+             │
+             ├─SemanticsNode#23
+             │   locale: "en_XA"
+             │   Rect.fromLTRB(16.0, 16.0, 543.0, 120.0)
+             │   tags: RenderViewport.twoPane
+             │   actions: focus, tap
+             │   flags: isButton, hasEnabledState, isEnabled, isFocusable,
+             │     hasSelectedState
+             │   label:
+             │     "[Díréctíón cóntról ~~~~~~]
+             │     [Fíxéd jóystíck ~~~~~]"
+             │   textDirection: ltr
+             │   indexInParent: 0
+             │
+             ├─SemanticsNode#24
+             │   locale: "en_XA"
+             │   Rect.fromLTRB(16.0, 120.0, 543.0, 264.0)
+             │   tags: RenderViewport.twoPane
+             │   actions: focus, tap
+             │   flags: isButton, hasEnabledState, isEnabled, isFocusable,
+             │     hasSelectedState
+             │   label:
+             │     "[Édít láyóút ~~~~]
+             │     [Récómméndéd láyóút ~~~~~~]"
+             │   textDirection: ltr
+             │   indexInParent: 1
+             │
+             ├─SemanticsNode#25
+             │   locale: "en_XA"
+             │   Rect.fromLTRB(16.0, 264.0, 543.0, 280.0)
+             │   tags: RenderViewport.twoPane
+             │   actions: focus, tap
+             │   flags: isButton, hasEnabledState, isEnabled, isFocusable,
+             │     hasSelectedState
+             │   label: "[Prévíéw háptícs ~~~~~]"
+             │   textDirection: ltr
+             │   indexInParent: 2
+             │
+             ├─SemanticsNode#26
+             │   locale: "en_XA"
+             │   Rect.fromLTRB(16.0, 328.0, 543.0, 432.0)
+             │   tags: RenderViewport.twoPane
+             │   actions: focus, tap
+             │   flags: isButton, hasEnabledState, isEnabled, isHidden,
+             │     isFocusable, hasSelectedState
+             │   HIDDEN
+             │   label:
+             │     "[Háptíc stréngth ~~~~~]
+             │     [Líght ~~]"
+             │   textDirection: ltr
+             │   indexInParent: 3
+             │
+             └─SemanticsNode#27
+               │ locale: "en_XA"
+               │ Rect.fromLTRB(16.0, 432.0, 543.0, 530.0)
+               │ tags: RenderViewport.twoPane
+               │ flags: isHidden
+               │ HIDDEN
+               │ indexInParent: 4
+               │
+               └─SemanticsNode#28
+                 │ merge boundary ⛔️
+                 │ locale: "en_XA"
+                 │ Rect.fromLTRB(0.0, 0.0, 527.0, 98.0)
+                 │ actions: focus, tap
+                 │ flags: isButton, hasEnabledState, isEnabled, isHidden,
+                 │   isFocusable, hasSelectedState
+                 │ HIDDEN
+                 │ label: "[Dístínct Á/B háptícs ~~~~~~]"
+                 │ textDirection: ltr
+                 │
+                 └─SemanticsNode#29
+                     merged up ⬆️
+                     locale: "en_XA"
+                     Rect.fromLTRB(435.0, 32.0, 503.0, 80.0)
+                     actions: tap
+                     flags: hasEnabledState, isEnabled, hasToggledState, isToggled
+                     label: "[Dístínct Á/B háptícs ~~~~~~]"
+                     textDirection: ltr

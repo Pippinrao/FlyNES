@@ -34,6 +34,10 @@ public class G1NativeSavePerformanceTest {
         String canonicalId = InstrumentationRegistry.getArguments().getString("g1CanonicalId", "");
         int targetApplicationFlags = context.getApplicationInfo().flags;
         boolean targetDebuggable = (targetApplicationFlags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        boolean g2="true".equals(InstrumentationRegistry.getArguments().getString("g2Release"));
+        if(g2){assertFalse("Actual target must be Release",targetDebuggable);assertTrue(BuildConfig.CONTROLLED_NATIVE_BASELINE);}
+        FlyNesApplication app=(FlyNesApplication)context;
+        assertFalse("Start in a cold process without an engine",G2PerformanceUi.enginePresent(app));
         String targetMode = targetDebuggable ? "debug" : "release";
         var repository = com.flynes.emu.settings.SettingsAccess.repository(context);
         var settings = repository.load();
@@ -46,13 +50,24 @@ public class G1NativeSavePerformanceTest {
                 ? "flutter-to-native-game-" : "native-game-") + targetMode + "-simulator")
                 .put("intervalMs", 60000).put("processId", android.os.Process.myPid())
                 .put("requestedCanonicalId", canonicalId)
+                .put("entry",throughFlutter?"flutter":"native").put("engineBefore",false).put("result","incomplete")
                 .put("targetPackage", context.getPackageName())
                 .put("targetApplicationFlags", targetApplicationFlags).put("targetDebuggable", targetDebuggable)
                 .put("physicalLatencyCertified", false);
+        var originalNavigation=G2PerformanceUi.select(context,canonicalId);
+        boolean phaseDiagnostics="true".equals(InstrumentationRegistry.getArguments().getString("g2SavePhaseDiagnostics"));
+        var phaseEvents=java.util.Collections.synchronizedList(new ArrayList<JSONObject>());
+        AutoCloseable phaseObserver=phaseDiagnostics?com.flynes.emu.save.SavePhaseTrace.observe(event->{
+            try{
+                phaseEvents.add(new JSONObject().put("phase",event.phase()).put("monotonicNs",event.monotonicNs())
+                        .put("javaThreadId",event.threadId()).put("epochMs",System.currentTimeMillis()));
+                android.util.Log.i("FlyNES","SAVE_PHASE phase="+event.phase()+" monotonicNs="+event.monotonicNs());
+            }catch(org.json.JSONException failure){throw new IllegalStateException(failure);}
+        }):()->{};
         try {
             assertTrue(repository.save(settings.toBuilder().autosaveEnabled(true).audioEnabled(true).build()));
             assertTrue(preferences.edit().putLong("interval_ms", 60000).commit());
-            if (!throughFlutter && !canonicalId.isEmpty()) {
+            if (!g2 && !throughFlutter && !canonicalId.isEmpty()) {
                 var launched = new java.util.concurrent.CompletableFuture<com.flynes.emu.launch.LaunchResult>();
                 ((FlyNesApplication) context).gameLaunchService().launchCanonical(canonicalId, launched::complete);
                 var result = launched.get(30, java.util.concurrent.TimeUnit.SECONDS);
@@ -61,10 +76,15 @@ public class G1NativeSavePerformanceTest {
             }
             AtomicReference<MainActivity> owner = new AtomicReference<>();
             var intent = new android.content.Intent(context,
-                    throughFlutter ? FlutterFoundationActivity.class : MainActivity.class);
+                    throughFlutter ? FlutterFoundationActivity.class : g2?HomeActivity.class:MainActivity.class);
+            if(!throughFlutter)intent.putExtra(ProductRoutes.NATIVE_BASELINE,true);
             try (ActivityScenario<?> scenario = ActivityScenario.launch(intent)) {
                 if (throughFlutter) {
-                    FlutterFoundationIntegrationTest.click(FlutterFoundationIntegrationTest.awaitNode("launch-selected", true));
+                    G2PerformanceUi.clickPrimary();
+                    assertTrue(FlutterFoundationIntegrationTest.awaitActivity(MainActivity.class));
+                    owner.set(FlutterFoundationIntegrationTest.playingActivity());
+                } else if(g2){
+                    FlutterFoundationIntegrationTest.click(FlutterFoundationIntegrationTest.awaitNode("launch_selected",true));
                     assertTrue(FlutterFoundationIntegrationTest.awaitActivity(MainActivity.class));
                     owner.set(FlutterFoundationIntegrationTest.playingActivity());
                 } else scenario.onActivity(game -> owner.set((MainActivity) game));
@@ -78,6 +98,7 @@ public class G1NativeSavePerformanceTest {
                     String key = ((com.flynes.emu.data.RomIdentity) field(activity, "currentRomIdentity")).sha1();
                     report.put("contentKey", key);
                     String expectedKey = InstrumentationRegistry.getArguments().getString("g1ExpectedContentKey", "");
+                    if(g2)assertFalse("Same real content key must be supplied",expectedKey.isEmpty());
                     if (!expectedKey.isEmpty()) assertEquals("Compare the identical content", expectedKey, key);
                     File database = new File(context.getFilesDir(), "save-history.sqlite");
                     try (HistoryStore store = new HistoryStore(database)) {
@@ -138,22 +159,35 @@ public class G1NativeSavePerformanceTest {
                         assertTrue("Actual emulation must reach the unchanged 60s interval", clock.playedMs() - startMs >= 65000);
                         assertNotEquals("Native timer must persist an automatic save", beforeHead, store.head(key));
                         assertTrue("A new automatic record must exist", saves.length() > 0);
+                        report.put("result","PASS");
                     }
                 } finally {
                     signal.removeListener(listener);
-                    if (throughFlutter) InstrumentationRegistry.getInstrumentation().runOnMainSync(activity::finish);
+                    InstrumentationRegistry.getInstrumentation().runOnMainSync(activity::finish);
                 }
             }
+        } catch(Throwable failure) {
+            report.put("result","failed");
+            throw failure;
         } finally {
-            repository.save(settings);
-            if (hadInterval) preferences.edit().putLong("interval_ms", oldInterval).commit();
-            else preferences.edit().remove("interval_ms").commit();
+            phaseObserver.close();
+            boolean restored=repository.save(settings);
+            restored &= hadInterval?preferences.edit().putLong("interval_ms", oldInterval).commit():preferences.edit().remove("interval_ms").commit();
+            restored &= G2PerformanceUi.restore(context,originalNavigation);
+            boolean engineAfter=G2PerformanceUi.enginePresent(app);
+            report.put("preferencesRestored",restored).put("engineAfter",engineAfter);
+            if(!restored||(!throughFlutter&&engineAfter))report.put("result","failed_cleanup");
             JSONArray events = new JSONArray();
             synchronized (frames) { for (long[] row : frames) events.put(new JSONArray(row)); }
             report.put("coreFrameEvents", events).put("memoryAndAudio", memory);
+            JSONArray phases=new JSONArray();
+            synchronized(phaseEvents){for(JSONObject event:phaseEvents)phases.put(event);}
+            report.put("savePhaseDiagnosticsEnabled",phaseDiagnostics).put("savePhaseEvents",phases);
             Files.write(new File(context.getExternalFilesDir(null), throughFlutter
                     ? "g1-flutter-save-performance.json" : "g1-native-save-performance.json").toPath(),
                     report.toString().getBytes(StandardCharsets.UTF_8));
+            assertTrue("All settings and navigation must be restored",restored);
+            if(!throughFlutter)assertFalse("Native baseline never creates an engine",engineAfter);
         }
     }
     private static Object field(Object object, String name) throws Exception {

@@ -52,6 +52,7 @@ ScanExecutionResult run_once(
     const std::array<std::uint8_t, 16>& uuid,
     const ScanJobQueue::CancelCheck& cancelled,
     const ScanJobQueue::ProgressSink& progress,
+    const ScanJobQueue::CommitGate& begin_commit,
     bool* conflict)
 {
     *conflict = false;
@@ -92,6 +93,7 @@ ScanExecutionResult run_once(
         if (cancelled()) return ScanExecutionResult::cancelled();
     }
 
+    if (cancelled() || (begin_commit && !begin_commit())) return ScanExecutionResult::cancelled();
     fly_scan_t* committing = scan.release();
     const fly_result commit = fly_scan_commit(committing, request.final_completeness);
     fly_scan_abort(committing);
@@ -110,13 +112,14 @@ ScanExecutionResult execute_scan_job(
     fly_app_t& app,
     const ScanJobRequest& request,
     const ScanJobQueue::CancelCheck& cancelled,
-    const ScanJobQueue::ProgressSink& progress)
+    const ScanJobQueue::ProgressSink& progress,
+    const ScanJobQueue::CommitGate& begin_commit)
 {
     const auto uuid = parse_uuid(request.source_uuid_hex);
     bool conflict = false;
-    ScanExecutionResult result = run_once(app, request, uuid, cancelled, progress, &conflict);
+    ScanExecutionResult result = run_once(app, request, uuid, cancelled, progress, begin_commit, &conflict);
     if (!conflict || cancelled()) return result;
-    return run_once(app, request, uuid, cancelled, progress, &conflict);
+    return run_once(app, request, uuid, cancelled, progress, begin_commit, &conflict);
 }
 
 } // namespace flynes::harmony

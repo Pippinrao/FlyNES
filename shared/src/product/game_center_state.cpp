@@ -214,10 +214,18 @@ std::vector<GameCenterItem> GameCenterState::filtered(
     }
 
     std::vector<GameCenterItem> result;
-    for (const GameCenterItem& item : category_items)
+    std::unordered_set<std::string> matching_ids;
+    for (const GameCenterItem& item : all)
     {
         if (contains(item.title_en, needle) || contains(item.title_zh_hans, needle)
-            || contains(item.original_filename, needle))
+            || contains(item.original_filename, needle) || contains(item.search_aliases, needle))
+        {
+            matching_ids.insert(item.canonical_id);
+        }
+    }
+    for (const GameCenterItem& item : category_items)
+    {
+        if (matching_ids.find(item.canonical_id) != matching_ids.end())
         {
             result.push_back(item);
         }

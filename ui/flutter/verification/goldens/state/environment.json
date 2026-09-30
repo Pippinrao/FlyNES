@@ -1,0 +1,14 @@
+{
+  "sdk": {
+    "framework": "cc0734ac716fbb8b90f3f9db8020958b1553afa7",
+    "engine": "59aa584fdf100e6c78c785d8a5b565d1de4b48ab",
+    "dart": "3.11.5"
+  },
+  "fonts": {
+    "Roboto-Regular.ttf": "79E851404657DAC2106B3D22AD256D47824A9A5765458EDB72C9102A45816D95",
+    "NotoSansCJK-Regular.ttc": "3E7E5AFAAC2C6D872592D76ABEDAC03A51C6F0FC42D11E311FF2816A6C368AFE",
+    "MaterialIcons-Regular.otf": "D9865B671A09D683D13A863089D8825E0F61A37696CE5D7D448BC8023AA62453"
+  },
+  "surface": "flutter-tester; devicePixelRatio=1; controlled clock; no system keyboard pixels",
+  "platform": "Microsoft Windows NT 10.0.26200.0"
+}

@@ -6,6 +6,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { i18n } from '@kit.LocalizationKit';
 import nativeApp, { SettingsDto } from 'libentry.so';
 import { hapticPreviewGapMs, runtimeLanguageFor } from './SettingsHelpers';
+import { redirectProductRoute } from '../flutter/ProductRoutes';
 
 const SECTION_DISPLAY: string = 'section.display';
 const SECTION_CONTROLS: string = 'section.controls';
@@ -31,10 +32,12 @@ struct Settings {
   @State private status: string = '';
 
   aboutToAppear(): void {
+    if (redirectProductRoute('settings')) return;
     this.reload();
   }
 
   onPageShow(): void {
+    if (AppStorage.get<boolean>('ProductNativeBaseline') !== true) return;
     this.reload();
   }
 

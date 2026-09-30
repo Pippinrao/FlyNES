@@ -10,6 +10,7 @@ import nativePlay, { PlayRuntimeStatusDto, PlayStepResult, RenderStatusDto, Sett
 import { GamepadOverlay } from '../overlay/GamepadOverlay';
 import { PlayService, rememberRomOpenError, RomLaunchLocator } from '../service/PlayService';
 import { CoverStore } from '../service/CoverStore';
+import { ProductHandoffBackdrop } from '../flutter/ProductHandoffBackdrop';
 import { parsePauseTitle } from './PauseParams';
 import { computeViewport, ViewportSize } from './ViewportGeometry';
 import {
@@ -36,7 +37,7 @@ struct RunGame {
   @State private historySaved: boolean = false;
   private launchMode: string = '';
   private foundationReturn: boolean = false;
-  private backgroundHandler: () => void = () => { if (this.started && !this.nearby) this.openPause(); };
+  private backgroundHandler: () => void = () => { this.productNavigationEpoch++; if (this.started && !this.nearby) this.openPause(); };
   private timerId: number = -1;
   private started: boolean = false;
   private nearby: boolean = false;
@@ -60,6 +61,7 @@ struct RunGame {
   private titleZhHans: string = '';
   @State private pressedBits: number = 0;
   @State private checkpointFailed: boolean = false;
+  @State private productNavigationError: string = '';
   @State private status: string = '';
   @State private directionMode: number = DIRECTION_FIXED_JOYSTICK;
   @State private deadZone: number = DEFAULT_DEAD_ZONE;
@@ -141,6 +143,7 @@ struct RunGame {
   }
 
   onPageHide(): void {
+    this.productNavigationEpoch++;
     if (this.started && !this.nearby && !this.paused) this.openPause();
     if (this.nearby && this.started && !this.returningToLobby &&
       nativePlay.nearbyMvpSnapshot().state === 6) {
@@ -152,6 +155,7 @@ struct RunGame {
   }
 
   aboutToDisappear(): void {
+    this.productNavigationEpoch++;
     if (this.started && !this.nearby && !this.paused) this.openPause();
     this.getUIContext().getHostContext()?.eventHub.off('save-background', this.backgroundHandler);
     this.stopLoop();
@@ -162,6 +166,7 @@ struct RunGame {
   }
 
   onBackPress(): boolean {
+    this.productNavigationEpoch++;
     if (this.historyOpen) { this.historyOpen = false; this.loadPersistedLayout(); return true; }
     this.openPause();
     return true;
@@ -304,6 +309,9 @@ struct RunGame {
             .fontSize(14)
             .fontColor('#FF6B5E')
             .width('100%')
+        }
+        if (this.productNavigationError.length > 0) {
+          Text(this.productNavigationError).fontSize(14).fontColor('#FF6B5E').width('100%')
         }
         if (!this.nearby) {
           if (this.historySaved) { Text($r('app.string.history_saved')).fontColor('#C5CCD6') }
@@ -664,6 +672,7 @@ struct RunGame {
   }
 
   private resumePlay(): void {
+    this.productNavigationEpoch++;
     this.drawerOpen = false;
     this.historySaved = false;
     if (this.nearby) { nativePlay.nearbyMvpResumeGame(); return; }
@@ -680,7 +689,70 @@ struct RunGame {
     this.startLoop();
   }
 
+  private openingProductSettings: boolean = false;
+  private productNavigationEpoch: number = 0;
+  private navigationFailed(): void {
+    const locale = nativePlay.settingsGet().localeTag;
+    const language = locale === 'system' ? i18n.System.getSystemLanguage() : locale;
+    this.productNavigationError = language.startsWith('zh') ? '无法打开页面，请重试。' : 'Could not open the page. Please try again.';
+  }
+  private async openProductSettings(): Promise<void> {
+    if (this.openingProductSettings) return;
+    this.openingProductSettings = true;
+    this.productNavigationError = '';
+    const epoch = ++this.productNavigationEpoch;
+    let captureToken: number = 0;
+    try {
+      captureToken = await ProductHandoffBackdrop.capture(getContext(this) as common.UIAbilityContext,
+        () => this.started && this.paused && this.drawerOpen && epoch === this.productNavigationEpoch);
+      if (!this.started || !this.paused || !this.drawerOpen || epoch !== this.productNavigationEpoch) {
+        ProductHandoffBackdrop.clear(captureToken); return;
+      }
+      if (captureToken === 0) throw new Error('capture_cancelled');
+      this.drawerOpen = false;
+      this.paused = true;
+      this.resumeAfterSettings = true;
+      await router.pushUrl({ url: 'pages/FlutterFoundation', params: { route: 'settings' } });
+    } catch (_) {
+      ProductHandoffBackdrop.clear(captureToken);
+      if (epoch === this.productNavigationEpoch) {
+        this.resumeAfterSettings = false;
+        this.drawerOpen = true;
+        this.navigationFailed();
+      }
+    } finally { this.openingProductSettings = false; }
+  }
+
+  private async openProductHall(): Promise<void> {
+    if (this.openingProductSettings) return;
+    this.openingProductSettings = true;
+    this.productNavigationError = '';
+    const epoch = ++this.productNavigationEpoch;
+    let captureToken: number = 0;
+    try {
+      captureToken = await ProductHandoffBackdrop.capture(getContext(this) as common.UIAbilityContext,
+        () => this.started && this.paused && this.drawerOpen && epoch === this.productNavigationEpoch);
+      if (!this.started || !this.paused || !this.drawerOpen || epoch !== this.productNavigationEpoch) {
+        ProductHandoffBackdrop.clear(captureToken); return;
+      }
+      if (captureToken === 0) throw new Error('capture_cancelled');
+      // Pause already published its checkpoint. Finish the same synchronous
+      // native close before navigation; the captured pixels own no live core.
+      this.stopLoop();
+      this.play.close();
+      nativePlay.renderSetPaused(true);
+      this.started = false;
+      this.drawerOpen = false;
+      if (this.foundationReturn) router.back();
+      else await router.replaceUrl({ url: 'pages/FlutterFoundation' });
+    } catch (_) {
+      ProductHandoffBackdrop.clear(captureToken);
+      if (epoch === this.productNavigationEpoch) { this.drawerOpen = true; this.navigationFailed(); }
+    } finally { this.openingProductSettings = false; }
+  }
+
   private handlePauseCommand(id: string): void {
+    if (id !== 'settings') this.productNavigationEpoch++;
     if (id === 'resume') {
       this.resumePlay();
       return;
@@ -693,21 +765,12 @@ struct RunGame {
         void router.replaceUrl({ url: 'pages/NearbyLobby' });
         return;
       }
-      this.drawerOpen = false;
-      this.stopLoop();
-      this.play.close();
-      nativePlay.renderSetPaused(true);
-      this.started = false;
-      if (this.foundationReturn) router.back();
-      else void router.replaceUrl({ url: 'pages/GameCenter' });
+      void this.openProductHall();
       return;
     }
     if (id === 'settings') {
       if (this.nearby) return;
-      this.drawerOpen = false;
-      this.paused = true;
-      this.resumeAfterSettings = true;
-      void router.pushUrl({ url: 'pages/Settings' });
+      void this.openProductSettings();
     }
   }
 

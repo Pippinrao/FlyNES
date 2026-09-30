@@ -2,7 +2,7 @@
 
 从 [总路线 roadmap.md](roadmap.md) 开始，再读 [STATUS](STATUS.md) 和仓库 [AGENTS.md](../../AGENTS.md)。
 用户已确定 Flutter，并授权创建分支/worktree、迁移版本到 3.0.0、搭建基础骨架；
-当前已批准实施8.1（REQ-001～007）；总路线其余需求不因此自动进入本轮。
+当前已批准实施 G2 Android／Harmony 产品页面迁移（iOS 暂缓）；以本轮详细设计限定范围，G1 历史失败保留。
 
 | 文档 | 用途 / 权威范围 |
 | --- | --- |
@@ -13,6 +13,8 @@
 | [当前存档契约](../../libs/save_history/README.md) | main@3a2dc426已交付库；Android/Harmony已接入，iOS未接入 |
 | [8.1详细设计](requirements/REQ-001-007-baseline-flutter-design.md) | 已批准的UX、基线、接口与G1门槛 |
 | [8.1执行计划](requirements/REQ-001-007-baseline-flutter-plan.md) | REQ-001～007任务检查单 |
+| [G2详细设计](requirements/REQ-008-012-030-031-g2-design.md) | 批准的 U01～26、A01～17、产品通道及宿主边界 |
+| [G2执行计划](requirements/REQ-008-012-030-031-g2-plan.md) | W0～W8、TDD、截图、模拟器与 Release 验收 |
 | [references/save-history-proposal.md](references/save-history-proposal.md) | 历史设计快照，不代表当前实现 |
 | [references/save-library-research.md](references/save-library-research.md) | 独立存档库与 SQLite 取舍参考 |
 | [references/gameplay-usability-audit.md](references/gameplay-usability-audit.md) | 当时游戏体验静态审阅，不能冒充已复现或已修复 |
@@ -47,3 +49,7 @@
 - [Android Flutter 候选性能](verification/2026-09-29-android-flutter-candidate-performance.md)
 - [Android Release 内存对照](verification/2026-09-29-android-release-pss.md)
 - [Harmony Flutter 候选性能](verification/2026-09-29-ohos-flutter-candidate-performance.md)
+
+- [G2 实施及失败回归记录](verification/2026-09-30-g2-implementation.md)
+- [G2 Android G1→G2 数据保留](verification/2026-09-30-g2-android-upgrade.md)
+- [G2 Harmony G1→G2 数据保留](verification/2026-09-30-g2-harmony-upgrade.md)

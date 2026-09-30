@@ -29,7 +29,7 @@ public final class SettingsRepository {
         this.store = store;
     }
 
-    public AppSettings load() {
+    public synchronized AppSettings load() {
         Map<String, ?> raw = store.snapshot();
         Object schemaValue = raw.get(SettingsKeys.SCHEMA);
         if (schemaValue instanceof Integer && (Integer) schemaValue > SCHEMA_VERSION) {
@@ -59,7 +59,7 @@ public final class SettingsRepository {
         return migrateLegacy(raw);
     }
 
-    public boolean save(AppSettings settings) {
+    public synchronized boolean save(AppSettings settings) {
         if (settings == null) throw new IllegalArgumentException("settings must not be null");
         Map<String, ?> raw = store.snapshot();
         Object schema = raw.get(SettingsKeys.SCHEMA);
@@ -68,6 +68,33 @@ public final class SettingsRepository {
             return false;
         }
         return commitOrRemember(settings, canonicalBatch(settings, nextGeneration(raw)), raw);
+    }
+
+    /** Product acknowledgments must reflect committed storage, never a legacy retry candidate. */
+    public synchronized AppSettings loadCommitted() {
+        return readCommitted(store.snapshot());
+    }
+
+    /** Serial read-current/update/commit without scheduling a rejected product change for retry. */
+    public synchronized boolean updateCommitted(java.util.function.UnaryOperator<AppSettings> update) {
+        Objects.requireNonNull(update, "update");
+        Map<String, ?> raw = store.snapshot();
+        Object schema = raw.get(SettingsKeys.SCHEMA);
+        if (schema instanceof Integer && (Integer) schema > SCHEMA_VERSION) return false;
+        AppSettings next = Objects.requireNonNull(update.apply(readCommitted(raw)), "updated settings");
+        if (!store.commit(canonicalBatch(next, nextGeneration(raw)))) return false;
+        clearPending();
+        return true;
+    }
+
+    private AppSettings readCommitted(Map<String, ?> raw) {
+        Object schema = raw.get(SettingsKeys.SCHEMA);
+        if (schema instanceof Integer && (Integer) schema > SCHEMA_VERSION) return AppSettings.defaults();
+        if (schema instanceof Integer && (Integer) schema == SCHEMA_VERSION) return loadSchemaFour(raw, false);
+        boolean hasDisplay = raw.containsKey(SettingsKeys.ASPECT)
+                || raw.containsKey(SettingsKeys.LEGACY_FILTER) || raw.containsKey(SettingsKeys.LEGACY_REFRESH);
+        return readCommon(raw, hasDisplay ? migrateLegacyVideo(raw, schema instanceof Integer ? (Integer)schema : null)
+                : VideoPreferences.defaults());
     }
 
     private AppSettings migrateLegacy(Map<String, ?> raw) {
@@ -84,6 +111,10 @@ public final class SettingsRepository {
     }
 
     private AppSettings loadSchemaFour(Map<String, ?> raw) {
+        return loadSchemaFour(raw, true);
+    }
+
+    private AppSettings loadSchemaFour(Map<String, ?> raw, boolean repairAllowed) {
         boolean repair = false;
         VideoPreferences video;
         try {
@@ -103,7 +134,7 @@ public final class SettingsRepository {
         AppSettings settings = readCommon(raw, video);
         if (!(raw.get(SettingsKeys.COMMIT_GENERATION) instanceof Integer)
                 || !validEnum(raw, SettingsKeys.ASPECT, AspectMode.class)) repair = true;
-        if (repair)
+        if (repair && repairAllowed)
             commitOrRemember(settings, canonicalBatch(settings, nextGeneration(raw)), raw);
         return settings;
     }

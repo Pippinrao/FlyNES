@@ -97,8 +97,10 @@ try {
   try {
     Invoke-Recorded 'ohpm-install' $node @($ohpmCli, 'install', '--all')
     Invoke-Recorded "hap-$Mode" $node @($hvigor, '--mode', 'module', '-p', 'product=default', '-p', "buildMode=$Mode", 'assembleHap', '--no-daemon')
+    Copy-Item -LiteralPath (Join-Path $repo 'harmony/entry/src/main/resources/rawfile/build-revision.json') -Destination (Join-Path $run 'build-revision.json')
     if ($BuildTests) {
       Invoke-Recorded 'hap-tests' $node @($hvigor, '--mode', 'module', '-p', 'product=default', '-p', 'module=entry@ohosTest', '-p', 'buildMode=debug', 'assembleHap', '--no-daemon')
+      Copy-Item -LiteralPath (Join-Path $repo 'harmony/entry/src/main/resources/rawfile/build-revision.json') -Destination (Join-Path $run 'build-revision-tests.json')
     }
   } finally { Pop-Location }
   $packages = Join-Path $run 'packages'

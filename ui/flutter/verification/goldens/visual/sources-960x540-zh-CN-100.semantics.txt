@@ -1,0 +1,112 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 2880.0, 1620.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0) scaled by 3.0x
+   │ textDirection: ltr
+   │
+   └─SemanticsNode#2
+     │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+     │ sortKey: OrdinalSortKey#de093(order: 0.0)
+     │
+     └─SemanticsNode#3
+       │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+       │ flags: scopesRoute
+       │
+       ├─SemanticsNode#10
+       │ │ Rect.fromLTRB(0.0, 0.0, 960.0, 56.0)
+       │ │
+       │ └─SemanticsNode#11
+       │     Rect.fromLTRB(16.0, 14.0, 60.0, 42.0)
+       │     flags: isHeader, namesRoute
+       │     label: "来源"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#4
+       │ │ Rect.fromLTRB(16.0, 72.0, 323.4, 524.0)
+       │ │ flags: hasImplicitScrolling
+       │ │ scrollExtentMin: 0.0
+       │ │ scrollPosition: 0.0
+       │ │ scrollExtentMax: 0.0
+       │ │
+       │ ├─SemanticsNode#5
+       │ │   Rect.fromLTRB(0.0, 0.0, 307.4, 32.0)
+       │ │   label: "游戏来源"
+       │ │   textDirection: ltr
+       │ │
+       │ ├─SemanticsNode#6
+       │ │   Rect.fromLTRB(0.0, 48.0, 307.4, 89.0)
+       │ │   label: "添加自己的 NES 游戏。移除来源不会删除原文件和游戏进度。"
+       │ │   textDirection: ltr
+       │ │
+       │ ├─SemanticsNode#7
+       │ │   Rect.fromLTRB(0.0, 113.0, 307.4, 169.0)
+       │ │   actions: focus, tap
+       │ │   flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │ │   label: "添加文件"
+       │ │   textDirection: ltr
+       │ │
+       │ └─SemanticsNode#8
+       │     Rect.fromLTRB(0.0, 181.0, 307.4, 229.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "添加文件夹"
+       │     textDirection: ltr
+       │
+       └─SemanticsNode#12
+         │ Rect.fromLTRB(347.4, 72.0, 944.0, 524.0)
+         │
+         └─SemanticsNode#20
+           │ Rect.fromLTRB(0.0, 0.0, 596.6, 452.0)
+           │ flags: hasImplicitScrolling
+           │ scrollIndex: 0
+           │ scrollExtentMin: 0.0
+           │ scrollPosition: 0.0
+           │ scrollExtentMax: 0.0
+           │
+           ├─SemanticsNode#13
+           │ │ Rect.fromLTRB(0.0, 0.0, 596.6, 122.0)
+           │ │ tags: RenderViewport.twoPane
+           │ │ indexInParent: 0
+           │ │
+           │ └─SemanticsNode#14
+           │     Rect.fromLTRB(0.0, 0.0, 596.6, 122.0)
+           │     label:
+           │       "内置
+           │       内置 · 不可移除
+           │       7 个游戏"
+           │     textDirection: ltr
+           │
+           └─SemanticsNode#15
+             │ Rect.fromLTRB(0.0, 122.0, 596.6, 291.0)
+             │ tags: RenderViewport.twoPane
+             │ indexInParent: 1
+             │
+             └─SemanticsNode#16
+               │ Rect.fromLTRB(0.0, 0.0, 596.6, 169.0)
+               │ label:
+               │   "My games
+               │   文件夹
+               │   12 个游戏"
+               │ textDirection: ltr
+               │
+               ├─SemanticsNode#17
+               │   Rect.fromLTRB(20.0, 101.0, 72.2, 149.0)
+               │   actions: focus, tap
+               │   flags: isButton, hasEnabledState, isEnabled, isFocusable
+               │   label: "扫描"
+               │   textDirection: ltr
+               │
+               ├─SemanticsNode#18
+               │   Rect.fromLTRB(80.2, 101.0, 160.6, 149.0)
+               │   actions: focus, tap
+               │   flags: isButton, hasEnabledState, isEnabled, isFocusable
+               │   label: "重新授权"
+               │   textDirection: ltr
+               │
+               └─SemanticsNode#19
+                   Rect.fromLTRB(168.6, 101.0, 220.8, 149.0)
+                   actions: focus, tap
+                   flags: isButton, hasEnabledState, isEnabled, isFocusable
+                   label: "移除"
+                   textDirection: ltr

@@ -1,0 +1,143 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 2880.0, 1620.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0) scaled by 3.0x
+   │ textDirection: ltr
+   │
+   └─SemanticsNode#2
+     │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+     │ sortKey: OrdinalSortKey#de093(order: 0.0)
+     │
+     └─SemanticsNode#3
+       │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+       │ flags: scopesRoute
+       │
+       ├─SemanticsNode#4
+       │ │ Rect.fromLTRB(16.0, 8.0, 740.0, 56.0)
+       │ │ flags: hasImplicitScrolling
+       │ │ scrollExtentMin: 0.0
+       │ │ scrollPosition: 0.0
+       │ │ scrollExtentMax: 0.0
+       │ │
+       │ ├─SemanticsNode#5
+       │ │ │ Rect.fromLTRB(0.0, 0.0, 102.8, 48.0)
+       │ │ │ flags: hasSelectedState
+       │ │ │
+       │ │ └─SemanticsNode#6
+       │ │     Rect.fromLTRB(0.0, 0.0, 102.8, 48.0)
+       │ │     actions: focus, tap
+       │ │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │ │     label: "Recent"
+       │ │     textDirection: ltr
+       │ │
+       │ ├─SemanticsNode#7
+       │ │ │ Rect.fromLTRB(106.8, 0.0, 237.7, 48.0)
+       │ │ │ flags: hasSelectedState
+       │ │ │
+       │ │ └─SemanticsNode#8
+       │ │     Rect.fromLTRB(0.0, 0.0, 131.0, 48.0)
+       │ │     actions: focus, tap
+       │ │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │ │     label: "Favorites"
+       │ │     textDirection: ltr
+       │ │
+       │ ├─SemanticsNode#9
+       │ │ │ Rect.fromLTRB(241.7, 0.0, 289.9, 48.0)
+       │ │ │ flags: isSelected, hasSelectedState
+       │ │ │
+       │ │ └─SemanticsNode#10
+       │ │     Rect.fromLTRB(0.0, 0.0, 48.2, 48.0)
+       │ │     actions: focus, tap
+       │ │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │ │     label: "All"
+       │ │     textDirection: ltr
+       │ │
+       │ └─SemanticsNode#11
+       │   │ Rect.fromLTRB(293.9, 0.0, 396.2, 48.0)
+       │   │ flags: hasSelectedState
+       │   │
+       │   └─SemanticsNode#12
+       │       Rect.fromLTRB(0.0, 0.0, 102.4, 48.0)
+       │       actions: focus, tap
+       │       flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │       label: "Built-in"
+       │       textDirection: ltr
+       │
+       ├─SemanticsNode#13
+       │ │ Rect.fromLTRB(740.0, 8.0, 788.0, 56.0)
+       │ │ traversalParentIdentifier: _OverlayPortalState#ba324
+       │ │
+       │ └─SemanticsNode#14
+       │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "Search"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#15
+       │ │ Rect.fromLTRB(792.0, 8.0, 840.0, 56.0)
+       │ │ traversalParentIdentifier: _OverlayPortalState#de9a4
+       │ │
+       │ └─SemanticsNode#16
+       │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "Sources"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#17
+       │ │ Rect.fromLTRB(844.0, 8.0, 892.0, 56.0)
+       │ │ traversalParentIdentifier: _OverlayPortalState#2d21f
+       │ │
+       │ └─SemanticsNode#18
+       │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "Settings"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#19
+       │ │ Rect.fromLTRB(896.0, 8.0, 944.0, 56.0)
+       │ │ traversalParentIdentifier: _OverlayPortalState#ee90f
+       │ │
+       │ └─SemanticsNode#20
+       │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "Nearby"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#21
+       │   Rect.fromLTRB(16.0, 64.0, 896.0, 144.0)
+       │   actions: focus, setSelection, setText, tap
+       │   flags: isTextField, isFocused, hasEnabledState, isEnabled,
+       │     isFocusable
+       │   label: "Search games"
+       │   textDirection: ltr
+       │   text selection: [0, 0]
+       │   currentValueLength: 0
+       │   inputType: text
+       │
+       ├─SemanticsNode#23
+       │ │ Rect.fromLTRB(848.0, 80.0, 896.0, 128.0)
+       │ │ tags: _InputDecoratorState.suffixIcon
+       │ │ traversalParentIdentifier: _OverlayPortalState#f9fcf
+       │ │
+       │ └─SemanticsNode#22
+       │     Rect.fromLTRB(848.0, 80.0, 896.0, 128.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "Clear search"
+       │     textDirection: ltr
+       │
+       └─SemanticsNode#24
+         │ Rect.fromLTRB(896.0, 80.0, 944.0, 128.0)
+         │ traversalParentIdentifier: _OverlayPortalState#2a711
+         │
+         └─SemanticsNode#25
+             Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+             actions: focus, tap
+             flags: isButton, hasEnabledState, isEnabled, isFocusable
+             label: "Close search"
+             textDirection: ltr

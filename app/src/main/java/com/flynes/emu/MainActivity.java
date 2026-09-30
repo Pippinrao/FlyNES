@@ -161,13 +161,14 @@ public class MainActivity extends AppCompatActivity {
         @Override public void run() {
             if (nearbyPlay == null && rendering && pauseLayer == null
                     && session.state() == SessionState.RUNNING && historyClock.due(historyInterval())) {
-                if (stopAudioThread()) {
-                    try { saveHistoryAutomatic(); }
-                    finally {
+                if (com.flynes.emu.save.SavePhaseTrace.measure("auto.audio_stop",()->stopAudioThread())) {
+                    com.flynes.emu.save.AutomaticSaveCycle.run(MainActivity.this::saveHistoryAutomatic,()->{
                         if (!isFinishing() && pauseLayer == null && session.state() == SessionState.RUNNING) {
+                            com.flynes.emu.save.SavePhaseTrace.event("auto.audio_restart.request");
                             audio = createAudioThread(); audio.start();
+                            com.flynes.emu.save.SavePhaseTrace.event("auto.audio_restart.submitted");
                         }
-                    }
+                    });
                 }
             }
             if (!isFinishing()) statusHandler.postDelayed(this, 1000);
@@ -594,6 +595,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onConfigurationChanged(android.content.res.Configuration configuration) {
+        super.onConfigurationChanged(configuration);
+        // Locale changes from Flutter Settings must retain this live game owner.
+        // Refresh native labels without loading the ROM, capturing a new save,
+        // or changing the current pause/media state.
+        if (pauseButton != null) pauseButton.setContentDescription(getString(R.string.open_pause));
+        if (pauseLayer != null && root != null) {
+            root.removeView(pauseLayer);
+            pauseLayer = createPauseDrawer();
+            root.addView(pauseLayer, new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            pauseLayer.requestApplyInsets();
+        }
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         if (nearbyPlay != null) {
@@ -690,6 +707,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        ((FlyNesApplication)getApplication()).gameDestroyed(this);
         unregisterDisplayListener();
         statusHandler.removeCallbacks(publishVideoStatus);
         statusHandler.removeCallbacks(historyTimer);
@@ -769,7 +787,7 @@ public class MainActivity extends AppCompatActivity {
                 closePauseForNavigation(HomeActivity.class);
                 break;
             case OPEN_SETTINGS:
-                startActivity(new Intent(this, SettingsActivity.class));
+                startActivity(ProductRoutes.intent(this,"settings"));
                 break;
         }
     }
@@ -919,12 +937,20 @@ public class MainActivity extends AppCompatActivity {
 
     private void closePauseForNavigation(Class<?> destination) {
         removePauseLayer();
-        if (destination == HomeActivity.class
-                && getIntent().getBooleanExtra(FoundationBridge.RETURN_TO_FOUNDATION, false)) {
-            finish(); // Existing onPause stops audio and publishes history before the host resumes.
+        if(destination==SettingsActivity.class) {
+            startActivity(ProductRoutes.intent(this,"settings").putExtra("product_return_token","game"));
+            overridePendingTransition(0,0);
             return;
         }
-        startActivity(new Intent(this, destination));
+        if (destination == HomeActivity.class
+                && getIntent().getBooleanExtra(FoundationBridge.RETURN_TO_FOUNDATION, false)) {
+            // Keep this valid outgoing window until the replacement hall acknowledges
+            // its own raster. onPause still stops audio and publishes history normally.
+            startActivity(((FlyNesApplication)getApplication()).prepareHallHandoff(this));
+            overridePendingTransition(0,0);
+            return;
+        }
+        startActivity(ProductRoutes.nativeIntent(this, destination));
     }
 
     private void removePauseLayer() {
@@ -1827,8 +1853,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void saveHistoryAutomatic() {
+        saveHistoryAutomatic(null);
+    }
+    private void saveHistoryAutomatic(Runnable afterCapture) {
         if (historyInterval() == 0 || !historyInitialized || !historyClock.changed()) return;
-        try { historySession.save(com.flynes.emu.save.HistoryStore.AUTO, ""); }
+        try {
+            if(afterCapture==null)historySession.save(com.flynes.emu.save.HistoryStore.AUTO, "");
+            else historySession.saveAutomatic(afterCapture);
+        }
         catch (Exception failure) { historyFailure(failure); }
     }
 

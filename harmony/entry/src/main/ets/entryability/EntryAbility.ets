@@ -4,9 +4,11 @@ import { window } from '@kit.ArkUI';
 import { resolveTestFontSizeScale } from '../ui/NearbyTestFontScale';
 import { ExclusiveAppComponent, FlutterManager } from '@ohos/flutter_ohos';
 import { isFlutterFoundationRoute } from '../flutter/FoundationProjection';
+import { ProductStartupObservation } from '../service/ProductStartupObservation';
+import nativeApp from 'libentry.so';
 
 export default class EntryAbility extends UIAbility implements ExclusiveAppComponent<UIAbility> {
-  private testPage: string = 'pages/GameCenter';
+  private testPage: string = 'pages/FlutterFoundation';
   private stage: window.WindowStage | undefined = undefined;
 
   onCreate(want: Want, _launchParam: AbilityConstant.LaunchParam): void {
@@ -35,7 +37,11 @@ export default class EntryAbility extends UIAbility implements ExclusiveAppCompo
       return false;
     }
     const page: string | undefined = want.parameters?.['flynes.test.page'] as string | undefined;
-    if (page === 'flutter_texture_probe') {
+    if (page !== undefined && page !== 'native_baseline') AppStorage.setOrCreate('ProductNativeBaseline', false);
+    if (page === 'native_baseline') {
+      AppStorage.setOrCreate('ProductNativeBaseline', true);
+      this.testPage = 'pages/GameCenter';
+    } else if (page === 'flutter_texture_probe') {
       this.testPage = 'pages/FlutterTextureProbe';
     } else if (isFlutterFoundationRoute(page, debug)) {
       this.testPage = 'pages/FlutterFoundation';
@@ -54,6 +60,16 @@ export default class EntryAbility extends UIAbility implements ExclusiveAppCompo
   onWindowStageCreate(windowStage: window.WindowStage): void {
     this.stage = windowStage;
     FlutterManager.getInstance().pushWindowStage(this, windowStage);
+    // Open the one process-owned product instance before either page builds.
+    // Flutter engine creation must not delay the native owner-ready event.
+    // Page-level initialization remains the retry path when opening fails.
+    try {
+      nativeApp.appOpen(this.context.filesDir, this.context.cacheDir);
+      ProductStartupObservation.ownerReady();
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : 'appOpen failed';
+      console.error(`FlyNES product owner preload failed: ${detail}`);
+    }
     console.info(`FlyNES UI configuration fontSizeScale=${this.context.config.fontSizeScale ?? -1}`);
     try {
       const win = windowStage.getMainWindowSync();
@@ -64,7 +80,10 @@ export default class EntryAbility extends UIAbility implements ExclusiveAppCompo
       const detail = error instanceof Error ? error.message : 'orientation failed';
       console.error(`FlyNES landscape preference failed: ${detail}`);
     }
-    windowStage.loadContent(this.testPage, (error) => {
+    // The in-process test module can select a same-package native baseline
+    // before any Flutter page/engine exists. This is never read from a Release Want.
+    const initialPage = AppStorage.get<boolean>('ProductNativeBaseline') === true ? 'pages/GameCenter' : this.testPage;
+    windowStage.loadContent(initialPage, (error) => {
       if (error.code !== 0) {
         console.error(`FlyNES content failed to load: ${error.code}`);
       }

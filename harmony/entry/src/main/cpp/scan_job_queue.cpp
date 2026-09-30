@@ -118,7 +118,8 @@ public:
         {
             std::lock_guard<std::mutex> lock(mutex);
             const auto found = jobs.find(id);
-            if (found == jobs.end() || found->second->snapshot.terminal()) return false;
+            if (found == jobs.end() || found->second->snapshot.terminal() ||
+                found->second->snapshot.phase == ScanJobPhase::COMMITTING) return false;
             found->second->snapshot.cancel_requested = true;
             if (found->second->snapshot.phase == ScanJobPhase::QUEUED)
             {
@@ -145,10 +146,21 @@ public:
         std::uint64_t count = 0u;
         {
             std::lock_guard<std::mutex> lock(mutex);
+            // sourceRemove must not succeed between commit entry and a conflict
+            // retry, which could otherwise republish the removed source.
+            for (const auto& item : jobs)
+            {
+                const Job& job = *item.second;
+                if (job.snapshot.phase == ScanJobPhase::COMMITTING &&
+                    job.request.source_uuid_hex == source_uuid_hex &&
+                    job.request.source_scope == source_scope)
+                    throw std::runtime_error("source_busy");
+            }
             for (auto& item : jobs)
             {
                 Job& job = *item.second;
-                if (job.snapshot.terminal() || job.request.source_uuid_hex != source_uuid_hex ||
+                if (job.snapshot.terminal() || job.snapshot.phase == ScanJobPhase::COMMITTING ||
+                    job.request.source_uuid_hex != source_uuid_hex ||
                     job.request.source_scope != source_scope)
                 {
                     continue;
@@ -217,6 +229,13 @@ private:
                         std::lock_guard<std::mutex> lock(mutex);
                         job->snapshot.processed_files = processed;
                         job->snapshot.result_count = results;
+                    },
+                    [this, job]() {
+                        // Serialize the last cancel decision with commit entry.
+                        std::lock_guard<std::mutex> lock(mutex);
+                        if (job->snapshot.cancel_requested) return false;
+                        job->snapshot.phase = ScanJobPhase::COMMITTING;
+                        return true;
                     });
             }
             catch (const std::exception& error)

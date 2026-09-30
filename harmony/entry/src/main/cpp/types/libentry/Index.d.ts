@@ -17,6 +17,40 @@ export interface GameCenterRow {
   popularityScore?: number;
 }
 
+export interface ProductCatalogCapability {
+  canonicalId: string;
+  titleEn: string;
+  titleZhHans: string;
+  multiplayerSupported: boolean;
+}
+export interface ProductCatalogQuery {
+  category: string;
+  query: string;
+  multiplayerOnly: boolean;
+  selectedId: string;
+  offset: number;
+  limit: number;
+  catalogGeneration: number;
+  viewRevision: number;
+  capabilities: ProductCatalogCapability[];
+}
+export interface ProductCatalogRow extends GameCenterRow {
+  available: boolean;
+  variantCount: number;
+  multiplayerSupported: boolean;
+}
+export interface ProductCatalogProjection {
+  catalogGeneration: number;
+  viewRevision: number;
+  total: number;
+  offset: number;
+  selectedId: string;
+  items: ProductCatalogRow[];
+}
+export const productCatalogProject: (query: ProductCatalogQuery) => Promise<ProductCatalogProjection>;
+export const productCatalogItem: (canonicalId: string, capabilities: ProductCatalogCapability[]) => Promise<ProductCatalogRow>;
+export const catalogUserStateCopyIfAbsent: (legacyId: string, targetId: string) => Promise<void>;
+
 export interface HitMapDto {
   dpadLeft: number;
   dpadTop: number;
@@ -196,6 +230,8 @@ export const nearbyInviteCancelCode: (attemptId: number) => boolean;
 export const nearbyInviteTick: (nowMs: number) => boolean;
 export const nearbyInviteSnapshot: () => NearbyInviteSnapshotDto;
 export interface NearbyMvpSnapshotDto {
+  roomGeneration: number;
+  selectionPending: boolean;
   paused: boolean;
   peerGameKey: string;
   peerConfigToken: string;
@@ -228,6 +264,16 @@ export const nearbyMvpInvite: () => string;
 export const nearbyMvpSnapshot: () => NearbyMvpSnapshotDto;
 export const nearbyMvpSelectRom: (rom: Uint8Array | ArrayBuffer) => boolean;
 export const nearbyMvpSelectGame: (rom: Uint8Array | ArrayBuffer, gameKey: string) => boolean;
+export interface NearbyMvpSelectionResult {
+  selected: boolean;
+  roomGeneration: number;
+  status: string;
+}
+export const nearbyMvpSelectGameAsync: (rom: Uint8Array | ArrayBuffer, gameKey: string, roomGeneration: number) => Promise<NearbyMvpSelectionResult>;
+/** Debug builds only; bounded native executor fixture for Hypium. */
+export const nearbyMvpTestSelectionRoom: (delayMs: number) => number;
+/** Debug only: 1=create, 2=queue, 3=cancel-before-execute, 4=retirement, 5=executor setup. Returns live work handles. */
+export const nearbyMvpTestSelectionFailure: (mode: number) => number;
 export const nearbyMvpConfirm: () => boolean;
 export const nearbyMvpStep: (buttons: number) => NearbyMvpStepResult;
 export const nearbyMvpCancel: () => boolean;

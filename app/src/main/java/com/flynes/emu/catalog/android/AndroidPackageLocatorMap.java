@@ -17,6 +17,15 @@ public final class AndroidPackageLocatorMap {
     public String get(byte[] sourceUuid, String relativePath) {
         return locators.get(key(sourceUuid, relativePath));
     }
+    public void invalidateSource(byte[] sourceUuid) {
+        String prefix=AndroidUuidSafMap.toHex(sourceUuid)+"|";
+        locators.keySet().removeIf(key->key.startsWith(prefix));
+    }
+    public void restoreSource(byte[] sourceUuid, Map<String,String> snapshot) {
+        String prefix=AndroidUuidSafMap.toHex(sourceUuid)+"|";
+        invalidateSource(sourceUuid);
+        for(var entry:snapshot.entrySet())if(entry.getKey().startsWith(prefix))locators.put(entry.getKey(),entry.getValue());
+    }
 
     public Map<String, String> snapshot() {
         return Collections.unmodifiableMap(new LinkedHashMap<String, String>(locators));

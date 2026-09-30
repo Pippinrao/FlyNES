@@ -14,6 +14,75 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class HistorySessionIntegrationTest {
+    @Test public void automaticResumePrecedesStoreAndPreservesCapturedProgress() throws Exception {
+        Context context=ApplicationProvider.getApplicationContext();
+        File file=new File(context.getCacheDir(),"history-captured-auto-"+System.nanoTime()+".sqlite");
+        NesCore core=new NesCore();core.create();byte[] rom=batteryRom();
+        try(HistoryStore store=new HistoryStore(file)){
+            assertTrue(core.loadRom(rom)>=0);core.setAudioFormat(48000,0);core.runFrames(20);
+            String key=core.romInfo().identity().sha1();HistoryClock clock=new HistoryClock();clock.advance(60000321);
+            byte[] captured=core.saveState();byte[] thumbnail={1,2,3};
+            HistorySession session=new HistorySession(core,store,key,rom,clock,()->thumbnail);
+            int[] resumed={0};
+            long id=session.saveAutomatic(()->{
+                assertEquals("No database commit before resuming the captured core",0,store.head(key));
+                resumed[0]++;core.runFrames(6);clock.advance(25000);
+            });
+            assertEquals(1,resumed[0]);assertEquals(id,store.head(key));
+            assertArrayEquals("Store owns capture-time bytes",captured,store.read(key,id,false));
+            assertArrayEquals(thumbnail,store.read(key,id,true));
+            assertFalse("Live core continues during persistence",java.util.Arrays.equals(captured,core.saveState()));
+            assertEquals(60000,store.list(key)[0].playedMs());
+            assertTrue("Later live progress is not marked saved",clock.changed());
+            byte[] later=core.saveState();long next=session.save(HistoryStore.MANUAL,"Next");
+            assertArrayEquals(later,store.read(key,next,false));assertFalse(clock.changed());
+        }finally{core.destroy();SQLiteDatabase.deleteDatabase(file);}
+    }
+    @Test public void automaticStoreFailureKeepsHeadAndMarkerAfterResume() throws Exception {
+        Context context=ApplicationProvider.getApplicationContext();
+        File file=new File(context.getCacheDir(),"history-captured-fault-"+System.nanoTime()+".sqlite");
+        NesCore core=new NesCore();core.create();byte[] rom=batteryRom();
+        try(HistoryStore store=new HistoryStore(file)){
+            assertTrue(core.loadRom(rom)>=0);core.setAudioFormat(48000,0);core.runFrames(20);
+            String key=core.romInfo().identity().sha1();HistoryClock clock=new HistoryClock();clock.advance(1000000);
+            HistorySession session=new HistorySession(core,store,key,rom,clock,()->null);
+            long original=session.save(HistoryStore.MANUAL,"Original");
+            core.runFrames(6);clock.advance(60000321);
+            try(SQLiteDatabase fault=SQLiteDatabase.openDatabase(file.getAbsolutePath(),null,SQLiteDatabase.OPEN_READWRITE)){
+                fault.execSQL("CREATE TRIGGER reject_auto_head BEFORE UPDATE ON heads BEGIN SELECT RAISE(ABORT, 'injected auto failure'); END");
+            }
+            int[] resumed={0};byte[][] live={null};
+            try{
+                session.saveAutomatic(()->{resumed[0]++;core.runFrames(6);clock.advance(25000);live[0]=core.saveState();});
+                fail("Injected storage failure must propagate");
+            }catch(IllegalStateException expected){}
+            assertEquals("Capture completed, so resume precedes even a failed store",1,resumed[0]);
+            assertArrayEquals("Storage failure cannot roll back live core",live[0],core.saveState());
+            assertEquals(original,store.head(key));assertEquals("Failed transaction leaves no partial entry",1,store.list(key).length);
+            assertTrue("Failed save cannot acknowledge the captured checkpoint",clock.due(60000));
+            try(SQLiteDatabase fault=SQLiteDatabase.openDatabase(file.getAbsolutePath(),null,SQLiteDatabase.OPEN_READWRITE)){
+                fault.execSQL("DROP TRIGGER reject_auto_head");
+            }
+            long retried=session.saveAutomatic(()->{});
+            assertEquals(retried,store.head(key));assertFalse(clock.changed());
+            HistoryStore.Entry committed=java.util.Arrays.stream(store.list(key)).filter(row->row.id()==retried).findFirst().orElseThrow();
+            assertEquals(original,committed.parent());
+        }finally{core.destroy();SQLiteDatabase.deleteDatabase(file);}
+    }
+    @Test public void automaticCaptureFailureNeverRunsTheEarlyResumeHook() throws Exception {
+        Context context=ApplicationProvider.getApplicationContext();
+        File file=new File(context.getCacheDir(),"history-capture-failed-"+System.nanoTime()+".sqlite");
+        NesCore core=new NesCore();core.create();byte[] rom=batteryRom();
+        try(HistoryStore store=new HistoryStore(file)){
+            assertTrue(core.loadRom(rom)>=0);String key=core.romInfo().identity().sha1();
+            HistoryClock clock=new HistoryClock();clock.advance(60000000);
+            HistorySession session=new HistorySession(core,store,key,rom,clock,()->null);core.destroy();
+            int[] resumed={0};
+            try{session.saveAutomatic(()->resumed[0]++);fail("Dead core capture must fail");}
+            catch(IllegalStateException expected){}
+            assertEquals(0,resumed[0]);assertEquals(0,store.head(key));assertTrue(clock.due(60000));
+        }finally{core.destroy();SQLiteDatabase.deleteDatabase(file);}
+    }
     @Test
     public void selectedHeadSkipsUnreadableLegacyAutosave() throws Exception {
         Context context = ApplicationProvider.getApplicationContext();

@@ -36,6 +36,8 @@ add_subdirectory("${FLYNES_REPOSITORY_ROOT}/libs/save_history"
 add_library(entry SHARED
     save_history_napi.cpp
     napi_init.cpp
+    product_catalog_projection.cpp
+    product_catalog_napi.cpp
     "${FLYNES_REPOSITORY_ROOT}/harmony/nearby/session_owner_v2.cpp"
     "${FLYNES_REPOSITORY_ROOT}/harmony/nearby/content_port_v2.cpp"
     catalog_smoke.cpp

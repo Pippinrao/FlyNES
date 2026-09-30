@@ -1,0 +1,708 @@
+[
+  {
+    "id": "hall-800x360-en-XA-100",
+    "ux": [
+      "U02",
+      "U26"
+    ],
+    "fixture": "synthetic-no-rom-debug-pseudolocalization",
+    "steps": [
+      "Resolve debug en-XA via system preference",
+      "Accent product strings and expand approximately 30%",
+      "800x360; safe insets 16/16/16/8; scale 1.0"
+    ],
+    "expectedText": [
+      "[Cóntínúé ~~~]"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "2 named controls hit-testable",
+      "16 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "No native/user language enum added",
+      "Preference remains system"
+    ],
+    "width": 800.0,
+    "height": 360.0,
+    "locale": "en-XA",
+    "textScale": 1.0,
+    "safeArea": [
+      16.0,
+      16.0,
+      16.0,
+      8.0
+    ],
+    "image": "hall-800x360-en-XA-100.png",
+    "geometry": "hall-800x360-en-XA-100.geometry.json",
+    "semantics": "hall-800x360-en-XA-100.semantics.txt",
+    "review": "pending",
+    "nativeLocalePreference": "system"
+  },
+  {
+    "id": "search-800x360-en-XA-100",
+    "ux": [
+      "U05",
+      "U26"
+    ],
+    "fixture": "synthetic-no-rom-debug-pseudolocalization",
+    "steps": [
+      "Resolve debug en-XA via system preference",
+      "Accent product strings and expand approximately 30%",
+      "800x360; safe insets 16/16/16/8; scale 1.0",
+      "Simulated 180px IME inset, not system keyboard pixels"
+    ],
+    "expectedText": [
+      "[Séárch gámés ~~~~]"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "2 named controls hit-testable",
+      "16 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "No native/user language enum added",
+      "Preference remains system"
+    ],
+    "width": 800.0,
+    "height": 360.0,
+    "locale": "en-XA",
+    "textScale": 1.0,
+    "safeArea": [
+      16.0,
+      16.0,
+      16.0,
+      8.0
+    ],
+    "image": "search-800x360-en-XA-100.png",
+    "geometry": "search-800x360-en-XA-100.geometry.json",
+    "semantics": "search-800x360-en-XA-100.semantics.txt",
+    "review": "pending",
+    "nativeLocalePreference": "system"
+  },
+  {
+    "id": "sources-800x360-en-XA-100",
+    "ux": [
+      "U09",
+      "U26"
+    ],
+    "fixture": "synthetic-no-rom-debug-pseudolocalization",
+    "steps": [
+      "Resolve debug en-XA via system preference",
+      "Accent product strings and expand approximately 30%",
+      "800x360; safe insets 16/16/16/8; scale 1.0",
+      "Scroll introduction to both add controls; verify independent vertical access"
+    ],
+    "expectedText": [
+      "[Yóúr gámé sóúrcés ~~~~~~]"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "2 named controls hit-testable",
+      "5 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "No native/user language enum added",
+      "Preference remains system"
+    ],
+    "width": 800.0,
+    "height": 360.0,
+    "locale": "en-XA",
+    "textScale": 1.0,
+    "safeArea": [
+      16.0,
+      16.0,
+      16.0,
+      8.0
+    ],
+    "image": "sources-800x360-en-XA-100.png",
+    "geometry": "sources-800x360-en-XA-100.geometry.json",
+    "semantics": "sources-800x360-en-XA-100.semantics.txt",
+    "review": "pending",
+    "nativeLocalePreference": "system"
+  },
+  {
+    "id": "display-800x360-en-XA-100",
+    "ux": [
+      "U15",
+      "U26"
+    ],
+    "fixture": "synthetic-no-rom-debug-pseudolocalization",
+    "steps": [
+      "Resolve debug en-XA via system preference",
+      "Accent product strings and expand approximately 30%",
+      "800x360; safe insets 16/16/16/8; scale 1.0"
+    ],
+    "expectedText": [
+      "[Séttíngs ~~~]"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "9 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "No native/user language enum added",
+      "Preference remains system"
+    ],
+    "width": 800.0,
+    "height": 360.0,
+    "locale": "en-XA",
+    "textScale": 1.0,
+    "safeArea": [
+      16.0,
+      16.0,
+      16.0,
+      8.0
+    ],
+    "image": "display-800x360-en-XA-100.png",
+    "geometry": "display-800x360-en-XA-100.geometry.json",
+    "semantics": "display-800x360-en-XA-100.semantics.txt",
+    "review": "pending",
+    "nativeLocalePreference": "system"
+  },
+  {
+    "id": "controls-800x360-en-XA-100",
+    "ux": [
+      "U16",
+      "U26"
+    ],
+    "fixture": "synthetic-no-rom-debug-pseudolocalization",
+    "steps": [
+      "Resolve debug en-XA via system preference",
+      "Accent product strings and expand approximately 30%",
+      "800x360; safe insets 16/16/16/8; scale 1.0"
+    ],
+    "expectedText": [
+      "[Séttíngs ~~~]"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "9 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "No native/user language enum added",
+      "Preference remains system"
+    ],
+    "width": 800.0,
+    "height": 360.0,
+    "locale": "en-XA",
+    "textScale": 1.0,
+    "safeArea": [
+      16.0,
+      16.0,
+      16.0,
+      8.0
+    ],
+    "image": "controls-800x360-en-XA-100.png",
+    "geometry": "controls-800x360-en-XA-100.geometry.json",
+    "semantics": "controls-800x360-en-XA-100.semantics.txt",
+    "review": "pending",
+    "nativeLocalePreference": "system"
+  },
+  {
+    "id": "audio-800x360-en-XA-100",
+    "ux": [
+      "U17",
+      "U26"
+    ],
+    "fixture": "synthetic-no-rom-debug-pseudolocalization",
+    "steps": [
+      "Resolve debug en-XA via system preference",
+      "Accent product strings and expand approximately 30%",
+      "800x360; safe insets 16/16/16/8; scale 1.0"
+    ],
+    "expectedText": [
+      "[Séttíngs ~~~]"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "8 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "No native/user language enum added",
+      "Preference remains system"
+    ],
+    "width": 800.0,
+    "height": 360.0,
+    "locale": "en-XA",
+    "textScale": 1.0,
+    "safeArea": [
+      16.0,
+      16.0,
+      16.0,
+      8.0
+    ],
+    "image": "audio-800x360-en-XA-100.png",
+    "geometry": "audio-800x360-en-XA-100.geometry.json",
+    "semantics": "audio-800x360-en-XA-100.semantics.txt",
+    "review": "pending",
+    "nativeLocalePreference": "system"
+  },
+  {
+    "id": "game-800x360-en-XA-100",
+    "ux": [
+      "U18",
+      "U26"
+    ],
+    "fixture": "synthetic-no-rom-debug-pseudolocalization",
+    "steps": [
+      "Resolve debug en-XA via system preference",
+      "Accent product strings and expand approximately 30%",
+      "800x360; safe insets 16/16/16/8; scale 1.0"
+    ],
+    "expectedText": [
+      "[Séttíngs ~~~]"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "9 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "No native/user language enum added",
+      "Preference remains system"
+    ],
+    "width": 800.0,
+    "height": 360.0,
+    "locale": "en-XA",
+    "textScale": 1.0,
+    "safeArea": [
+      16.0,
+      16.0,
+      16.0,
+      8.0
+    ],
+    "image": "game-800x360-en-XA-100.png",
+    "geometry": "game-800x360-en-XA-100.geometry.json",
+    "semantics": "game-800x360-en-XA-100.semantics.txt",
+    "review": "pending",
+    "nativeLocalePreference": "system"
+  },
+  {
+    "id": "about-800x360-en-XA-100",
+    "ux": [
+      "U19",
+      "U26"
+    ],
+    "fixture": "synthetic-no-rom-debug-pseudolocalization",
+    "steps": [
+      "Resolve debug en-XA via system preference",
+      "Accent product strings and expand approximately 30%",
+      "800x360; safe insets 16/16/16/8; scale 1.0"
+    ],
+    "expectedText": [
+      "[Séttíngs ~~~]"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "6 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "No native/user language enum added",
+      "Preference remains system"
+    ],
+    "width": 800.0,
+    "height": 360.0,
+    "locale": "en-XA",
+    "textScale": 1.0,
+    "safeArea": [
+      16.0,
+      16.0,
+      16.0,
+      8.0
+    ],
+    "image": "about-800x360-en-XA-100.png",
+    "geometry": "about-800x360-en-XA-100.geometry.json",
+    "semantics": "about-800x360-en-XA-100.semantics.txt",
+    "review": "pending",
+    "nativeLocalePreference": "system"
+  },
+  {
+    "id": "licenses-800x360-en-XA-100",
+    "ux": [
+      "U20",
+      "U26"
+    ],
+    "fixture": "synthetic-no-rom-debug-pseudolocalization",
+    "steps": [
+      "Resolve debug en-XA via system preference",
+      "Accent product strings and expand approximately 30%",
+      "800x360; safe insets 16/16/16/8; scale 1.0"
+    ],
+    "expectedText": [
+      "[Lícénsés ~~~]"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "8 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "No native/user language enum added",
+      "Preference remains system"
+    ],
+    "width": 800.0,
+    "height": 360.0,
+    "locale": "en-XA",
+    "textScale": 1.0,
+    "safeArea": [
+      16.0,
+      16.0,
+      16.0,
+      8.0
+    ],
+    "image": "licenses-800x360-en-XA-100.png",
+    "geometry": "licenses-800x360-en-XA-100.geometry.json",
+    "semantics": "licenses-800x360-en-XA-100.semantics.txt",
+    "review": "pending",
+    "nativeLocalePreference": "system"
+  },
+  {
+    "id": "hall-800x360-en-XA-200",
+    "ux": [
+      "U02",
+      "U26"
+    ],
+    "fixture": "synthetic-no-rom-debug-pseudolocalization",
+    "steps": [
+      "Resolve debug en-XA via system preference",
+      "Accent product strings and expand approximately 30%",
+      "800x360; safe insets 16/16/16/8; scale 2.0"
+    ],
+    "expectedText": [
+      "[Cóntínúé ~~~]"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "2 named controls hit-testable",
+      "15 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "No native/user language enum added",
+      "Preference remains system"
+    ],
+    "width": 800.0,
+    "height": 360.0,
+    "locale": "en-XA",
+    "textScale": 2.0,
+    "safeArea": [
+      16.0,
+      16.0,
+      16.0,
+      8.0
+    ],
+    "image": "hall-800x360-en-XA-200.png",
+    "geometry": "hall-800x360-en-XA-200.geometry.json",
+    "semantics": "hall-800x360-en-XA-200.semantics.txt",
+    "review": "pending",
+    "nativeLocalePreference": "system"
+  },
+  {
+    "id": "search-800x360-en-XA-200",
+    "ux": [
+      "U05",
+      "U26"
+    ],
+    "fixture": "synthetic-no-rom-debug-pseudolocalization",
+    "steps": [
+      "Resolve debug en-XA via system preference",
+      "Accent product strings and expand approximately 30%",
+      "800x360; safe insets 16/16/16/8; scale 2.0",
+      "Simulated 180px IME inset, not system keyboard pixels"
+    ],
+    "expectedText": [
+      "[Séárch gámés ~~~~]"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "2 named controls hit-testable",
+      "15 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "No native/user language enum added",
+      "Preference remains system"
+    ],
+    "width": 800.0,
+    "height": 360.0,
+    "locale": "en-XA",
+    "textScale": 2.0,
+    "safeArea": [
+      16.0,
+      16.0,
+      16.0,
+      8.0
+    ],
+    "image": "search-800x360-en-XA-200.png",
+    "geometry": "search-800x360-en-XA-200.geometry.json",
+    "semantics": "search-800x360-en-XA-200.semantics.txt",
+    "review": "pending",
+    "nativeLocalePreference": "system"
+  },
+  {
+    "id": "sources-800x360-en-XA-200",
+    "ux": [
+      "U09",
+      "U26"
+    ],
+    "fixture": "synthetic-no-rom-debug-pseudolocalization",
+    "steps": [
+      "Resolve debug en-XA via system preference",
+      "Accent product strings and expand approximately 30%",
+      "800x360; safe insets 16/16/16/8; scale 2.0",
+      "Scroll introduction to both add controls; verify independent vertical access"
+    ],
+    "expectedText": [
+      "[Yóúr gámé sóúrcés ~~~~~~]"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "2 named controls hit-testable",
+      "2 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "No native/user language enum added",
+      "Preference remains system"
+    ],
+    "width": 800.0,
+    "height": 360.0,
+    "locale": "en-XA",
+    "textScale": 2.0,
+    "safeArea": [
+      16.0,
+      16.0,
+      16.0,
+      8.0
+    ],
+    "image": "sources-800x360-en-XA-200.png",
+    "geometry": "sources-800x360-en-XA-200.geometry.json",
+    "semantics": "sources-800x360-en-XA-200.semantics.txt",
+    "review": "pending",
+    "nativeLocalePreference": "system"
+  },
+  {
+    "id": "display-800x360-en-XA-200",
+    "ux": [
+      "U15",
+      "U26"
+    ],
+    "fixture": "synthetic-no-rom-debug-pseudolocalization",
+    "steps": [
+      "Resolve debug en-XA via system preference",
+      "Accent product strings and expand approximately 30%",
+      "800x360; safe insets 16/16/16/8; scale 2.0"
+    ],
+    "expectedText": [
+      "[Séttíngs ~~~]"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "4 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "No native/user language enum added",
+      "Preference remains system"
+    ],
+    "width": 800.0,
+    "height": 360.0,
+    "locale": "en-XA",
+    "textScale": 2.0,
+    "safeArea": [
+      16.0,
+      16.0,
+      16.0,
+      8.0
+    ],
+    "image": "display-800x360-en-XA-200.png",
+    "geometry": "display-800x360-en-XA-200.geometry.json",
+    "semantics": "display-800x360-en-XA-200.semantics.txt",
+    "review": "pending",
+    "nativeLocalePreference": "system"
+  },
+  {
+    "id": "controls-800x360-en-XA-200",
+    "ux": [
+      "U16",
+      "U26"
+    ],
+    "fixture": "synthetic-no-rom-debug-pseudolocalization",
+    "steps": [
+      "Resolve debug en-XA via system preference",
+      "Accent product strings and expand approximately 30%",
+      "800x360; safe insets 16/16/16/8; scale 2.0"
+    ],
+    "expectedText": [
+      "[Séttíngs ~~~]"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "4 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "No native/user language enum added",
+      "Preference remains system"
+    ],
+    "width": 800.0,
+    "height": 360.0,
+    "locale": "en-XA",
+    "textScale": 2.0,
+    "safeArea": [
+      16.0,
+      16.0,
+      16.0,
+      8.0
+    ],
+    "image": "controls-800x360-en-XA-200.png",
+    "geometry": "controls-800x360-en-XA-200.geometry.json",
+    "semantics": "controls-800x360-en-XA-200.semantics.txt",
+    "review": "pending",
+    "nativeLocalePreference": "system"
+  },
+  {
+    "id": "audio-800x360-en-XA-200",
+    "ux": [
+      "U17",
+      "U26"
+    ],
+    "fixture": "synthetic-no-rom-debug-pseudolocalization",
+    "steps": [
+      "Resolve debug en-XA via system preference",
+      "Accent product strings and expand approximately 30%",
+      "800x360; safe insets 16/16/16/8; scale 2.0"
+    ],
+    "expectedText": [
+      "[Séttíngs ~~~]"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "5 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "No native/user language enum added",
+      "Preference remains system"
+    ],
+    "width": 800.0,
+    "height": 360.0,
+    "locale": "en-XA",
+    "textScale": 2.0,
+    "safeArea": [
+      16.0,
+      16.0,
+      16.0,
+      8.0
+    ],
+    "image": "audio-800x360-en-XA-200.png",
+    "geometry": "audio-800x360-en-XA-200.geometry.json",
+    "semantics": "audio-800x360-en-XA-200.semantics.txt",
+    "review": "pending",
+    "nativeLocalePreference": "system"
+  },
+  {
+    "id": "game-800x360-en-XA-200",
+    "ux": [
+      "U18",
+      "U26"
+    ],
+    "fixture": "synthetic-no-rom-debug-pseudolocalization",
+    "steps": [
+      "Resolve debug en-XA via system preference",
+      "Accent product strings and expand approximately 30%",
+      "800x360; safe insets 16/16/16/8; scale 2.0"
+    ],
+    "expectedText": [
+      "[Séttíngs ~~~]"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "6 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "No native/user language enum added",
+      "Preference remains system"
+    ],
+    "width": 800.0,
+    "height": 360.0,
+    "locale": "en-XA",
+    "textScale": 2.0,
+    "safeArea": [
+      16.0,
+      16.0,
+      16.0,
+      8.0
+    ],
+    "image": "game-800x360-en-XA-200.png",
+    "geometry": "game-800x360-en-XA-200.geometry.json",
+    "semantics": "game-800x360-en-XA-200.semantics.txt",
+    "review": "pending",
+    "nativeLocalePreference": "system"
+  },
+  {
+    "id": "about-800x360-en-XA-200",
+    "ux": [
+      "U19",
+      "U26"
+    ],
+    "fixture": "synthetic-no-rom-debug-pseudolocalization",
+    "steps": [
+      "Resolve debug en-XA via system preference",
+      "Accent product strings and expand approximately 30%",
+      "800x360; safe insets 16/16/16/8; scale 2.0"
+    ],
+    "expectedText": [
+      "[Séttíngs ~~~]"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "3 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "No native/user language enum added",
+      "Preference remains system"
+    ],
+    "width": 800.0,
+    "height": 360.0,
+    "locale": "en-XA",
+    "textScale": 2.0,
+    "safeArea": [
+      16.0,
+      16.0,
+      16.0,
+      8.0
+    ],
+    "image": "about-800x360-en-XA-200.png",
+    "geometry": "about-800x360-en-XA-200.geometry.json",
+    "semantics": "about-800x360-en-XA-200.semantics.txt",
+    "review": "pending",
+    "nativeLocalePreference": "system"
+  },
+  {
+    "id": "licenses-800x360-en-XA-200",
+    "ux": [
+      "U20",
+      "U26"
+    ],
+    "fixture": "synthetic-no-rom-debug-pseudolocalization",
+    "steps": [
+      "Resolve debug en-XA via system preference",
+      "Accent product strings and expand approximately 30%",
+      "800x360; safe insets 16/16/16/8; scale 2.0"
+    ],
+    "expectedText": [
+      "[Lícénsés ~~~]"
+    ],
+    "assertions": [
+      "no Flutter exception/overflow",
+      "1 named controls hit-testable",
+      "7 visible enabled controls",
+      "visible ProductButton targets at least 48x48",
+      "No native/user language enum added",
+      "Preference remains system"
+    ],
+    "width": 800.0,
+    "height": 360.0,
+    "locale": "en-XA",
+    "textScale": 2.0,
+    "safeArea": [
+      16.0,
+      16.0,
+      16.0,
+      8.0
+    ],
+    "image": "licenses-800x360-en-XA-200.png",
+    "geometry": "licenses-800x360-en-XA-200.geometry.json",
+    "semantics": "licenses-800x360-en-XA-200.semantics.txt",
+    "review": "pending",
+    "nativeLocalePreference": "system"
+  }
+]

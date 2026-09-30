@@ -1,0 +1,35 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 2880.0, 1620.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0) scaled by 3.0x
+   │ textDirection: ltr
+   │
+   └─SemanticsNode#2
+     │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+     │ sortKey: OrdinalSortKey#1ba97(order: 0.0)
+     │
+     └─SemanticsNode#3
+       │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+       │ flags: scopesRoute
+       │
+       └─SemanticsNode#4
+         │ Rect.fromLTRB(24.0, 24.0, 936.0, 516.0)
+         │
+         └─SemanticsNode#9
+           │ Rect.fromLTRB(0.0, 0.0, 912.0, 492.0)
+           │ flags: hasImplicitScrolling
+           │ scrollIndex: 0
+           │ scrollExtentMin: 0.0
+           │ scrollPosition: 0.0
+           │ scrollExtentMax: 0.0
+           │
+           └─SemanticsNode#5
+             │ Rect.fromLTRB(0.0, 0.0, 912.0, 148.0)
+             │ tags: RenderViewport.twoPane
+             │ indexInParent: 0
+             │
+             └─SemanticsNode#6
+                 Rect.fromLTRB(0.0, 0.0, 912.0, 148.0)
+                 label: "Built-in"
+                 textDirection: ltr

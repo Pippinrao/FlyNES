@@ -1,0 +1,624 @@
+{
+  "reviewer": "g2_visual_settings_review",
+  "date": "2026-09-30",
+  "scope": "24 actual 960x540 component frames; A01 press/release, A10 entrance, A11 switch, A12 removal, A13 progress, A14 notice entrance, A17 reduced-motion switch. Not all A01-A17; no native/device certification, no golden promotion.",
+  "verification": "Independently ran flutter test --no-pub test/product_motion_test.dart test/product_sources_test.dart: 21/21 passed.",
+  "findings": [
+    {
+      "severity": "P2",
+      "file": "ui/flutter/lib/design_system/product_dialogs.dart",
+      "line": 8,
+      "issue": "Remaining A17 integration gap: route snapshots durations at construction and paints animation unconditionally. Enabling reduced motion during an existing dialog transition does not force terminal paint. Current fixture only opens with reduced motion already enabled."
+    },
+    {
+      "severity": "P2",
+      "file": "ui/flutter/lib/features/product/product_hall.dart",
+      "line": 73,
+      "issue": "Remaining A17 integration gap: category AnimatedContainer (also tile line504) changes duration only when reduced motion turns on mid-animation; no decorative reset or final-paint override as added to ProductSwitch. Not exercised in component-focused mid-transition test."
+    }
+  ],
+  "notes": [
+    "A01 distinct frames and reverse endpoint hash pairing now establish painted fill interpolation, not merely configured durations.",
+    "A17 three identical images equal A11-end by hash; expected because fixture uses reduced motion from scene construction. The separate test covers enabling reduced motion mid-transition for switch/progress/notice/rows.",
+    "A11 transition-start thumb changes to target dark color immediately while track still dark; brief low contrast only, complete bright track outline remains. Settled off-state is not captured here.",
+    "No blocking regressions found in the repaired notice pointer/focus/semantics retirement, outgoing-row focus exclusion, source-operation error persistence, or component A17 terminal painting.",
+    "Timing attributed to controlled-clock capture script, not inferred from still images. No image was accepted solely from existence or hash."
+  ],
+  "images": [
+    {
+      "name": "A01-press-end.png",
+      "sha256": "4e6260c0858a187163a0efaf9887024ae2edee8ae51a4bc1cb9c2fbf62b3d95b",
+      "bytes": 5137,
+      "id": "A01-press-end",
+      "elapsedMs": 80,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Pressed fill reaches lighter coral; no clipping, scale jump or text movement."
+    },
+    {
+      "name": "A01-press-middle.png",
+      "sha256": "a09c0ebf0b3b9029b93baba0962797964954afc3c4ab5e31db20c362967eb94d",
+      "bytes": 5124,
+      "id": "A01-press-middle",
+      "elapsedMs": 40,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Fill visibly lightens partway; label position, button size and corners remain fixed."
+    },
+    {
+      "name": "A01-press-start.png",
+      "sha256": "6558951138f34d87c59e8d20670a3d7d4bdea5039d2fd12b6beb317929ee59d8",
+      "bytes": 5116,
+      "id": "A01-press-start",
+      "elapsedMs": 0,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Coral Continue button begins at resting fill; label and rounded bounds intact."
+    },
+    {
+      "name": "A01-release-end.png",
+      "sha256": "6558951138f34d87c59e8d20670a3d7d4bdea5039d2fd12b6beb317929ee59d8",
+      "bytes": 5116,
+      "id": "A01-release-end",
+      "elapsedMs": 120,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Resting coral exactly restored; matches press start."
+    },
+    {
+      "name": "A01-release-middle.png",
+      "sha256": "a09c0ebf0b3b9029b93baba0962797964954afc3c4ab5e31db20c362967eb94d",
+      "bytes": 5124,
+      "id": "A01-release-middle",
+      "elapsedMs": 60,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Fill returns through intermediate coral; stable label and geometry."
+    },
+    {
+      "name": "A01-release-start.png",
+      "sha256": "4e6260c0858a187163a0efaf9887024ae2edee8ae51a4bc1cb9c2fbf62b3d95b",
+      "bytes": 5137,
+      "id": "A01-release-start",
+      "elapsedMs": 0,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Pressed lighter coral matches press end; stable geometry."
+    },
+    {
+      "name": "A10-end.png",
+      "sha256": "c53080d9ba2bf807f82f43c62bba406a8faf9dadae8464a39429296b98f6bb75",
+      "bytes": 11550,
+      "id": "A10-end",
+      "elapsedMs": 180,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Opaque dark dialog, complete title and explanatory line; no clipping. Fixture has no action buttons, so actions not visually covered."
+    },
+    {
+      "name": "A10-middle.png",
+      "sha256": "55a0b884d522fa0c4ee69e2e227e002cfd3d304f5a5e737d439510b92badd59e",
+      "bytes": 12022,
+      "id": "A10-middle",
+      "elapsedMs": 90,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Dialog title and body fade/scale in; backdrop Sources is visible through partially transparent dialog as expected for fade."
+    },
+    {
+      "name": "A10-start.png",
+      "sha256": "68eab0b6028aeda0dafd9aac807206f3bbc20cd4a46b9bb03a1fdecabbfb089d",
+      "bytes": 4456,
+      "id": "A10-start",
+      "elapsedMs": 0,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Only Sources backdrop visible at zero opacity of entering dialog; no stray dialog content."
+    },
+    {
+      "name": "A11-end.png",
+      "sha256": "a24101d3c9f84224b277d5ec7335138762c868e0f9a3cb2e605acef8d5467d51",
+      "bytes": 5253,
+      "id": "A11-end",
+      "elapsedMs": 150,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Thumb right, coral track, complete outline; no clipping."
+    },
+    {
+      "name": "A11-middle.png",
+      "sha256": "32ac55aa0cd9613e3cdcf98901ce23eda4ee014d3a2d11dc68a9a27b315b71a1",
+      "bytes": 5252,
+      "id": "A11-middle",
+      "elapsedMs": 75,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Thumb at intermediate horizontal position; track partway to coral; outline continuous."
+    },
+    {
+      "name": "A11-start.png",
+      "sha256": "68a85fce8360d30df83bd2d4c23a60f0b28ef039b0528b6b006bd56848b24ad5",
+      "bytes": 5174,
+      "id": "A11-start",
+      "elapsedMs": 0,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Toggle starts at left with dark track and bright outline; thumb already target dark color, temporarily low contrast against track."
+    },
+    {
+      "name": "A12-end.png",
+      "sha256": "e810a2a3d7a7043348f9f8bdc60da1fe246dc6ab9c63d11411a7a9b9f777e329",
+      "bytes": 4787,
+      "id": "A12-end",
+      "elapsedMs": 180,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Only retained first row remains; no outgoing text, residual stripe or blank row."
+    },
+    {
+      "name": "A12-middle.png",
+      "sha256": "781f72502eb251c72ee17569b31b56a718f3f25f49fe3e5eb570cf879ca43c30",
+      "bytes": 6201,
+      "id": "A12-middle",
+      "elapsedMs": 90,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Outgoing second row fades and collapses; temporary clipped corners are the expected SizeTransition crop, no overlap onto first row."
+    },
+    {
+      "name": "A12-start.png",
+      "sha256": "51ccc829462e918b983ef1057934eabf262b461c744d0afd7b1860a8e8cfbae8",
+      "bytes": 6991,
+      "id": "A12-start",
+      "elapsedMs": 0,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Both full-height rows visible with complete labels; first row stable."
+    },
+    {
+      "name": "A13-end.png",
+      "sha256": "0026e52171f994db9ca10db7b9113ece109ccf1a7813ff891e7483723c116bb5",
+      "bytes": 3336,
+      "id": "A13-end",
+      "elapsedMs": 120,
+      "openedIndividually": true,
+      "status": "reviewed_after_fix",
+      "observation": "Coral fill at 90%; dark selected inactive track, stable line geometry. Teal palette issue closed after individual re-review.",
+      "previousSha256": "07b8f7ac67fe227a7cb7ee99ab3273faafd217b788139b54d931a3a294a3160b"
+    },
+    {
+      "name": "A13-middle.png",
+      "sha256": "94444da4b3533c5d28e0242d4a1fd5bb77ea1b2eba30fd01e76aa157ecf6ea99",
+      "bytes": 3332,
+      "id": "A13-middle",
+      "elapsedMs": 60,
+      "openedIndividually": true,
+      "status": "reviewed_after_fix",
+      "observation": "Coral fill at 50%; dark selected inactive track, stable line geometry. Teal palette issue closed after individual re-review.",
+      "previousSha256": "8dd317aa247f279b21e19021cc3e6c34ebc08d80946b684435433a1953aae1b5"
+    },
+    {
+      "name": "A13-start.png",
+      "sha256": "33fda83ec3a11d492195a789023711b143c9f16a09c3107703dfacddb24461eb",
+      "bytes": 3338,
+      "id": "A13-start",
+      "elapsedMs": 0,
+      "openedIndividually": true,
+      "status": "reviewed_after_fix",
+      "observation": "Coral fill at 10%; dark selected inactive track, stable line geometry. Teal palette issue closed after individual re-review.",
+      "previousSha256": "a4360d05956aae3c08b17fedd32f20f3be3d80f2bb895c9155040d4df68d91db"
+    },
+    {
+      "name": "A14-end.png",
+      "sha256": "be5c7231fc6e3811316f19be7e3ff4a81cfc22e6ced097674e62d02864751716",
+      "bytes": 8251,
+      "id": "A14-end",
+      "elapsedMs": 160,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Notice fully readable, complete text, no clipping or overlap. This fixture covers entrance only."
+    },
+    {
+      "name": "A14-middle.png",
+      "sha256": "6119055177e7d70cf9d55a8f694ac5ab3ff4e87aa8eafc38f8156ed99ed2bb88",
+      "bytes": 8477,
+      "id": "A14-middle",
+      "elapsedMs": 80,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Saved successfully fades into allocated top row; retained text stationary and no overlap."
+    },
+    {
+      "name": "A14-start.png",
+      "sha256": "4fc6f2458ea9d4e9f29625360aafd4b48feba15646416b5ce036dee66d0f0d59",
+      "bytes": 6237,
+      "id": "A14-start",
+      "elapsedMs": 0,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Notice text invisible at transition start; retained text remains readable and stationary."
+    },
+    {
+      "name": "A17-end.png",
+      "sha256": "a24101d3c9f84224b277d5ec7335138762c868e0f9a3cb2e605acef8d5467d51",
+      "bytes": 5253,
+      "id": "A17-end",
+      "elapsedMs": 0,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Same terminal checked image; no delayed movement or fade."
+    },
+    {
+      "name": "A17-middle.png",
+      "sha256": "a24101d3c9f84224b277d5ec7335138762c868e0f9a3cb2e605acef8d5467d51",
+      "bytes": 5253,
+      "id": "A17-middle",
+      "elapsedMs": 0,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Same terminal checked image; intentional zero-duration reduced-motion fixture."
+    },
+    {
+      "name": "A17-start.png",
+      "sha256": "a24101d3c9f84224b277d5ec7335138762c868e0f9a3cb2e605acef8d5467d51",
+      "bytes": 5253,
+      "id": "A17-start",
+      "elapsedMs": 0,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Reduced-motion switch is already at terminal checked position and coral fill."
+    },
+    {
+      "name": "A07-end.png",
+      "sha256": "5bd2c2b79eaffd221fb605cc2790c05c0e607b534c2ba987cf9da085a54bc577",
+      "bytes": 20913,
+      "id": "A07-end",
+      "elapsedMs": 220,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Opaque settings, five sections readable, no old hall residue."
+    },
+    {
+      "name": "A07-middle.png",
+      "sha256": "f83701eca7f3f8f3c4d605fc021d9573357e6bdba9e84ba1d3d19a75e7ca7bbc",
+      "bytes": 44395,
+      "id": "A07-middle",
+      "elapsedMs": 110,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Settings fading/translating over hall; expected transparency overlap, no scale or white flash."
+    },
+    {
+      "name": "A07-return-end.png",
+      "sha256": "369ed39e7b110b0852903af5783394cfb4dfebb3d46ac4f66d611a186bb92d94",
+      "bytes": 29006,
+      "id": "A07-return-end",
+      "elapsedMs": 180,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Same hall selection/geometry restored, no settings residue."
+    },
+    {
+      "name": "A07-return-middle.png",
+      "sha256": "057783f9f8e2a3cde5c88397d3ed1e932267ee8857b690cacf008b25846df731",
+      "bytes": 45961,
+      "id": "A07-return-middle",
+      "elapsedMs": 90,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Settings fading/translating over same hall; no unrelated page/white flash."
+    },
+    {
+      "name": "A07-return-start.png",
+      "sha256": "5bd2c2b79eaffd221fb605cc2790c05c0e607b534c2ba987cf9da085a54bc577",
+      "bytes": 20913,
+      "id": "A07-return-start",
+      "elapsedMs": 0,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Complete settings retained as return starts."
+    },
+    {
+      "name": "A07-start.png",
+      "sha256": "369ed39e7b110b0852903af5783394cfb4dfebb3d46ac4f66d611a186bb92d94",
+      "bytes": 29006,
+      "id": "A07-start",
+      "elapsedMs": 0,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Original hall intact; English/icons readable, no blank frame."
+    },
+    {
+      "name": "A08-end.png",
+      "sha256": "ea28ac0433b5b894988b71a7a22ce49c15654a161a9de3fa9bd7e27b2d7ad60d",
+      "bytes": 20855,
+      "id": "A08-end",
+      "elapsedMs": 220,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Opaque Sources; explanation and both add actions complete; empty list supplied by fixture."
+    },
+    {
+      "name": "A08-middle.png",
+      "sha256": "907e89c32a5093b7e7d51d306a5e56052f7a5ac0447b91e06d93c96567d6f43b",
+      "bytes": 44187,
+      "id": "A08-middle",
+      "elapsedMs": 110,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Sources fades/translates over hall, no scale; English/actions/icons readable."
+    },
+    {
+      "name": "A08-return-end.png",
+      "sha256": "369ed39e7b110b0852903af5783394cfb4dfebb3d46ac4f66d611a186bb92d94",
+      "bytes": 29006,
+      "id": "A08-return-end",
+      "elapsedMs": 180,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Same hall selection/geometry restored, no Sources residue."
+    },
+    {
+      "name": "A08-return-middle.png",
+      "sha256": "76fab754add0b43065ee708ede941922a5fe8b9c0895c8079b27976b2bd425d8",
+      "bytes": 45565,
+      "id": "A08-return-middle",
+      "elapsedMs": 90,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Sources fades/translates over same hall; no unrelated page/white flash."
+    },
+    {
+      "name": "A08-return-start.png",
+      "sha256": "ea28ac0433b5b894988b71a7a22ce49c15654a161a9de3fa9bd7e27b2d7ad60d",
+      "bytes": 20855,
+      "id": "A08-return-start",
+      "elapsedMs": 0,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Complete Sources retained as return starts."
+    },
+    {
+      "name": "A08-start.png",
+      "sha256": "369ed39e7b110b0852903af5783394cfb4dfebb3d46ac4f66d611a186bb92d94",
+      "bytes": 29006,
+      "id": "A08-start",
+      "elapsedMs": 0,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Original hall intact, no blank frame."
+    },
+    {
+      "name": "A09-end.png",
+      "sha256": "5d465bab0f09290d7a5d904dd5ee1c55bffae72ac2006dcae6c78536b1c25374",
+      "bytes": 26621,
+      "id": "A09-end",
+      "elapsedMs": 120,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Only Sound/Audio focus fields remain; no clipping; pointer ripple independent of content fade."
+    },
+    {
+      "name": "A09-middle.png",
+      "sha256": "7948ad6ff25c8f5ab7676aa151a41a880688048a850716758ada16f3b8186aa3",
+      "bytes": 29546,
+      "id": "A09-middle",
+      "elapsedMs": 60,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Display/audio fields crossfade at same origin; navigation/divider fixed."
+    },
+    {
+      "name": "A09-start.png",
+      "sha256": "9cf4347c805f2c4b28a36d6edae21f68ab1d44a723de816c5aaed52fab4cf3f3",
+      "bytes": 20883,
+      "id": "A09-start",
+      "elapsedMs": 0,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "Audio destination selected, outgoing display fields retained; navigation fixed."
+    },
+    {
+      "id": "A04-start",
+      "name": "A04-start.png",
+      "sha256": "9b98f816d3980c768441cd3212e2b73d9979c33700edb327667468f5850fd3ee",
+      "bytes": 5524,
+      "elapsedMs": 0,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "start frame: Decoded synthetic cover fades over title placeholder from 0 to full opacity in 120ms; retained 2:1 aspect with vertical letterboxing inside fixed 320x200 footprint. No geometry jump."
+    },
+    {
+      "id": "A04-middle",
+      "name": "A04-middle.png",
+      "sha256": "230b0e30057104c42cbc02b13e099d5b63746b1ee5818fbd59fa3c1f6d23005c",
+      "bytes": 5484,
+      "elapsedMs": 60,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "middle frame: Decoded synthetic cover fades over title placeholder from 0 to full opacity in 120ms; retained 2:1 aspect with vertical letterboxing inside fixed 320x200 footprint. No geometry jump."
+    },
+    {
+      "id": "A04-end",
+      "name": "A04-end.png",
+      "sha256": "2b973f43c41c5bf514b270dacb537a15a197423819d7cadefc1187646b6ff727",
+      "bytes": 3345,
+      "elapsedMs": 120,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "end frame: Decoded synthetic cover fades over title placeholder from 0 to full opacity in 120ms; retained 2:1 aspect with vertical letterboxing inside fixed 320x200 footprint. No geometry jump."
+    },
+    {
+      "id": "A02-start",
+      "name": "A02-start.png",
+      "sha256": "bec255752e63da2ec4769dc551f2e4686bf004933872f283d4d3375a0636c3ac",
+      "bytes": 32936,
+      "elapsedMs": 0,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "start frame: A-to-B selection border/background transitions with stable card bounds; Chinese subtitle now readable. Pointer ripple is independent.",
+      "previousSha256": "ab9ccef30759905e2d500abd217c6297b8d51900b7cecce51e8289113c8984eb"
+    },
+    {
+      "id": "A03-start",
+      "name": "A03-start.png",
+      "sha256": "bec255752e63da2ec4769dc551f2e4686bf004933872f283d4d3375a0636c3ac",
+      "bytes": 32936,
+      "elapsedMs": 0,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "start frame: Cover placeholder and title now retain A at start, fade through intermediate state, and finish B at 120ms with fixed geometry; Chinese subtitle readable. Previous two findings closed.",
+      "previousSha256": "ab9ccef30759905e2d500abd217c6297b8d51900b7cecce51e8289113c8984eb"
+    },
+    {
+      "id": "A03-middle",
+      "name": "A03-middle.png",
+      "sha256": "32b35db261d0492f9135f3dcb3bc50181de6cd84b07ee2c3c010fe64fd9a06df",
+      "bytes": 38593,
+      "elapsedMs": 60,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "middle frame: Cover placeholder and title now retain A at start, fade through intermediate state, and finish B at 120ms with fixed geometry; Chinese subtitle readable. Previous two findings closed.",
+      "previousSha256": "a588872dbad9bafac984decc41a89ae6b0d02195b310e89ce9967fddcd433a90"
+    },
+    {
+      "id": "A02-middle",
+      "name": "A02-middle.png",
+      "sha256": "8695c2ccce3e53cd2869a6268734f1d1aa0eb88c3dc0a870f6f461e7d274f305",
+      "bytes": 44007,
+      "elapsedMs": 80,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "middle frame: A-to-B selection border/background transitions with stable card bounds; Chinese subtitle now readable. Pointer ripple is independent.",
+      "previousSha256": "8e0299315fdc931f08de6356a97c0a5ffe96afd5e843c259b2953c1cbbdd178e"
+    },
+    {
+      "id": "A03-end",
+      "name": "A03-end.png",
+      "sha256": "3bab3fe98f473ebc4b2f1cbb858f7f7005c9956af109fe678a816c02e5f126e7",
+      "bytes": 57493,
+      "elapsedMs": 120,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "end frame: Cover placeholder and title now retain A at start, fade through intermediate state, and finish B at 120ms with fixed geometry; Chinese subtitle readable. Previous two findings closed.",
+      "previousSha256": "92f77ac83f9c8ccc4d45deaaa7419e8743e7b1f0975172833ad6130d52f7665b"
+    },
+    {
+      "id": "A02-end",
+      "name": "A02-end.png",
+      "sha256": "7df91e9143ccf947a544e9aae63563dc98883595f70cd638ba93afa0e6f82c86",
+      "bytes": 44216,
+      "elapsedMs": 160,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "end frame: A-to-B selection border/background transitions with stable card bounds; Chinese subtitle now readable. Pointer ripple is independent.",
+      "previousSha256": "e4dc52fae2cbf2be8f4126ef97855bfeb59d4eba4d5e2813a7addd5a4b1058ae"
+    },
+    {
+      "id": "A05-start",
+      "name": "A05-start.png",
+      "sha256": "2c5bdda73326b6df5a8ea820b9a0fd4bc064598fd944521cdb359ae1024d94ad",
+      "bytes": 25103,
+      "elapsedMs": 0,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "start frame: Category indicator transitions All-to-Favorites while results fade into fixed grid; start grid is transparent, intermediate partially visible, end opaque. No whole-page slide; this fixture does not certify multiplayer filter separately."
+    },
+    {
+      "id": "A05-middle",
+      "name": "A05-middle.png",
+      "sha256": "9a34afe7fd43685fd5ec9fec6b26dec45fd774c0f9a2bd3d2378f724b38695c2",
+      "bytes": 32543,
+      "elapsedMs": 75,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "middle frame: Category indicator transitions All-to-Favorites while results fade into fixed grid; start grid is transparent, intermediate partially visible, end opaque. No whole-page slide; this fixture does not certify multiplayer filter separately."
+    },
+    {
+      "id": "A05-end",
+      "name": "A05-end.png",
+      "sha256": "4665f48074c4f2a57a43c957f61101834dfce3f259e79397d850549c8ce29278",
+      "bytes": 32745,
+      "elapsedMs": 150,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "end frame: Category indicator transitions All-to-Favorites while results fade into fixed grid; start grid is transparent, intermediate partially visible, end opaque. No whole-page slide; this fixture does not certify multiplayer filter separately."
+    },
+    {
+      "id": "A06-start",
+      "name": "A06-start.png",
+      "sha256": "4665f48074c4f2a57a43c957f61101834dfce3f259e79397d850549c8ce29278",
+      "bytes": 32745,
+      "elapsedMs": 0,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "start frame: Search height/opacity reveal starts hidden, midpoint crops field within expanding viewport, endpoint shows complete field/caret/clear/close. Chinese subtitle readable; library remains bounded.",
+      "previousSha256": "e4dc52fae2cbf2be8f4126ef97855bfeb59d4eba4d5e2813a7addd5a4b1058ae"
+    },
+    {
+      "id": "A06-middle",
+      "name": "A06-middle.png",
+      "sha256": "67540a8971d85c4a2d93fa7f55accff75ac310405ddca90c03d572fcf7314475",
+      "bytes": 33188,
+      "elapsedMs": 80,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "middle frame: Search height/opacity reveal starts hidden, midpoint crops field within expanding viewport, endpoint shows complete field/caret/clear/close. Chinese subtitle readable; library remains bounded.",
+      "previousSha256": "ece27bc9871b07b9764ee08191642e567f27ff50aa181dd65c5019b0a268e4b8"
+    },
+    {
+      "id": "A06-end",
+      "name": "A06-end.png",
+      "sha256": "411a09e54f637cddc0052493f41e6fb2c018d679e599345ce4fde429f14f9844",
+      "bytes": 35519,
+      "elapsedMs": 160,
+      "openedIndividually": true,
+      "status": "reviewed",
+      "observation": "end frame: Search height/opacity reveal starts hidden, midpoint crops field within expanding viewport, endpoint shows complete field/caret/clear/close. Chinese subtitle readable; library remains bounded.",
+      "previousSha256": "1adb921c1b7d7829318618ba1316de48d7f434e9d248cd59a104a9c1252cc42c"
+    }
+  ],
+  "closedFindings": [
+    {
+      "severity": "P2",
+      "file": "ui/flutter/lib/design_system/product_motion.dart",
+      "line": 19,
+      "issue": "Unspecified inactive progress track inherits bright teal from theme; visible in all A13 frames. Explicitly choose approved dark surface/selected track and recapture.",
+      "resolution": "Explicit progressIndicatorTheme uses approved selected track and accent fill. Reopened all three recaptured A13 PNGs individually; teal removed, stable geometry and 10/50/90 percent stages retained."
+    }
+  ],
+  "followupReviews": [
+    {
+      "scope": "24 additional frames A02/A03/A06/A07/A08/A09, including route returns; all opened individually. No golden promotion. Still not all A01-A17.",
+      "raceReview": "Both previous races closed: explicit choose saves intent before async observation; context reacquisition clears absorbed dirty domains before adoptHost. Reviewed navigation-races-green.log 26/26; no independent rerun this followup.",
+      "findings": [
+        {
+          "severity": "P2",
+          "file": "ui/flutter/verification/g2_animation_capture.dart",
+          "line": 62,
+          "issue": "Missing Chinese subtitle glyphs in all nine A02/A03/A06 frames. G2CJK is loaded but show() applies Roboto without fallback; correct capture fallback and recapture. Not evidence of device font failure."
+        },
+        {
+          "severity": "P2",
+          "file": "ui/flutter/lib/features/product/product_hall.dart",
+          "line": 393,
+          "issue": "A03 detail cover/placeholder updates directly while only title crossfades. Start frame mixes B cover with A title. Include cover in 120ms detail crossfade with stable geometry."
+        }
+      ],
+      "notes": [
+        "A07/A08 English and Material glyphs readable; no fallback-font invisibility observed.",
+        "A02 selection, A03 title, A06 reveal, routes, and settings sections show meaningful intermediate states. Some endpoint captures still show independent pointer ripple.",
+        "A09 license transition is not covered; only settings section captured.",
+        "Three samples cannot rule out every between-frame flash; sampled routes show no white or unrelated-page flash.",
+        "Earlier A17 integration findings are historical and parent fixes have since been inspected; not reopened here."
+      ]
+    },
+    {
+      "scope": "15 frames independently reopened after full current capture: changed A02/A03/A06 and new A04/A05. No product edits, builds, device actions, or golden promotion.",
+      "findings": [],
+      "resolution": "Both earlier capture findings closed: CJK subtitle glyphs render and detail cover/placeholder participates in 120ms fade. A04 decode fade and A05 category/result frames show meaningful intermediate states.",
+      "captureManifestSha256": "74a6445313a600aa6f9f1f481c71e417f28dde120e5b271197fed846b4628eb2",
+      "note": "Older report sections remain historical. New current entries replace changed frame hashes and preserve previous SHA256. This is bounded animation evidence, not all A01-A17 certification."
+    }
+  ]
+}

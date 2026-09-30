@@ -87,7 +87,7 @@ public final class SettingsFragment extends PreferenceFragmentCompat {
         Preference library = findPreference("general.library");
         if (library != null) {
             library.setOnPreferenceClickListener(preference -> {
-                Intent sources = new Intent(requireContext(), HomeActivity.class);
+                Intent sources = com.flynes.emu.ProductRoutes.nativeIntent(requireActivity(), HomeActivity.class);
                 sources.setAction(HomeActivity.ACTION_SHOW_SOURCES);
                 startActivity(sources);
                 return true;
@@ -96,7 +96,7 @@ public final class SettingsFragment extends PreferenceFragmentCompat {
         Preference licenses = findPreference("general.licenses");
         if (licenses != null) {
             licenses.setOnPreferenceClickListener(preference -> {
-                startActivity(new Intent(requireContext(), LicensesActivity.class));
+                startActivity(com.flynes.emu.ProductRoutes.nativeIntent(requireActivity(), LicensesActivity.class));
                 return true;
             });
         }

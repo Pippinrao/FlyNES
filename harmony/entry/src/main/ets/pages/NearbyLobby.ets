@@ -127,7 +127,7 @@ struct NearbyLobby {
       this.pendingChooseGame = false;
       if (this.timerId !== -1) clearInterval(this.timerId);
       this.timerId = -1;
-      void router.replaceUrl({ url: 'pages/GameCenter', params: { nearbyChooseGame: true } });
+      void router.pushUrl({ url: 'pages/FlutterFoundation', params: { purpose: 'nearby' } });
       return;
     }
     if (snapshot.state === 3 || snapshot.state === 7) {
@@ -175,7 +175,8 @@ struct NearbyLobby {
   }
 
   private leave(): void {
-    void router.replaceUrl({ url: 'pages/GameCenter' });
+    if (Number(router.getLength()) > 1) router.back();
+    else void router.replaceUrl({ url: 'pages/FlutterFoundation' });
   }
 
   private disconnect(): void {
@@ -187,7 +188,7 @@ struct NearbyLobby {
     if (this.role !== 1 || (this.mvpState !== 3 && this.mvpState !== 5 && this.mvpState !== 6)) return;
     if (this.timerId !== -1) clearInterval(this.timerId);
     this.timerId = -1;
-    void router.pushUrl({ url: 'pages/GameCenter', params: { nearbyChooseGame: true } });
+    void router.pushUrl({ url: 'pages/FlutterFoundation', params: { purpose: 'nearby' } });
   }
 
   onPageShow(): void {

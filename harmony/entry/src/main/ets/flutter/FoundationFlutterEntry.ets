@@ -1,9 +1,22 @@
 import { common } from '@kit.AbilityKit';
 import { router } from '@kit.ArkUI';
-import { FlutterEngine, FlutterEntry, FlutterShellArgs, MethodChannel } from '@ohos/flutter_ohos';
+import { FlutterEngine, FlutterEngineCache, FlutterEntry, FlutterShellArgs, MethodChannel } from '@ohos/flutter_ohos';
 import { FoundationChannelHandler } from './FoundationChannelHandler';
+import { ProductChannelHandler, ProductRouteContext } from './ProductChannelHandler';
+
+const PRODUCT_ENGINE_ID: string = 'flynes-product';
+let productChannel: MethodChannel | undefined = undefined;
+let productHandler: ProductChannelHandler | undefined = undefined;
 
 export class FoundationFlutterEntry extends FlutterEntry {
+  private static attachedHosts: number = 0;
+  private hostRegistered: boolean = false;
+  /** Counts configured native hosts; the cache separately proves engine identity. */
+  static activeHostCount(): number { return FoundationFlutterEntry.attachedHosts; }
+  route: ProductRouteContext = new ProductRouteContext();
+  onPresented: () => void = () => {};
+  beforeNative: () => Promise<void> = async () => {};
+  private hostGeneration: number = 0;
   private channel: MethodChannel | undefined = undefined;
   private handler: FoundationChannelHandler | undefined = undefined;
   private surfaceDetached: boolean = false;
@@ -43,8 +56,24 @@ export class FoundationFlutterEntry extends FlutterEntry {
     return args;
   }
 
+  getCachedEngineId(): string {
+    return FlutterEngineCache.getInstance().contains(PRODUCT_ENGINE_ID) ? PRODUCT_ENGINE_ID : '';
+  }
+  shouldDestroyEngineWithHost(): boolean { return false; }
+
   configureFlutterEngine(engine: FlutterEngine): void {
     super.configureFlutterEngine(engine);
+    if (!this.hostRegistered) {
+      this.hostRegistered = true;
+      FoundationFlutterEntry.attachedHosts++;
+    }
+    FlutterEngineCache.getInstance().put(PRODUCT_ENGINE_ID, engine);
+    if (productChannel === undefined) {
+      productChannel = new MethodChannel(engine.getDartExecutor().getBinaryMessenger(), 'flynes/product.v1');
+      productHandler = new ProductChannelHandler(this.context as common.UIAbilityContext, productChannel);
+      productChannel.setMethodCallHandler(productHandler);
+    }
+    this.hostGeneration = productHandler!.attach(this.route, this.onPresented, this.beforeNative);
     this.channel = new MethodChannel(engine.getDartExecutor().getBinaryMessenger(), 'flynes/foundation');
     this.handler = new FoundationChannelHandler(this.context as common.UIAbilityContext);
     this.channel.setMethodCallHandler(this.handler);
@@ -56,6 +85,7 @@ export class FoundationFlutterEntry extends FlutterEntry {
     this.pageVisible = true;
     this.resumeSurface();
     super.onPageShow();
+    this.getFlutterEngine()?.getFlutterNapi()?.setSemanticsEnabled(true);
     this.handler?.onPageShow();
   }
   onPageHide(): void {
@@ -66,11 +96,17 @@ export class FoundationFlutterEntry extends FlutterEntry {
   }
 
   popSystemNavigator(): boolean {
-    void router.replaceUrl({ url: 'pages/GameCenter' });
+    if (Number(router.getLength()) > 1) router.back();
+    else void (this.context as common.UIAbilityContext).terminateSelf();
     return true;
   }
 
   cleanUpFlutterEngine(engine: FlutterEngine): void {
+    if (this.hostRegistered) {
+      this.hostRegistered = false;
+      FoundationFlutterEntry.attachedHosts--;
+    }
+    productHandler?.detach(this.hostGeneration);
     (this.context as common.UIAbilityContext).eventHub.off('save-background', this.background);
     (this.context as common.UIAbilityContext).eventHub.off('app-foreground', this.foreground);
     this.surfaceDetached = false;

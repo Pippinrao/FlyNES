@@ -3,6 +3,7 @@ import { abilityDelegatorRegistry } from '@kit.TestKit';
 import { fileIo, picker } from '@kit.CoreFileKit';
 import { common } from '@kit.AbilityKit';
 import { preferences } from '@kit.ArkData';
+import zlib from '@ohos.zlib';
 import nativePlay, { HistoryInput } from 'libentry.so';
 import { BuiltinGames } from '../../../main/ets/service/BuiltinGames';
 import { CheckpointStore } from '../../../main/ets/service/CheckpointStore';
@@ -124,13 +125,28 @@ export default function saveHistoryUpgradeTest() {
         await new Promise<void>((resolve) => setTimeout(resolve, 1500));
         const ability = await delegator.getCurrentTopAbility();
         const options = new picker.DocumentSaveOptions();
-        options.newFileNames = ['upgrade212.nes'];
+        const kind = parameters['-s sourceFixtureKind'];
+        const g2 = kind === 'rom' || kind === 'zip';
+        options.newFileNames = [g2 ? `g2-source-20260930.${kind === 'zip' ? 'zip' : 'nes'}` : 'upgrade212.nes'];
         const uris = await new picker.DocumentViewPicker(ability.context).save(options);
         expect(uris.length).assertEqual(1);
         const game = BuiltinGames.loadSync(ability.context).all()[0];
         const rom = isolatedRom(ability.context.resourceManager.getRawFileContentSync(game.assetPath()), 'upgrade212-import');
+        let exported = rom.buffer as ArrayBuffer;
+        if (kind === 'zip') {
+          const directory = `${ability.context.cacheDir}/g2-export-${Date.now()}`;
+          fileIo.mkdirSync(directory);
+          const source = `${directory}/fixture.nes`;
+          const input = fileIo.openSync(source, fileIo.OpenMode.CREATE | fileIo.OpenMode.WRITE_ONLY);
+          try { fileIo.writeSync(input.fd, exported); } finally { fileIo.closeSync(input.fd); }
+          const archive = `${directory}/fixture.zip`;
+          await zlib.compressFile(source, archive, { level: zlib.CompressLevel.COMPRESS_LEVEL_DEFAULT_COMPRESSION });
+          const packed = fileIo.openSync(archive, fileIo.OpenMode.READ_ONLY);
+          try { exported = new ArrayBuffer(Number(fileIo.statSync(packed.fd).size)); fileIo.readSync(packed.fd, exported); }
+          finally { fileIo.closeSync(packed.fd); }
+        }
         const file = fileIo.openSync(uris[0], fileIo.OpenMode.WRITE_ONLY);
-        try { fileIo.writeSync(file.fd, rom.buffer as ArrayBuffer); fileIo.fsyncSync(file.fd); }
+        try { fileIo.writeSync(file.fd, exported); fileIo.fsyncSync(file.fd); }
         finally { fileIo.closeSync(file.fd); }
         console.info('FlyNES upgrade preparation: licensed ROM exported with system DocumentSavePicker');
         return;

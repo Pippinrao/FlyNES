@@ -1,7 +1,7 @@
 # Same-revision native package size baseline
 
 `prepare_native_size_baseline.py` prepares an auditable native-only export for
-the G1 Release package-size comparison. It does not build or measure anything.
+the G1 or G2 Release package-size comparison. It does not build or measure anything.
 This is a derived control build, not the historical 2.1.2 product. Comparing the
 old single-ABI 2.1.2 package against the dual-ABI Flutter package would mix native
 changes and architecture counts into the Flutter increment.
@@ -72,6 +72,32 @@ rejected for review.
 The text fixtures currently cover both platform transformations. Neither native
 control Release build has been run as part of preparing this tool, so successful
 compilation and packaged ABI/content inspection remain required.
+
+## G2 same-revision controls
+
+G2 uses two explicit, platform-specific recipes. `--recipe android-g2` removes
+the Android Flutter module, product bridge and launcher route while preserving
+the current native session/catalog/save owners. `--recipe harmony-g2` removes
+the Harmony Flutter HARs and pages, routes ordinary startup to `GameCenter`,
+sets the native-baseline mode before that page loads, and routes native pause,
+nearby selection and return to their existing native pages. Both recipes reject
+unreviewed route or embedding changes, preserve both native ABIs, and leave the
+other platform's source intact. They are size controls, not G2 user-facing
+packages; do not install them over data-retention test apps.
+
+After committing the exact G2 candidate source and reviewing its revision,
+export each recipe into a distinct empty directory below `.artifacts/`:
+
+```powershell
+$sizeRevision = (git rev-parse HEAD).Trim()
+python tools/flutter/prepare_native_size_baseline.py --expect-head $sizeRevision --recipe android-g2 --output .artifacts/g2-native-android-$($sizeRevision.Substring(0,12))
+python tools/flutter/prepare_native_size_baseline.py --expect-head $sizeRevision --recipe harmony-g2 --output .artifacts/g2-native-harmony-$($sizeRevision.Substring(0,12))
+```
+
+Review both manifests, source inventories and patches, then build each Release
+control with the platform commands below. Build the G2 Flutter counterparts
+from that same exact revision and compare actual unsigned dual-ABI APK/HAP ZIP
+byte sizes. Changing the candidate source requires a new matched export.
 
 ## Deferred matched Release builds
 

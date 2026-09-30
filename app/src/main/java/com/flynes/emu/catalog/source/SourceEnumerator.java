@@ -25,6 +25,10 @@ public final class SourceEnumerator {
     }
 
     public Result enumerate(RomSource source, DocumentTreeGateway gateway) {
+        return enumerate(source,gateway,()->{});
+    }
+
+    public Result enumerate(RomSource source, DocumentTreeGateway gateway,Runnable checkpoint) {
         DomainValidation.requireNonNull(source, "source");
         DomainValidation.requireNonNull(gateway, "document tree gateway");
         if (source.type() != RomSource.Type.SAF_TREE) {
@@ -32,13 +36,17 @@ public final class SourceEnumerator {
         }
         ArrayList<PackageCandidate> candidates = new ArrayList<>();
         try {
+            checkpoint.run();
             String root = DomainValidation.requireNonBlank(
                     gateway.rootDocumentId(), "root document id");
             HashSet<String> visited = new HashSet<>();
             visited.add(root);
             int[] remainingNodes = {maxNodes};
-            visit(gateway, root, 0, visited, candidates, remainingNodes);
+            visit(gateway, root, 0, visited, candidates, remainingNodes,checkpoint);
+            checkpoint.run();
             return new Result(candidates, Completeness.FULL, Collections.emptyList());
+        } catch (java.util.concurrent.CancellationException cancelled) {
+            throw cancelled;
         } catch (SecurityException failure) {
             return fatal(source.id(), candidates, ScanIssue.Code.PERMISSION_REVOKED);
         } catch (IOException failure) {
@@ -54,7 +62,8 @@ public final class SourceEnumerator {
             int depth,
             Set<String> visited,
             List<PackageCandidate> candidates,
-            int[] remainingNodes) throws IOException {
+            int[] remainingNodes,Runnable checkpoint) throws IOException {
+        checkpoint.run();
         DocumentTreeGateway.ChildrenBatch batch =
                 gateway.listChildren(parent, remainingNodes[0]);
         if (!batch.complete()) throw new TraversalFailure();
@@ -65,11 +74,12 @@ public final class SourceEnumerator {
         children.sort(Comparator.comparing(DocumentTreeGateway.DocumentNode::documentId)
                 .thenComparing(DocumentTreeGateway.DocumentNode::displayName));
         for (DocumentTreeGateway.DocumentNode child : children) {
+            checkpoint.run();
             if (!visited.add(child.documentId())) throw new TraversalFailure();
             if (child.directory()) {
                 if (depth >= maxDepth) throw new TraversalFailure();
                 visit(gateway, child.documentId(), depth + 1, visited, candidates,
-                        remainingNodes);
+                        remainingNodes,checkpoint);
             } else {
                 candidates.add(new PackageCandidate(
                         child.documentId(), child.displayName(), child.contentLocator(),

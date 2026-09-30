@@ -6,3 +6,4 @@ oh_modules/
 /entry/build/
 *.hap
 *.app
+/entry/src/main/resources/rawfile/build-revision.json

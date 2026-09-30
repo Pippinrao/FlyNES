@@ -4,7 +4,7 @@ These instructions apply to the whole repository.
 
 ## 当前工作区：Flutter 3.0 迁移基础分支
 
-- **用途**：本 worktree 是用户明确授权的 Flutter 三端统一迁移工作区，分支 `codex/flutter-foundation`，目录 `.worktrees/flutter-foundation`，源基线 `main@78057350c12b`。当前用户已批准实施8.1（REQ-001～007），详见requirements中的设计与执行计划；其他需求不自动扩大为本期实现范围。
+- **用途**：本 worktree 是用户明确授权的 Flutter 三端统一迁移工作区，分支 `codex/flutter-foundation`，目录 `.worktrees/flutter-foundation`，源基线 `main@78057350c12b`。当前用户已批准实施 G2：Android／Harmony 产品大厅、来源、基础设置和许可迁移，详见 requirements/REQ-008-012-030-031-g2-design.md 与 g2-plan.md。iOS 暂缓；两端模拟器功能、截图、动画、升级与 Release 性能是独立门禁，不能冒称 G1 已通过。
 - **版本**：用户已明确授权从 2.x 迁到 **3.0.0**，当前 `VERSION_MAJOR=3`，PATCH随提交增长，实际版本读取VERSION。继续遵守下方版本规则，不再改 major。正常提交会由 hook 递增 PATCH；不要为保持 3.0.0 绕过 hook。基础提交3b4fb0fd，已通过08eb6823合入main@3a2dc426的存档系统。
 - **先读入口**：[重构文档索引](docs/flutter-migration/README.md) → [总路线 / REQ-001～045](docs/flutter-migration/roadmap.md) → [当前进度与协作登记](docs/flutter-migration/STATUS.md)。用户最初指定的 `docs/superpowers/plans/2026-09-28-flutter-architecture-and-delivery-roadmap.md` 保留为跳转入口；只维护集中目录中的正文。
 - **已完成的基础**：`ui/flutter/` 已有深色目录验证页、不可变客户端投影和28项测试；Android/Harmony存档接续、真实目录与原生游戏桥、external texture实验已有验证记录。Android完成2.1.2→3.0.3跨版本覆盖保留；OH小栈问题由固定SDK公开独立UI线程选项解决。原始骨架验证看 [09-28记录](docs/flutter-migration/verification/2026-09-28-foundation.md)，最新实际结果看STATUS及09-29 verification。

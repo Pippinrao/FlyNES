@@ -1,0 +1,164 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+   │ textDirection: ltr
+   │
+   └─SemanticsNode#2
+     │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+     │ sortKey: OrdinalSortKey#7d98a(order: 0.0)
+     │
+     └─SemanticsNode#3
+       │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+       │ flags: scopesRoute
+       │
+       └─SemanticsNode#4
+         │ locale: "en_XA"
+         │ Rect.fromLTRB(0.0, 0.0, 800.0, 360.0)
+         │ textDirection: ltr
+         │
+         ├─SemanticsNode#13
+         │ │ locale: "en_XA"
+         │ │ Rect.fromLTRB(0.0, 0.0, 800.0, 72.0)
+         │ │
+         │ └─SemanticsNode#14
+         │     locale: "en_XA"
+         │     Rect.fromLTRB(32.0, 25.5, 222.7, 62.5)
+         │     flags: isHeader, namesRoute
+         │     label: "[Séttíngs ~~~]"
+         │     textDirection: ltr
+         │
+         ├─SemanticsNode#5
+         │ │ Rect.fromLTRB(16.0, 72.0, 224.0, 352.0)
+         │ │
+         │ └─SemanticsNode#11
+         │   │ locale: "en_XA"
+         │   │ Rect.fromLTRB(0.0, 0.0, 208.0, 280.0)
+         │   │ actions: scrollDown, scrollToOffset
+         │   │ flags: hasImplicitScrolling
+         │   │ scrollChildren: 5
+         │   │ scrollIndex: 3
+         │   │ scrollExtentMin: 0.0
+         │   │ scrollPosition: 344.0
+         │   │ scrollExtentMax: 344.0
+         │   │
+         │   ├─SemanticsNode#6
+         │   │   locale: "en_XA"
+         │   │   Rect.fromLTRB(8.0, -250.0, 200.0, -224.0)
+         │   │   tags: RenderViewport.twoPane
+         │   │   actions: focus, tap
+         │   │   flags: isButton, hasEnabledState, isEnabled, isHidden,
+         │   │     isFocusable, hasSelectedState
+         │   │   HIDDEN
+         │   │   label: "[Díspláy ~~~]"
+         │   │   textDirection: ltr
+         │   │   indexInParent: 0
+         │   │
+         │   ├─SemanticsNode#7
+         │   │   locale: "en_XA"
+         │   │   Rect.fromLTRB(8.0, -224.0, 200.0, -112.0)
+         │   │   tags: RenderViewport.twoPane
+         │   │   actions: focus, tap
+         │   │   flags: isButton, hasEnabledState, isEnabled, isHidden,
+         │   │     isFocusable, hasSelectedState
+         │   │   HIDDEN
+         │   │   label: "[Cóntróls ~~~]"
+         │   │   textDirection: ltr
+         │   │   indexInParent: 1
+         │   │
+         │   ├─SemanticsNode#8
+         │   │   locale: "en_XA"
+         │   │   Rect.fromLTRB(8.0, -112.0, 200.0, 0.0)
+         │   │   tags: RenderViewport.twoPane
+         │   │   actions: focus, tap
+         │   │   flags: isButton, hasEnabledState, isEnabled, isHidden,
+         │   │     isFocusable, hasSelectedState
+         │   │   HIDDEN
+         │   │   label: "[Áúdíó ~~]"
+         │   │   textDirection: ltr
+         │   │   indexInParent: 2
+         │   │
+         │   ├─SemanticsNode#9
+         │   │   locale: "en_XA"
+         │   │   Rect.fromLTRB(8.0, 0.0, 200.0, 160.0)
+         │   │   tags: RenderViewport.twoPane
+         │   │   actions: focus, tap
+         │   │   flags: isSelected, isButton, hasEnabledState, isEnabled,
+         │   │     isFocusable, hasSelectedState
+         │   │   label: "[Gámé & lángúágé ~~~~~]"
+         │   │   textDirection: ltr
+         │   │   indexInParent: 3
+         │   │
+         │   └─SemanticsNode#10
+         │       locale: "en_XA"
+         │       Rect.fromLTRB(8.0, 160.0, 200.0, 272.0)
+         │       tags: RenderViewport.twoPane
+         │       actions: focus, tap
+         │       flags: isButton, hasEnabledState, isEnabled, isFocusable,
+         │         hasSelectedState
+         │       label: "[Ábóút ~~]"
+         │       textDirection: ltr
+         │       indexInParent: 4
+         │
+         └─SemanticsNode#22
+           │ Rect.fromLTRB(225.0, 72.0, 784.0, 352.0)
+           │
+           └─SemanticsNode#28
+             │ locale: "en_XA"
+             │ Rect.fromLTRB(0.0, 0.0, 559.0, 280.0)
+             │ flags: hasImplicitScrolling
+             │ scrollChildren: 3
+             │ scrollIndex: 0
+             │ scrollExtentMin: 0.0
+             │ scrollPosition: 0.0
+             │ scrollExtentMax: 0.0
+             │
+             ├─SemanticsNode#23
+             │   locale: "en_XA"
+             │   Rect.fromLTRB(16.0, 16.0, 543.0, 120.0)
+             │   tags: RenderViewport.twoPane
+             │   actions: focus, tap
+             │   flags: isButton, hasEnabledState, isEnabled, isFocusable,
+             │     hasSelectedState
+             │   label:
+             │     "[Lángúágé ~~~]
+             │     [Fóllów systém ~~~~]"
+             │   textDirection: ltr
+             │   indexInParent: 0
+             │
+             ├─SemanticsNode#24
+             │ │ locale: "en_XA"
+             │ │ Rect.fromLTRB(16.0, 120.0, 543.0, 184.0)
+             │ │ tags: RenderViewport.twoPane
+             │ │ indexInParent: 1
+             │ │
+             │ └─SemanticsNode#25
+             │   │ merge boundary ⛔️
+             │   │ locale: "en_XA"
+             │   │ Rect.fromLTRB(0.0, 0.0, 527.0, 64.0)
+             │   │ actions: focus, tap
+             │   │ flags: isButton, hasEnabledState, isEnabled, isFocusable,
+             │   │   hasSelectedState
+             │   │ label: "[Áútómátíc sávé ~~~~~]"
+             │   │ textDirection: ltr
+             │   │
+             │   └─SemanticsNode#26
+             │       merged up ⬆️
+             │       locale: "en_XA"
+             │       Rect.fromLTRB(435.0, 8.0, 503.0, 56.0)
+             │       actions: tap
+             │       flags: hasEnabledState, isEnabled, hasToggledState, isToggled
+             │       label: "[Áútómátíc sávé ~~~~~]"
+             │       textDirection: ltr
+             │
+             └─SemanticsNode#27
+                 locale: "en_XA"
+                 Rect.fromLTRB(16.0, 184.0, 543.0, 248.0)
+                 tags: RenderViewport.twoPane
+                 actions: focus, tap
+                 flags: isButton, hasEnabledState, isEnabled, isFocusable,
+                   hasSelectedState
+                 label: "[Mánágé sóúrcés ~~~~~]"
+                 textDirection: ltr
+                 indexInParent: 2

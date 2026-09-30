@@ -1,0 +1,812 @@
+[
+  {
+    "id": "A01-press-start",
+    "elapsedMs": 0,
+    "image": "A01-press-start.png",
+    "geometry": "A01-press-start.geometry.json",
+    "semantics": "A01-press-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A01-press-middle",
+    "elapsedMs": 40,
+    "image": "A01-press-middle.png",
+    "geometry": "A01-press-middle.geometry.json",
+    "semantics": "A01-press-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A01-press-end",
+    "elapsedMs": 80,
+    "image": "A01-press-end.png",
+    "geometry": "A01-press-end.geometry.json",
+    "semantics": "A01-press-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A01-release-start",
+    "elapsedMs": 0,
+    "image": "A01-release-start.png",
+    "geometry": "A01-release-start.geometry.json",
+    "semantics": "A01-release-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A01-release-middle",
+    "elapsedMs": 60,
+    "image": "A01-release-middle.png",
+    "geometry": "A01-release-middle.geometry.json",
+    "semantics": "A01-release-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A01-release-end",
+    "elapsedMs": 120,
+    "image": "A01-release-end.png",
+    "geometry": "A01-release-end.geometry.json",
+    "semantics": "A01-release-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A04-start",
+    "elapsedMs": 0,
+    "image": "A04-start.png",
+    "geometry": "A04-start.geometry.json",
+    "semantics": "A04-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A04-middle",
+    "elapsedMs": 60,
+    "image": "A04-middle.png",
+    "geometry": "A04-middle.geometry.json",
+    "semantics": "A04-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A04-end",
+    "elapsedMs": 120,
+    "image": "A04-end.png",
+    "geometry": "A04-end.geometry.json",
+    "semantics": "A04-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A02-start",
+    "elapsedMs": 0,
+    "image": "A02-start.png",
+    "geometry": "A02-start.geometry.json",
+    "semantics": "A02-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A03-start",
+    "elapsedMs": 0,
+    "image": "A03-start.png",
+    "geometry": "A03-start.geometry.json",
+    "semantics": "A03-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A03-middle",
+    "elapsedMs": 60,
+    "image": "A03-middle.png",
+    "geometry": "A03-middle.geometry.json",
+    "semantics": "A03-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A02-middle",
+    "elapsedMs": 80,
+    "image": "A02-middle.png",
+    "geometry": "A02-middle.geometry.json",
+    "semantics": "A02-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A03-end",
+    "elapsedMs": 120,
+    "image": "A03-end.png",
+    "geometry": "A03-end.geometry.json",
+    "semantics": "A03-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A02-end",
+    "elapsedMs": 160,
+    "image": "A02-end.png",
+    "geometry": "A02-end.geometry.json",
+    "semantics": "A02-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A05-start",
+    "elapsedMs": 0,
+    "image": "A05-start.png",
+    "geometry": "A05-start.geometry.json",
+    "semantics": "A05-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A05-middle",
+    "elapsedMs": 75,
+    "image": "A05-middle.png",
+    "geometry": "A05-middle.geometry.json",
+    "semantics": "A05-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A05-end",
+    "elapsedMs": 150,
+    "image": "A05-end.png",
+    "geometry": "A05-end.geometry.json",
+    "semantics": "A05-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A06-start",
+    "elapsedMs": 0,
+    "image": "A06-start.png",
+    "geometry": "A06-start.geometry.json",
+    "semantics": "A06-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A06-middle",
+    "elapsedMs": 80,
+    "image": "A06-middle.png",
+    "geometry": "A06-middle.geometry.json",
+    "semantics": "A06-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A06-end",
+    "elapsedMs": 160,
+    "image": "A06-end.png",
+    "geometry": "A06-end.geometry.json",
+    "semantics": "A06-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A06-close-start",
+    "elapsedMs": 0,
+    "image": "A06-close-start.png",
+    "geometry": "A06-close-start.geometry.json",
+    "semantics": "A06-close-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A06-close-middle",
+    "elapsedMs": 80,
+    "image": "A06-close-middle.png",
+    "geometry": "A06-close-middle.geometry.json",
+    "semantics": "A06-close-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A06-close-end",
+    "elapsedMs": 160,
+    "image": "A06-close-end.png",
+    "geometry": "A06-close-end.geometry.json",
+    "semantics": "A06-close-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A05-two-player-start",
+    "elapsedMs": 0,
+    "image": "A05-two-player-start.png",
+    "geometry": "A05-two-player-start.geometry.json",
+    "semantics": "A05-two-player-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A05-two-player-middle",
+    "elapsedMs": 75,
+    "image": "A05-two-player-middle.png",
+    "geometry": "A05-two-player-middle.geometry.json",
+    "semantics": "A05-two-player-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A05-two-player-end",
+    "elapsedMs": 150,
+    "image": "A05-two-player-end.png",
+    "geometry": "A05-two-player-end.geometry.json",
+    "semantics": "A05-two-player-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A13-unknown-start",
+    "elapsedMs": 150,
+    "image": "A13-unknown-start.png",
+    "geometry": "A13-unknown-start.geometry.json",
+    "semantics": "A13-unknown-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A13-unknown-middle",
+    "elapsedMs": 210,
+    "image": "A13-unknown-middle.png",
+    "geometry": "A13-unknown-middle.geometry.json",
+    "semantics": "A13-unknown-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A13-unknown-end",
+    "elapsedMs": 270,
+    "image": "A13-unknown-end.png",
+    "geometry": "A13-unknown-end.geometry.json",
+    "semantics": "A13-unknown-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A13-fast-start",
+    "elapsedMs": 0,
+    "image": "A13-fast-start.png",
+    "geometry": "A13-fast-start.geometry.json",
+    "semantics": "A13-fast-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A13-fast-middle",
+    "elapsedMs": 75,
+    "image": "A13-fast-middle.png",
+    "geometry": "A13-fast-middle.geometry.json",
+    "semantics": "A13-fast-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A13-fast-end",
+    "elapsedMs": 100,
+    "image": "A13-fast-end.png",
+    "geometry": "A13-fast-end.geometry.json",
+    "semantics": "A13-fast-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A09-license-start",
+    "elapsedMs": 0,
+    "image": "A09-license-start.png",
+    "geometry": "A09-license-start.geometry.json",
+    "semantics": "A09-license-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A09-license-middle",
+    "elapsedMs": 60,
+    "image": "A09-license-middle.png",
+    "geometry": "A09-license-middle.geometry.json",
+    "semantics": "A09-license-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A09-license-end",
+    "elapsedMs": 120,
+    "image": "A09-license-end.png",
+    "geometry": "A09-license-end.geometry.json",
+    "semantics": "A09-license-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A09-start",
+    "elapsedMs": 0,
+    "image": "A09-start.png",
+    "geometry": "A09-start.geometry.json",
+    "semantics": "A09-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A09-middle",
+    "elapsedMs": 60,
+    "image": "A09-middle.png",
+    "geometry": "A09-middle.geometry.json",
+    "semantics": "A09-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A09-end",
+    "elapsedMs": 120,
+    "image": "A09-end.png",
+    "geometry": "A09-end.geometry.json",
+    "semantics": "A09-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A07-start",
+    "elapsedMs": 0,
+    "image": "A07-start.png",
+    "geometry": "A07-start.geometry.json",
+    "semantics": "A07-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A07-middle",
+    "elapsedMs": 110,
+    "image": "A07-middle.png",
+    "geometry": "A07-middle.geometry.json",
+    "semantics": "A07-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A07-end",
+    "elapsedMs": 220,
+    "image": "A07-end.png",
+    "geometry": "A07-end.geometry.json",
+    "semantics": "A07-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A07-return-start",
+    "elapsedMs": 0,
+    "image": "A07-return-start.png",
+    "geometry": "A07-return-start.geometry.json",
+    "semantics": "A07-return-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A07-return-middle",
+    "elapsedMs": 90,
+    "image": "A07-return-middle.png",
+    "geometry": "A07-return-middle.geometry.json",
+    "semantics": "A07-return-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A07-return-end",
+    "elapsedMs": 180,
+    "image": "A07-return-end.png",
+    "geometry": "A07-return-end.geometry.json",
+    "semantics": "A07-return-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A07-return-settled",
+    "elapsedMs": 196,
+    "image": "A07-return-settled.png",
+    "geometry": "A07-return-settled.geometry.json",
+    "semantics": "A07-return-settled.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A08-start",
+    "elapsedMs": 0,
+    "image": "A08-start.png",
+    "geometry": "A08-start.geometry.json",
+    "semantics": "A08-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A08-middle",
+    "elapsedMs": 110,
+    "image": "A08-middle.png",
+    "geometry": "A08-middle.geometry.json",
+    "semantics": "A08-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A08-end",
+    "elapsedMs": 220,
+    "image": "A08-end.png",
+    "geometry": "A08-end.geometry.json",
+    "semantics": "A08-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A08-return-start",
+    "elapsedMs": 0,
+    "image": "A08-return-start.png",
+    "geometry": "A08-return-start.geometry.json",
+    "semantics": "A08-return-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A08-return-middle",
+    "elapsedMs": 90,
+    "image": "A08-return-middle.png",
+    "geometry": "A08-return-middle.geometry.json",
+    "semantics": "A08-return-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A08-return-end",
+    "elapsedMs": 180,
+    "image": "A08-return-end.png",
+    "geometry": "A08-return-end.geometry.json",
+    "semantics": "A08-return-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A08-return-settled",
+    "elapsedMs": 196,
+    "image": "A08-return-settled.png",
+    "geometry": "A08-return-settled.geometry.json",
+    "semantics": "A08-return-settled.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A11-start",
+    "elapsedMs": 0,
+    "image": "A11-start.png",
+    "geometry": "A11-start.geometry.json",
+    "semantics": "A11-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A11-middle",
+    "elapsedMs": 75,
+    "image": "A11-middle.png",
+    "geometry": "A11-middle.geometry.json",
+    "semantics": "A11-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A11-end",
+    "elapsedMs": 150,
+    "image": "A11-end.png",
+    "geometry": "A11-end.geometry.json",
+    "semantics": "A11-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A12-start",
+    "elapsedMs": 0,
+    "image": "A12-start.png",
+    "geometry": "A12-start.geometry.json",
+    "semantics": "A12-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A12-middle",
+    "elapsedMs": 90,
+    "image": "A12-middle.png",
+    "geometry": "A12-middle.geometry.json",
+    "semantics": "A12-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A12-end",
+    "elapsedMs": 180,
+    "image": "A12-end.png",
+    "geometry": "A12-end.geometry.json",
+    "semantics": "A12-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A12-insert-start",
+    "elapsedMs": 0,
+    "image": "A12-insert-start.png",
+    "geometry": "A12-insert-start.geometry.json",
+    "semantics": "A12-insert-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A12-insert-middle",
+    "elapsedMs": 90,
+    "image": "A12-insert-middle.png",
+    "geometry": "A12-insert-middle.geometry.json",
+    "semantics": "A12-insert-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A12-insert-end",
+    "elapsedMs": 180,
+    "image": "A12-insert-end.png",
+    "geometry": "A12-insert-end.geometry.json",
+    "semantics": "A12-insert-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A13-start",
+    "elapsedMs": 0,
+    "image": "A13-start.png",
+    "geometry": "A13-start.geometry.json",
+    "semantics": "A13-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A13-middle",
+    "elapsedMs": 60,
+    "image": "A13-middle.png",
+    "geometry": "A13-middle.geometry.json",
+    "semantics": "A13-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A13-end",
+    "elapsedMs": 120,
+    "image": "A13-end.png",
+    "geometry": "A13-end.geometry.json",
+    "semantics": "A13-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A14-start",
+    "elapsedMs": 0,
+    "image": "A14-start.png",
+    "geometry": "A14-start.geometry.json",
+    "semantics": "A14-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A14-middle",
+    "elapsedMs": 80,
+    "image": "A14-middle.png",
+    "geometry": "A14-middle.geometry.json",
+    "semantics": "A14-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A14-end",
+    "elapsedMs": 160,
+    "image": "A14-end.png",
+    "geometry": "A14-end.geometry.json",
+    "semantics": "A14-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A14-exit-start",
+    "elapsedMs": 0,
+    "image": "A14-exit-start.png",
+    "geometry": "A14-exit-start.geometry.json",
+    "semantics": "A14-exit-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A14-exit-middle",
+    "elapsedMs": 80,
+    "image": "A14-exit-middle.png",
+    "geometry": "A14-exit-middle.geometry.json",
+    "semantics": "A14-exit-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A14-exit-end",
+    "elapsedMs": 160,
+    "image": "A14-exit-end.png",
+    "geometry": "A14-exit-end.geometry.json",
+    "semantics": "A14-exit-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A17-start",
+    "elapsedMs": 0,
+    "image": "A17-start.png",
+    "geometry": "A17-start.geometry.json",
+    "semantics": "A17-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A17-middle",
+    "elapsedMs": 0,
+    "image": "A17-middle.png",
+    "geometry": "A17-middle.geometry.json",
+    "semantics": "A17-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A17-end",
+    "elapsedMs": 0,
+    "image": "A17-end.png",
+    "geometry": "A17-end.geometry.json",
+    "semantics": "A17-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A10-start",
+    "elapsedMs": 0,
+    "image": "A10-start.png",
+    "geometry": "A10-start.geometry.json",
+    "semantics": "A10-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A10-middle",
+    "elapsedMs": 90,
+    "image": "A10-middle.png",
+    "geometry": "A10-middle.geometry.json",
+    "semantics": "A10-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A10-end",
+    "elapsedMs": 180,
+    "image": "A10-end.png",
+    "geometry": "A10-end.geometry.json",
+    "semantics": "A10-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A10-exit-start",
+    "elapsedMs": 0,
+    "image": "A10-exit-start.png",
+    "geometry": "A10-exit-start.geometry.json",
+    "semantics": "A10-exit-start.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A10-exit-middle",
+    "elapsedMs": 60,
+    "image": "A10-exit-middle.png",
+    "geometry": "A10-exit-middle.geometry.json",
+    "semantics": "A10-exit-middle.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A10-exit-end",
+    "elapsedMs": 120,
+    "image": "A10-exit-end.png",
+    "geometry": "A10-exit-end.geometry.json",
+    "semantics": "A10-exit-end.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  },
+  {
+    "id": "A10-exit-settled",
+    "elapsedMs": 136,
+    "image": "A10-exit-settled.png",
+    "geometry": "A10-exit-settled.geometry.json",
+    "semantics": "A10-exit-settled.semantics.txt",
+    "review": "pending",
+    "clock": "Flutter controlled test clock",
+    "scope": "shared component; native transition evidence separate"
+  }
+]

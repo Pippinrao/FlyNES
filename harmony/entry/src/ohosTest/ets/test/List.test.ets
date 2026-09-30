@@ -1,4 +1,12 @@
+import productProcessRetentionTest from './ProductProcessRetention.test';
+import productHistoryReturnTest from './ProductHistoryReturn.test';
+import productSourceObservationTest from './ProductSourceObservation.test';
+import productSourceFixtureTest from './ProductSourceFixture.test';
+import productTransitionRecordingTest from './ProductTransitionRecording.test';
+import productTransitionFramesTest from './ProductTransitionFrames.test';
+import productRenderObservationTest from './ProductRenderObservation.test';
 import saveHistoryPlayTest from './SaveHistoryPlay.test';
+import productG2Test, { productG2FaultTest } from './ProductG2.test';
 import g1NativeSavePerformanceTest from './G1NativeSavePerformance.test';
 import g1StartupObservationTest from './G1StartupObservation.test';
 import g1MemoryRoundTripsTest from './G1MemoryRoundTrips.test';
@@ -30,6 +38,42 @@ import builtinPlaySmokeTest from './BuiltinPlaySmoke.test';
 import builtinGameplayAcceptanceTest from './BuiltinGameplayAcceptance.test';
 
 export default function testsuite() {
+  if (abilityDelegatorRegistry.getArguments().parameters['-s productRetentionPhase'] !== undefined) {
+    productProcessRetentionTest();
+    return;
+  }
+  if (abilityDelegatorRegistry.getArguments().parameters['-s productHistoryRun'] !== undefined) {
+    productHistoryReturnTest();
+    return;
+  }
+  if (abilityDelegatorRegistry.getArguments().parameters['-s productG2FaultsOnly'] === 'true') {
+    productG2FaultTest();
+    return;
+  }
+  if (abilityDelegatorRegistry.getArguments().parameters['-s renderObservation'] !== undefined) {
+    productRenderObservationTest();
+    return;
+  }
+  if (abilityDelegatorRegistry.getArguments().parameters['-s transitionFrames'] !== undefined) {
+    productTransitionFramesTest();
+    return;
+  }
+  if (abilityDelegatorRegistry.getArguments().parameters['-s transitionRecording'] !== undefined) {
+    productTransitionRecordingTest();
+    return;
+  }
+  if (abilityDelegatorRegistry.getArguments().parameters['-s sourceFixtureLoad'] !== undefined) {
+    productSourceFixtureTest();
+    return;
+  }
+  if (abilityDelegatorRegistry.getArguments().parameters['-s sourceObservationLabel'] !== undefined) {
+    productSourceObservationTest();
+    return;
+  }
+  if (abilityDelegatorRegistry.getArguments().parameters['-s productG2Only'] === 'true') {
+    productG2Test();
+    return;
+  }
   if (abilityDelegatorRegistry.getArguments().parameters['-s memoryRoundTripsOnly'] === 'true') {
     g1MemoryRoundTripsTest();
     return;

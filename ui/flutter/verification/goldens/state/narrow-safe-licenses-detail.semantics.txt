@@ -1,0 +1,77 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 600.0, 540.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 600.0, 540.0)
+   │ textDirection: ltr
+   │
+   └─SemanticsNode#2
+     │ Rect.fromLTRB(0.0, 0.0, 600.0, 540.0)
+     │ sortKey: OrdinalSortKey#71b11(order: 0.0)
+     │
+     └─SemanticsNode#3
+       │ Rect.fromLTRB(0.0, 0.0, 600.0, 540.0)
+       │ flags: scopesRoute
+       │
+       ├─SemanticsNode#5
+       │ │ Rect.fromLTRB(0.0, 0.0, 600.0, 80.0)
+       │ │
+       │ ├─SemanticsNode#10
+       │ │ │ Rect.fromLTRB(24.0, 24.0, 80.0, 80.0)
+       │ │ │ traversalParentIdentifier: _OverlayPortalState#84909
+       │ │ │
+       │ │ └─SemanticsNode#11
+       │ │     Rect.fromLTRB(0.0, 0.0, 56.0, 56.0)
+       │ │     actions: focus, tap
+       │ │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │ │     label: "Back"
+       │ │     textDirection: ltr
+       │ │
+       │ └─SemanticsNode#6
+       │     Rect.fromLTRB(96.0, 38.0, 182.8, 66.0)
+       │     flags: isHeader, namesRoute
+       │     label: "Licenses"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#12
+       │   Rect.fromLTRB(40.0, 108.0, 464.0, 132.0)
+       │   label: "Fixture component"
+       │   textDirection: ltr
+       │
+       ├─SemanticsNode#13
+       │ │ Rect.fromLTRB(464.0, 96.0, 512.0, 144.0)
+       │ │ traversalParentIdentifier: _OverlayPortalState#ae6e0
+       │ │
+       │ └─SemanticsNode#14
+       │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "Source website"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#15
+       │ │ Rect.fromLTRB(512.0, 96.0, 560.0, 144.0)
+       │ │ traversalParentIdentifier: _OverlayPortalState#88345
+       │ │
+       │ └─SemanticsNode#16
+       │     Rect.fromLTRB(0.0, 0.0, 48.0, 48.0)
+       │     actions: focus, tap
+       │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │     label: "Copy license"
+       │     textDirection: ltr
+       │
+       └─SemanticsNode#17
+         │ Rect.fromLTRB(40.0, 144.0, 560.0, 508.0)
+         │ flags: hasImplicitScrolling
+         │ scrollExtentMin: 0.0
+         │ scrollPosition: 0.0
+         │ scrollExtentMax: 0.0
+         │
+         └─SemanticsNode#18
+             Rect.fromLTRB(0.0, 16.0, 353.5, 36.0)
+             actions: longPress
+             flags: isTextField, isMultiline, isReadOnly, isFocusable
+             value: "Fixture license text. Permission to use this test
+               fixture."
+             textDirection: ltr
+             inputType: text

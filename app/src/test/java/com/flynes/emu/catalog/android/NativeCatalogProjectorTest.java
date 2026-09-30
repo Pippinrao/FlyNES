@@ -23,6 +23,25 @@ import java.util.List;
 import java.util.Map;
 
 public final class NativeCatalogProjectorTest {
+    @Test public void mappedUriWithoutPersistedGrantStaysRevokedAcrossFavoriteProjection() throws Exception {
+        Map<String,String> backing=new LinkedHashMap<>();
+        var map=new AndroidUuidSafMap(backing::get,backing::put,backing::remove);
+        byte[] uuid=fill(16,3);map.put(uuid,"content://provider/tree/revoked");
+        var row=entry(uuid,FlyCatalogCommands.SOURCE_SCOPE_USER_DIRECTORY,"a".repeat(64),"game.nes",1);
+        for(boolean favorite:new boolean[]{false,true}) {
+            var state=NativeCatalogProjector.project(List.of(row),List.of(),
+                    Map.of(row.canonicalId(),new CanonicalUserState(favorite,1,0,0)),0,map,
+                    new AndroidPackageLocatorMap(),(uri,path)->"content://provider/document/game",
+                    com.flynes.emu.catalog.TestManifest.load(),uri->false);
+            var source=state.sources().values().stream().filter(s->s.source().type()==RomSource.Type.SAF_TREE).findFirst().orElseThrow();
+            assertEquals(RomSource.PermissionState.NEEDS_REAUTHORIZE,source.source().permissionState());
+            assertEquals(RomSource.Availability.PERMISSION_REQUIRED,source.source().availability());
+            var projected=new com.flynes.emu.gamecenter.GameCenterSnapshotProjector().project(2,"b".repeat(64),0,state);
+            assertFalse(projected.rows().get(0).launchable());
+            assertEquals(favorite,projected.rows().get(0).favorite());
+            assertEquals(1,AndroidCatalogRuntime.productGameCount(source));
+        }
+    }
     @Test public void indexTitlesReplaceRenamedPackageMetadataWithoutChangingIdentity() {
         Map<String, String> backing = new LinkedHashMap<>();
         AndroidUuidSafMap map = new AndroidUuidSafMap(backing::get, backing::put, backing::remove);
@@ -39,7 +58,7 @@ public final class NativeCatalogProjectorTest {
                 Map.of("canonical-a", new CanonicalUserState(true, 1, 2, 3)), 2,
                 map, new AndroidPackageLocatorMap(),
                 (uri, path) -> "content://provider/tree/roms/document/game",
-                com.flynes.emu.catalog.TestManifest.load());
+                com.flynes.emu.catalog.TestManifest.load(),uri->true);
         var game = safPackage(state).physicalPackage().variants().get(0).canonicalGame();
         assertEquals("Super Mario Bros. 3", game.englishTitle());
         assertEquals("超级马里奥3", game.zhHansTitle());
@@ -58,7 +77,7 @@ public final class NativeCatalogProjectorTest {
                         "whitespace-name", " .nes", 1)), List.of(), Map.of(), 0,
                 map, new AndroidPackageLocatorMap(),
                 (uri, path) -> "content://provider/tree/roms/document/game",
-                com.flynes.emu.catalog.TestManifest.load());
+                com.flynes.emu.catalog.TestManifest.load(),uri->true);
         assertEquals(" .nes", safPackage(state).physicalPackage().variants().get(0)
                 .canonicalGame().titleCandidates().get(0).value());
     }
@@ -78,7 +97,7 @@ public final class NativeCatalogProjectorTest {
         CatalogPackage pkg = safPackage(NativeCatalogProjector.project(
                 List.of(row), List.of(), Map.of(), 0, map, new AndroidPackageLocatorMap(),
                 (uri, path) -> "content://provider/tree/roms/document/game",
-                com.flynes.emu.catalog.TestManifest.load()));
+                com.flynes.emu.catalog.TestManifest.load(),uri->true));
         var variant = pkg.physicalPackage().variants().get(0);
         assertEquals("魂斗罗", variant.canonicalGame().zhHansTitle());
         assertEquals("Contra (USA)", variant.canonicalGame().englishTitle());
@@ -110,7 +129,7 @@ public final class NativeCatalogProjectorTest {
                                 FlyCatalogCommands.SCAN_FULL, 1)),
                 Map.of("canonical-a", new CanonicalUserState(true, 1, 1, 1)),
                 1, map, locators, NativeCatalogProjector.LocatorResolver.NONE,
-                com.flynes.emu.catalog.TestManifest.load());
+                com.flynes.emu.catalog.TestManifest.load(),uri->true);
 
         assertEquals("builtin", state.builtinSourceId());
         assertEquals(RomSource.Type.BUILTIN, state.sources().get("builtin").source().type());
@@ -149,7 +168,7 @@ public final class NativeCatalogProjectorTest {
                         FlyCatalogCommands.SCAN_FULL, 1)),
                 Map.of("builtin:thwaite", new CanonicalUserState(true, 3, 0, 0)),
                 0, map, new AndroidPackageLocatorMap(),
-                NativeCatalogProjector.LocatorResolver.NONE, com.flynes.emu.catalog.TestManifest.load());
+                NativeCatalogProjector.LocatorResolver.NONE, com.flynes.emu.catalog.TestManifest.load(),uri->true);
 
         assertEquals(3, state.revision());
         assertEquals(0, state.lastPlayedSequence());
@@ -170,7 +189,7 @@ public final class NativeCatalogProjectorTest {
                 List.of(new NativeSourceStatus(tree, FlyCatalogCommands.SOURCE_SCOPE_USER_DIRECTORY,
                         FlyCatalogCommands.SCAN_FULL, 1)),
                 Map.of(), 0, map, new AndroidPackageLocatorMap(),
-                NativeCatalogProjector.LocatorResolver.NONE, com.flynes.emu.catalog.TestManifest.load());
+                NativeCatalogProjector.LocatorResolver.NONE, com.flynes.emu.catalog.TestManifest.load(),uri->true);
 
         CatalogPackage projected = safPackage(state);
         String locator = projected.physicalPackage().sourceUri();
@@ -199,7 +218,7 @@ public final class NativeCatalogProjectorTest {
                 Map.of(), 0, map, new AndroidPackageLocatorMap(),
                 (treeLocator, relativePath) -> "content://com.android.externalstorage.documents"
                         + "/tree/primary%3AROMs/document/primary%3AROMs%2F" + relativePath,
-                com.flynes.emu.catalog.TestManifest.load());
+                com.flynes.emu.catalog.TestManifest.load(),uri->true);
 
         CatalogPackage projected = safPackage(state);
         assertEquals("content://com.android.externalstorage.documents/tree/primary%3AROMs"

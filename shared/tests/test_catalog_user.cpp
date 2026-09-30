@@ -323,11 +323,39 @@ void test_source_status_has_no_locator_and_survives_reload()
     fly_app_destroy(app);
 }
 
+void test_identity_migration_is_exact_and_idempotent()
+{
+    TempRoot root;
+    auto* app = make_app(root.utf8());
+    const std::string legacy = "builtin:legacy-fixture";
+    const std::string target = "game:canonical-fixture";
+    check(fly_catalog_favorite_set(app, legacy.data(), static_cast<std::uint32_t>(legacy.size()), 1) == FLY_RESULT_OK, "seed legacy favorite");
+    check(fly_catalog_mark_played(app, legacy.data(), static_cast<std::uint32_t>(legacy.size())) == FLY_RESULT_OK, "seed legacy play");
+    const auto before = get_user(app, legacy.c_str());
+    const auto copy = [&]() { return fly_catalog_user_state_copy_if_absent(app,
+        legacy.data(), static_cast<std::uint32_t>(legacy.size()), target.data(), static_cast<std::uint32_t>(target.size())); };
+    check(copy() == FLY_RESULT_OK, "copy legacy state");
+    const auto after = get_user(app, target.c_str());
+    check(after.favorite == before.favorite && after.favorite_revision == before.favorite_revision &&
+        after.play_count == before.play_count && after.last_played_sequence == before.last_played_sequence,
+        "migration preserves exact user state without synthetic play");
+    check(get_user(app, legacy.c_str()).favorite == 1, "legacy identity retained");
+    check(fly_catalog_favorite_set(app, target.data(), static_cast<std::uint32_t>(target.size()), 0) == FLY_RESULT_OK, "user updates target");
+    check(copy() == FLY_RESULT_OK && get_user(app, target.c_str()).favorite == 0, "retry never overwrites target user choice");
+    fly_app_destroy(app);
+    app = make_app(root.utf8());
+    const auto reopened = get_user(app, target.c_str());
+    check(reopened.play_count == before.play_count && reopened.last_played_sequence == before.last_played_sequence,
+        "migration persists exact play counters");
+    check(fly_catalog_user_state_copy_if_absent(nullptr, legacy.data(), static_cast<std::uint32_t>(legacy.size()), target.data(), static_cast<std::uint32_t>(target.size())) == FLY_RESULT_INVALID_ARGUMENT, "migration rejects null owner");
+    fly_app_destroy(app);
+}
 } // namespace
 
 int main()
 {
     test_abi_layout();
+    test_identity_migration_is_exact_and_idempotent();
     test_unknown_id_reads_empty_and_rejects_invalid_args();
     test_favorite_and_played_persist();
     test_snapshot_user_rows_are_generation_owned();

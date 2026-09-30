@@ -13,8 +13,13 @@ android {
         applicationId "com.flynes.emu"
         minSdk 24
         targetSdk 36
-        versionCode 3000006
-        versionName "3.0.6"
+        versionCode 3000007
+        versionName "3.0.7"
+        // Same-APK Release measurements may opt in; ordinary Release always redirects to Flutter.
+        buildConfigField 'boolean', 'CONTROLLED_NATIVE_BASELINE', providers.gradleProperty('flynesControlledNativeBaseline').orElse('false').get()
+        buildConfigField 'String', 'BUILD_REVISION', '"' + providers.exec {
+            commandLine 'git', 'rev-parse', '--short=12', 'HEAD'
+        }.standardOutput.asText.get().trim() + '"'
         testInstrumentationRunner "com.flynes.emu.test.SingleDeviceCertificationRunner"
         ndk {
             abiFilters 'arm64-v8a', 'x86_64'
@@ -36,6 +41,7 @@ android {
 
     buildTypes {
         debug {
+            buildConfigField 'boolean', 'CONTROLLED_NATIVE_BASELINE', providers.gradleProperty('flynesControlledNativeBaseline').orElse('true').get()
             pseudoLocalesEnabled true
             if (project.hasProperty('flynesIsolatedDeviceTest')) {
                 applicationIdSuffix '.nearbydev'

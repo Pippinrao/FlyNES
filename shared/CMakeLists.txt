@@ -770,6 +770,19 @@ if(FLYNES_BUILD_TESTS)
     flynes_enable_strict_warnings(flynes_product_game_center_test)
     add_test(NAME flynes_product_game_center COMMAND flynes_product_game_center_test)
 
+    add_executable(flynes_product_catalog_test tests/test_product_catalog.cpp)
+    target_include_directories(flynes_product_catalog_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+    target_link_libraries(flynes_product_catalog_test PRIVATE flynes_app)
+    flynes_enable_strict_warnings(flynes_product_catalog_test)
+    add_test(NAME flynes_product_catalog COMMAND flynes_product_catalog_test)
+
+    add_executable(flynes_product_header_test tests/test_product_header.c)
+    target_link_libraries(flynes_product_header_test PRIVATE flynes_app)
+    flynes_enable_strict_warnings(flynes_product_header_test)
+    add_test(NAME flynes_product_header COMMAND flynes_product_header_test)
+    add_test(NAME flynes_product_boundary
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_product_boundary.py)
+
     add_executable(flynes_product_control_layout_test tests/test_product_control_layout.cpp)
     target_link_libraries(flynes_product_control_layout_test PRIVATE flynes_product)
     flynes_enable_strict_warnings(flynes_product_control_layout_test)

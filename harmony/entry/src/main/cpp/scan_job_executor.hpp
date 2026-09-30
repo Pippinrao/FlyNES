@@ -11,6 +11,7 @@ ScanExecutionResult execute_scan_job(
     fly_app_t& app,
     const ScanJobRequest& request,
     const ScanJobQueue::CancelCheck& cancelled,
-    const ScanJobQueue::ProgressSink& progress);
+    const ScanJobQueue::ProgressSink& progress,
+    const ScanJobQueue::CommitGate& begin_commit = {});
 
 } // namespace flynes::harmony

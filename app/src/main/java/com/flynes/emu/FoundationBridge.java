@@ -119,6 +119,7 @@ final class FoundationBridge implements MethodChannel.MethodCallHandler {
         if (destination == null) { result.error("invalid_argument", "Unknown native page", null); return; }
         if (begin(result, false)) {
             Intent intent = new Intent(host, destination);
+            intent.putExtra(ProductRoutes.NATIVE_BASELINE,true);
             if ("sources".equals(page)) intent.setAction(HomeActivity.ACTION_SHOW_SOURCES)
                     .putExtra(RETURN_TO_FOUNDATION, true);
             open(intent);

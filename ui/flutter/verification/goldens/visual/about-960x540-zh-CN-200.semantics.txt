@@ -1,0 +1,139 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 2880.0, 1620.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0) scaled by 3.0x
+   │ textDirection: ltr
+   │
+   └─SemanticsNode#2
+     │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+     │ sortKey: OrdinalSortKey#de093(order: 0.0)
+     │
+     └─SemanticsNode#3
+       │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+       │ flags: scopesRoute
+       │
+       ├─SemanticsNode#12
+       │ │ Rect.fromLTRB(0.0, 0.0, 960.0, 56.0)
+       │ │
+       │ └─SemanticsNode#13
+       │     Rect.fromLTRB(16.0, 9.5, 75.0, 46.5)
+       │     flags: isHeader, namesRoute
+       │     label: "设置"
+       │     textDirection: ltr
+       │
+       ├─SemanticsNode#4
+       │ │ Rect.fromLTRB(0.0, 56.0, 249.6, 540.0)
+       │ │
+       │ └─SemanticsNode#10
+       │   │ Rect.fromLTRB(0.0, 0.0, 249.6, 484.0)
+       │   │ flags: hasImplicitScrolling
+       │   │ scrollChildren: 5
+       │   │ scrollIndex: 0
+       │   │ scrollExtentMin: 0.0
+       │   │ scrollPosition: 0.0
+       │   │ scrollExtentMax: 0.0
+       │   │
+       │   ├─SemanticsNode#5
+       │   │   Rect.fromLTRB(8.0, 8.0, 241.6, 72.0)
+       │   │   tags: RenderViewport.twoPane
+       │   │   actions: focus, tap
+       │   │   flags: isButton, hasEnabledState, isEnabled, isFocusable,
+       │   │     hasSelectedState
+       │   │   label: "显示"
+       │   │   textDirection: ltr
+       │   │   indexInParent: 0
+       │   │
+       │   ├─SemanticsNode#6
+       │   │   Rect.fromLTRB(8.0, 72.0, 241.6, 136.0)
+       │   │   tags: RenderViewport.twoPane
+       │   │   actions: focus, tap
+       │   │   flags: isButton, hasEnabledState, isEnabled, isFocusable,
+       │   │     hasSelectedState
+       │   │   label: "操作"
+       │   │   textDirection: ltr
+       │   │   indexInParent: 1
+       │   │
+       │   ├─SemanticsNode#7
+       │   │   Rect.fromLTRB(8.0, 136.0, 241.6, 200.0)
+       │   │   tags: RenderViewport.twoPane
+       │   │   actions: focus, tap
+       │   │   flags: isButton, hasEnabledState, isEnabled, isFocusable,
+       │   │     hasSelectedState
+       │   │   label: "音频"
+       │   │   textDirection: ltr
+       │   │   indexInParent: 2
+       │   │
+       │   ├─SemanticsNode#8
+       │   │   Rect.fromLTRB(8.0, 200.0, 241.6, 264.0)
+       │   │   tags: RenderViewport.twoPane
+       │   │   actions: focus, tap
+       │   │   flags: isButton, hasEnabledState, isEnabled, isFocusable,
+       │   │     hasSelectedState
+       │   │   label: "游戏语言"
+       │   │   textDirection: ltr
+       │   │   indexInParent: 3
+       │   │
+       │   └─SemanticsNode#9
+       │       Rect.fromLTRB(8.0, 264.0, 241.6, 328.0)
+       │       tags: RenderViewport.twoPane
+       │       actions: focus, tap
+       │       flags: isSelected, isButton, hasEnabledState, isEnabled,
+       │         isFocusable, hasSelectedState
+       │       label: "关于"
+       │       textDirection: ltr
+       │       indexInParent: 4
+       │
+       └─SemanticsNode#21
+         │ Rect.fromLTRB(250.6, 56.0, 960.0, 540.0)
+         │
+         └─SemanticsNode#26
+           │ Rect.fromLTRB(0.0, 0.0, 709.4, 484.0)
+           │ flags: hasImplicitScrolling
+           │ scrollChildren: 4
+           │ scrollIndex: 0
+           │ scrollExtentMin: 0.0
+           │ scrollPosition: 0.0
+           │ scrollExtentMax: 0.0
+           │
+           ├─SemanticsNode#22
+           │   Rect.fromLTRB(16.0, 16.0, 693.4, 120.0)
+           │   tags: RenderViewport.twoPane
+           │   flags: hasEnabledState, isEnabled, hasSelectedState
+           │   label:
+           │     "FlyNES
+           │     3.0.6"
+           │   textDirection: ltr
+           │   indexInParent: 0
+           │
+           ├─SemanticsNode#23
+           │   Rect.fromLTRB(16.0, 120.0, 693.4, 226.0)
+           │   tags: RenderViewport.twoPane
+           │   actions: longPress
+           │   flags: isTextField, hasEnabledState, isEnabled, isMultiline,
+           │     isReadOnly, isFocusable, hasSelectedState
+           │   label: "构建修订"
+           │   value: "不可用"
+           │   textDirection: ltr
+           │   indexInParent: 1
+           │   inputType: text
+           │
+           ├─SemanticsNode#24
+           │   Rect.fromLTRB(16.0, 226.0, 693.4, 290.0)
+           │   tags: RenderViewport.twoPane
+           │   actions: focus, tap
+           │   flags: isButton, hasEnabledState, isEnabled, isFocusable,
+           │     hasSelectedState
+           │   label: "许可"
+           │   textDirection: ltr
+           │   indexInParent: 2
+           │
+           └─SemanticsNode#25
+               Rect.fromLTRB(16.0, 290.0, 693.4, 394.0)
+               tags: RenderViewport.twoPane
+               flags: hasEnabledState, isEnabled, hasSelectedState
+               label:
+                 "项目来源
+                 未配置"
+               textDirection: ltr
+               indexInParent: 3

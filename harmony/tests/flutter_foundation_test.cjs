@@ -122,6 +122,7 @@ test('foundation entry retains a dedicated Flutter UI thread for the API20 host'
 });
 
 function extraImport(name) {
+  if (name === './ProductChannelHandler') return { ProductRouteContext: class {}, ProductChannelHandler: class {} };
   if (name === '../service/CoverStore') return { CoverStore: class { localPath() { return ''; } } };
   if (name !== './FoundationRouteOwner') return {};
   const ts = require(process.env.FLYNES_TYPESCRIPT || 'D:/soft/DevEco Studio/sdk/default/openharmony/ets/build-tools/ets-loader/node_modules/typescript');
@@ -137,7 +138,7 @@ test('page and ability pause detach the surface, restore semantics, and preserve
   const calls = [];
   const lifecycle = { appIsInactive: () => calls.push('inactive'), appIsPaused: () => calls.push('paused') };
   const imports = {
-    '@kit.ArkUI': { router: { replaceUrl: async value => calls.push(value.url) } },
+    '@kit.ArkUI': { router: { getLength: () => '2', back: () => calls.push('native-back') } },
     '@ohos/flutter_ohos': { FlutterEntry: class {
       getFlutterView() { return { setActive: value => calls.push(value), onSurfaceDestroyed: () => calls.push('surface-detached'), onSurfaceCreated: () => calls.push('surface-attached') }; }
       getFlutterEngine() { return { getLifecycleChannel: () => lifecycle, getFlutterNapi: () => ({ setSemanticsEnabled: value => calls.push('semantics-' + value) }) }; }
@@ -158,11 +159,11 @@ test('page and ability pause detach the surface, restore semantics, and preserve
   entry.foreground();
   assert.equal(calls.at(-1), 'paused', 'covered page stays detached on ability foreground');
   entry.onPageShow();
-  assert.deepEqual(calls.slice(-3), ['surface-attached', 'semantics-true', 'resumed']);
+  assert.deepEqual(calls.slice(-4), ['surface-attached', 'semantics-true', 'resumed', 'semantics-true']);
   entry.background();
   assert.deepEqual(calls.slice(-2), ['surface-detached', 'paused']);
   entry.foreground();
   assert.deepEqual(calls.slice(-2), ['surface-attached', 'semantics-true']);
   assert.equal(entry.popSystemNavigator(), true);
-  assert.equal(calls.at(-1), 'pages/GameCenter');
+  assert.equal(calls.at(-1), 'native-back');
 });

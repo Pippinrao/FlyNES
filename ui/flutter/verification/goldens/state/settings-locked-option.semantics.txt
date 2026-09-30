@@ -1,0 +1,77 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+   │ textDirection: ltr
+   │
+   ├─SemanticsNode#26
+   │ │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+   │ │ sortKey: OrdinalSortKey#71b11(order: 0.0)
+   │ │
+   │ └─SemanticsNode#27
+   │   │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+   │   │ flags: scopesRoute
+   │   │
+   │   └─SemanticsNode#28
+   │     │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+   │     │ role: dialog
+   │     │
+   │     └─SemanticsNode#29
+   │       │ Rect.fromLTRB(284.0, 110.0, 676.0, 430.0)
+   │       │ flags: scopesRoute, namesRoute
+   │       │ label: "Dialog"
+   │       │ textDirection: ltr
+   │       │
+   │       ├─SemanticsNode#30
+   │       │   Rect.fromLTRB(24.0, 24.0, 368.0, 52.0)
+   │       │   label: "Quality preset"
+   │       │   textDirection: ltr
+   │       │
+   │       └─SemanticsNode#31
+   │         │ Rect.fromLTRB(0.0, 52.0, 392.0, 320.0)
+   │         │ flags: hasImplicitScrolling
+   │         │ scrollExtentMin: 0.0
+   │         │ scrollPosition: 0.0
+   │         │ scrollExtentMax: 0.0
+   │         │
+   │         ├─SemanticsNode#32
+   │         │   Rect.fromLTRB(0.0, 12.0, 392.0, 68.0)
+   │         │   actions: focus, tap
+   │         │   flags: hasCheckedState, isButton, hasEnabledState, isEnabled,
+   │         │     isInMutuallyExclusiveGroup, isFocusable, hasSelectedState
+   │         │   label: "Power saver"
+   │         │   textDirection: ltr
+   │         │
+   │         ├─SemanticsNode#33
+   │         │   Rect.fromLTRB(0.0, 68.0, 392.0, 124.0)
+   │         │   actions: focus, tap
+   │         │   flags: hasCheckedState, isButton, hasEnabledState, isEnabled,
+   │         │     isInMutuallyExclusiveGroup, isFocusable, hasSelectedState
+   │         │   label: "Balanced"
+   │         │   textDirection: ltr
+   │         │
+   │         ├─SemanticsNode#34
+   │         │   Rect.fromLTRB(0.0, 124.0, 392.0, 196.0)
+   │         │   flags: hasCheckedState, hasEnabledState, isEnabled,
+   │         │     isInMutuallyExclusiveGroup, hasSelectedState
+   │         │   label:
+   │         │     "Extreme
+   │         │     This option requires verified device support."
+   │         │   textDirection: ltr
+   │         │
+   │         └─SemanticsNode#35
+   │             Rect.fromLTRB(0.0, 196.0, 392.0, 252.0)
+   │             actions: focus, tap
+   │             flags: hasCheckedState, isChecked, isButton, hasEnabledState,
+   │               isEnabled, isInMutuallyExclusiveGroup, isFocusable,
+   │               hasSelectedState
+   │             label: "Custom"
+   │             textDirection: ltr
+   │
+   └─SemanticsNode#25
+       Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+       actions: dismiss, tap
+       label: "Dismiss"
+       textDirection: ltr
+       sortKey: OrdinalSortKey#79cbc(order: 1.0)

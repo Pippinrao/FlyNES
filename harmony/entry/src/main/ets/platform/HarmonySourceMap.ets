@@ -4,6 +4,7 @@ import { util } from '@kit.ArkTS';
 
 const STORE_NAME: string = 'flynes_source_uuids';
 const MAP_KEY: string = 'source_map_v1';
+const REMOVALS_KEY: string = 'source_removals_v1';
 
 class StoredSource {
   uuid: string = '';
@@ -21,9 +22,11 @@ export class HarmonySourceMap {
   private builtinUuidHex: string = '';
   private readonly uuidHexes: string[] = [];
   private readonly urisByUuid: Map<string, string> = new Map();
+  private removals: string[] = [];
 
   async load(context: common.UIAbilityContext): Promise<void> {
     this.store = await preferences.getPreferences(context, STORE_NAME);
+    this.removals = JSON.parse(await this.store.get(REMOVALS_KEY, '[]') as string) as string[];
     const raw = await this.store.get(MAP_KEY, '') as string;
     this.uuidHexes.splice(0, this.uuidHexes.length);
     this.urisByUuid.clear();
@@ -57,6 +60,29 @@ export class HarmonySourceMap {
 
   builtinUuid(): string {
     return this.builtinUuidHex;
+  }
+
+  pendingRemovals(): string[] { return this.removals.slice(); }
+
+  async markRemoval(uuid: string): Promise<void> {
+    const hex = this.requireAssigned(uuid);
+    if (!this.removals.includes(hex)) this.removals.push(hex);
+    await this.flushRemovals();
+  }
+
+  async clearRemoval(uuid: string): Promise<void> {
+    const previous = this.removals.slice();
+    this.removals = this.removals.filter((id) => id !== uuid);
+    try { await this.flushRemovals(); } catch (error) {
+      this.removals = previous;
+      throw error as Error;
+    }
+  }
+
+  private async flushRemovals(): Promise<void> {
+    if (this.store === undefined) throw new Error('source_map_unavailable');
+    await this.store.put(REMOVALS_KEY, JSON.stringify(this.removals));
+    await this.store.flush();
   }
 
   put(uuidHex: string, persistableUri: string): void {

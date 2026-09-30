@@ -1,0 +1,69 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 2880.0, 1620.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0) scaled by 3.0x
+   │ textDirection: ltr
+   │
+   └─SemanticsNode#35
+     │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+     │ sortKey: OrdinalSortKey#1ba97(order: 0.0)
+     │
+     ├─SemanticsNode#42
+     │ │ Rect.fromLTRB(0.0, 0.0, 960.0, 56.0)
+     │ │
+     │ ├─SemanticsNode#43
+     │ │ │ Rect.fromLTRB(0.0, 0.0, 56.0, 56.0)
+     │ │ │ traversalParentIdentifier: _OverlayPortalState#05590
+     │ │ │
+     │ │ └─SemanticsNode#44
+     │ │     Rect.fromLTRB(0.0, 0.0, 56.0, 56.0)
+     │ │     actions: focus, tap
+     │ │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+     │ │     label: "Back"
+     │ │     textDirection: ltr
+     │ │
+     │ └─SemanticsNode#45
+     │     Rect.fromLTRB(72.0, 14.0, 151.5, 42.0)
+     │     flags: isHeader, namesRoute
+     │     label: "Sources"
+     │     textDirection: ltr
+     │
+     ├─SemanticsNode#36
+     │ │ Rect.fromLTRB(16.0, 72.0, 323.4, 524.0)
+     │ │ flags: hasImplicitScrolling
+     │ │ scrollExtentMin: 0.0
+     │ │ scrollPosition: 0.0
+     │ │ scrollExtentMax: 0.0
+     │ │
+     │ ├─SemanticsNode#37
+     │ │   Rect.fromLTRB(0.0, 0.0, 307.4, 32.0)
+     │ │   label: "Your game sources"
+     │ │   textDirection: ltr
+     │ │
+     │ ├─SemanticsNode#38
+     │ │   Rect.fromLTRB(0.0, 48.0, 307.4, 88.0)
+     │ │   label: "Add your own NES games. Removing a source keeps your
+     │ │     original files and saved progress."
+     │ │   textDirection: ltr
+     │ │
+     │ ├─SemanticsNode#39
+     │ │   Rect.fromLTRB(0.0, 112.0, 307.4, 168.0)
+     │ │   actions: focus, tap
+     │ │   flags: isButton, hasEnabledState, isEnabled, isFocusable
+     │ │   label: "Add file"
+     │ │   textDirection: ltr
+     │ │
+     │ └─SemanticsNode#40
+     │     Rect.fromLTRB(0.0, 180.0, 307.4, 228.0)
+     │     actions: focus, tap
+     │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+     │     label: "Add folder"
+     │     textDirection: ltr
+     │
+     └─SemanticsNode#41
+         Rect.fromLTRB(347.4, 72.0, 944.0, 524.0)
+         flags: hasImplicitScrolling
+         scrollExtentMin: 0.0
+         scrollPosition: 0.0
+         scrollExtentMax: 0.0

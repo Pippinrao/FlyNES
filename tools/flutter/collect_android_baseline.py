@@ -233,6 +233,7 @@ def collect_run(device, output, kind, number):
     started = time.monotonic()
     deadline = started + MARKER_TIMEOUT_SECONDS
     am_output = device.call("shell", "am", "start", "-W", "-n", COMPONENT,
+                            "--ez", "controlled_native_baseline", "true",
                             timeout=MARKER_TIMEOUT_SECONDS)
     wall_ms = round((time.monotonic() - started) * 1000, 3)
     # Only persist known am fields; avoid unbounded/unrelated device logs.
@@ -298,6 +299,8 @@ def main(argv=None):
     report = {
         "schemaVersion": 1, "generatedAt": datetime.now(timezone.utc).isoformat(),
         "serial": args.serial, "package": PACKAGE, "activity": COMPONENT,
+        "controlledNativeBaselineRequested": True,
+        "requiredBuildProperty": "flynesControlledNativeBaseline=true",
         "requestedRuns": args.runs, "warmups": args.warmups, "samples": [],
         "status": "blocked", "apk": None,
         "scope": {

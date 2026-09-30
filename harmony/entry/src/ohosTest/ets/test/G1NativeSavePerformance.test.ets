@@ -1,3 +1,5 @@
+import { ProductStartupObservation } from '../../../main/ets/service/ProductStartupObservation';
+import { FlutterEngineCache } from '@ohos/flutter_ohos';
 import { describe, it, expect } from '@ohos/hypium';
 import { abilityDelegatorRegistry } from '@kit.TestKit';
 import { common } from '@kit.AbilityKit';
@@ -45,9 +47,14 @@ class InputSample {
 }
 class PerformanceReport {
   schemaVersion: number = 1;
+  verificationStage: string = 'G2';
   entry: string = 'native';
   buildMode: string = '';
   actualApplicationDebug: boolean = false;
+  engineBefore: boolean = false;
+  engineAfter: boolean = false;
+  preferencesRestored: boolean = false;
+  coreClosedAfterReturn: boolean = false;
   canonicalId: string = '';
   contentKey: string = '';
   epochStartMs: number = 0;
@@ -66,6 +73,9 @@ class PerformanceReport {
   counters: CounterSample[] = [];
   memory: MemorySample[] = [];
   inputs: InputSample[] = [];
+  stage: string = 'setup';
+  preCleanupRoute: string = '';
+  preCleanupScreenshot: string = '';
   failure: string = '';
   complete: boolean = false;
   limitations: string[] = [
@@ -131,12 +141,21 @@ export default function g1NativeSavePerformanceTest() {
   describe('G1NativeSavePerformance', () => {
     it('native_autosave_65_seconds_records_real_progress_and_observations', 0, async () => {
       const delegator = abilityDelegatorRegistry.getAbilityDelegator();
+      const engineBefore = FlutterEngineCache.getInstance().contains('flynes-product');
+      expect(engineBefore).assertFalse();
+      AppStorage.setOrCreate('ProductNativeBaseline', route === 'native');
       await delegator.startAbility({ bundleName: 'com.flynes.emu', abilityName: 'EntryAbility' });
-      await wait(700);
+      for (let attempt = 0; attempt < 150 && ProductStartupObservation.catalogReadyMs < 0; attempt++) await wait(100);
+      expect(ProductStartupObservation.catalogReadyMs >= 0).assertTrue();
       const context = (await delegator.getCurrentTopAbility()).context as common.UIAbilityContext;
       const win = await window.getLastWindow(context);
       const nav = win.getUIContext().getRouter();
-      await nav.replaceUrl({ url: 'pages/GameCenter' });
+      if (route === 'native') {
+        expect(FlutterEngineCache.getInstance().contains('flynes-product')).assertFalse();
+        const page = nav.getState();
+        // API 20 reports the directory in path and the file name separately.
+        expect(page.name === 'GameCenter' || page.path === 'pages/GameCenter').assertTrue();
+      }
       await wait(300);
       const original = nativePlay.settingsGet();
       const options = preferences.getPreferencesSync(context, { name: 'save_history' });
@@ -144,6 +163,7 @@ export default function g1NativeSavePerformanceTest() {
       const oldInterval = options.getSync('intervalMs', 60000);
       const report = new PerformanceReport();
       report.entry = route;
+      report.engineBefore = engineBefore;
       report.actualApplicationDebug = context.applicationInfo.debug;
       const progress = new EmulatedProgress();
       let observer = -1;
@@ -167,23 +187,18 @@ export default function g1NativeSavePerformanceTest() {
         report.beforeHead = nativePlay.historyHead(db, report.contentKey);
         report.beforeRows = nativePlay.historyList(db, report.contentKey);
         const driver = Driver.create();
+        report.stage = 'select-entry';
         if (route === 'native') {
           await nav.replaceUrl({ url: 'pages/RunGame', params: { canonicalId: game.canonicalId } });
         } else {
           // Candidate must traverse the real shared directory and existing bridge.
           // Directly opening RunGame here would omit the retained Flutter engine.
-          if (report.buildMode === 'release') {
-            // Only this opt-in test router enters the existing real page. The
-            // production Release Want gate remains disabled and unchanged.
-            await nav.replaceUrl({ url: 'pages/FlutterFoundation' });
-          } else {
-            await delegator.startAbility({ bundleName: 'com.flynes.emu', abilityName: 'EntryAbility',
-              parameters: { 'flynes.test.page': 'flutter_foundation' } });
-          }
+          // Already entered through the ordinary Release/debug launcher path.
           await driver.waitForComponent(ON.id('flutter_foundation_host'), 15000);
           const title = localizedGameTitle(game.titleEn, game.titleZhHans, game.canonicalId,
             'system', i18n.System.getSystemLanguage());
           await (await driver.waitForComponent(ON.type('Button').text(title, MatchPattern.STARTS_WITH), 15000)).click();
+          report.stage = 'wait-for-launch-action';
           let launched = false;
           const chinese = i18n.System.getSystemLanguage().startsWith('zh');
           for (let attempt = 0; attempt < 100 && !launched; attempt++) {
@@ -199,7 +214,11 @@ export default function g1NativeSavePerformanceTest() {
           }
           expect(launched).assertTrue();
         }
-        expect(await driver.waitForComponent(ON.text('II'), 5000) !== null).assertTrue();
+        report.stage = 'wait-for-native-game';
+        // The real Flutter host handoff includes a native route transition.
+        // Give it the same bounded window as the product navigation suite.
+        expect(await driver.waitForComponent(ON.text('II'), 15000) !== null).assertTrue();
+        report.stage = 'measure-game';
         report.epochStartMs = Date.now();
         report.uptimeStartMs = now();
         const start = report.uptimeStartMs;
@@ -248,33 +267,53 @@ export default function g1NativeSavePerformanceTest() {
         expect(report.inputs.length > 0).assertTrue();
         expect(report.inputs.every((input) => input.firstAppliedMs >= 0 && input.releasedObservedMs >= 0 &&
           input.error.length === 0)).assertTrue();
+        report.engineAfter = FlutterEngineCache.getInstance().contains('flynes-product');
+        expect(report.engineAfter).assertEqual(route === 'flutter');
         report.complete = true;
-      } catch (error) { report.failure = `${error}`; throw new Error(report.failure); }
+      } catch (error) {
+        report.failure = `${report.stage}: ${error}`;
+        try {
+          const state = nav.getState();
+          report.preCleanupRoute = `${state.path}/${state.name}`;
+          report.preCleanupScreenshot = `${context.filesDir}/g1-${route}-save-failure.png`;
+          await Driver.create().screenCap(report.preCleanupScreenshot);
+        } catch (_) {}
+        throw new Error(report.failure);
+      }
       finally {
         if (observer !== -1) clearInterval(observer);
         report.emulatedMs = progress.playedMs;
         if (report.uptimeEndMs === 0) report.uptimeEndMs = now();
         try {
-          // A debug Want replaces WindowStage content for the Flutter route.
-          // Its previous UIContext router is invalid after that replacement.
           const current = (await delegator.getCurrentTopAbility()).context;
           const currentNav = (await window.getLastWindow(current)).getUIContext().getRouter();
-          await currentNav.replaceUrl({ url: 'pages/GameCenter' }); await wait(300);
+          await currentNav.replaceUrl({ url: route === 'flutter' ? 'pages/FlutterFoundation' : 'pages/GameCenter' });
+          await wait(300);
+          try { nativePlay.playRuntimeStatus(); } catch (_) { report.coreClosedAfterReturn = true; }
+          expect(report.coreClosedAfterReturn).assertTrue();
         } catch (error) {
           report.complete = false;
           report.failure += ` cleanup: ${error}`;
-          throw new Error(report.failure);
         }
-        finally {
-          nativePlay.settingsApply(original);
+        report.preferencesRestored = false;
+        try { nativePlay.settingsApply(original); }
+        catch (error) { report.failure += ` settings restoration: ${error}`; }
+        try {
           if (hadInterval) options.putSync('intervalMs', oldInterval); else options.deleteSync('intervalMs');
           await options.flush();
-          const path = `${context.filesDir}/g1-${route}-save-performance.json`;
-          const file = fileIo.openSync(path, fileIo.OpenMode.CREATE | fileIo.OpenMode.WRITE_ONLY | fileIo.OpenMode.TRUNC);
-          try { fileIo.writeSync(file.fd, JSON.stringify(report)); fileIo.fsyncSync(file.fd); }
-          finally { fileIo.closeSync(file); }
-          console.info(`FlyNES native performance report=${path} complete=${report.complete} emulatedMs=${report.emulatedMs}`);
-        }
+        } catch (error) { report.failure += ` interval restoration: ${error}`; }
+        try {
+          report.preferencesRestored = JSON.stringify(nativePlay.settingsGet()) === JSON.stringify(original) &&
+            (hadInterval ? options.getSync('intervalMs', 60000) === oldInterval : !options.hasSync('intervalMs'));
+        } catch (error) { report.failure += ` restoration verification: ${error}`; }
+        if (!report.preferencesRestored) report.failure += ' settings restoration failed';
+        if (report.failure.length > 0) report.complete = false;
+        const path = `${context.filesDir}/g1-${route}-save-performance.json`;
+        const file = fileIo.openSync(path, fileIo.OpenMode.CREATE | fileIo.OpenMode.WRITE_ONLY | fileIo.OpenMode.TRUNC);
+        try { fileIo.writeSync(file.fd, JSON.stringify(report)); fileIo.fsyncSync(file.fd); }
+        finally { fileIo.closeSync(file); }
+        console.info(`FlyNES native performance report=${path} complete=${report.complete} emulatedMs=${report.emulatedMs}`);
+        if (report.failure.length > 0) throw new Error(report.failure);
       }
     });
   });

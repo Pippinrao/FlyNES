@@ -169,11 +169,11 @@ export class HarmonyRomScan {
    * Copies picker-selected document URIs into the managed roms sandbox.
    * Phone devices lack reliable FolderSelection; FILE picks are the supported add path.
    */
-  importDocumentUris(uris: string[], destDir: string): number {
+  async importDocumentUris(uris: string[], destDir: string): Promise<number> {
     try {
-      fileIo.mkdirSync(destDir, true);
+      await fileIo.mkdir(destDir, true);
     } catch (error) {
-      if (!this.directoryExists(destDir)) {
+      if (!(await fileIo.access(destDir)) || !(await fileIo.stat(destDir)).isDirectory()) {
         const detail = error instanceof Error ? error.message : 'mkdir failed';
         throw new Error(detail);
       }
@@ -188,13 +188,14 @@ export class HarmonyRomScan {
       }
       const toPath = `${destDir}/${name}`;
       try {
-        fileIo.copyFileSync(uri, toPath);
+        await fileIo.copyFile(uri, toPath);
         copied += 1;
         console.info(`FlyNES imported document ${name}`);
       } catch (error) {
-        // Some URI schemes reject copyFileSync — fall back to open/read/write.
+        // Some providers require opened descriptors. Native asynchronous copy
+        // keeps the platform event loop responsive and avoids whole-ROM buffers.
         try {
-          this.copyUriViaFd(uri, toPath);
+          await this.copyUriViaFdAsync(uri, toPath);
           copied += 1;
           console.info(`FlyNES imported document via fd ${name}`);
         } catch (inner) {
@@ -207,27 +208,13 @@ export class HarmonyRomScan {
     return copied;
   }
 
-  private copyUriViaFd(uri: string, toPath: string): void {
-    const src = fileIo.openSync(uri, fileIo.OpenMode.READ_ONLY);
+  private async copyUriViaFdAsync(uri: string, toPath: string): Promise<void> {
+    const src = await fileIo.open(uri, fileIo.OpenMode.READ_ONLY);
     try {
-      const stat = fileIo.statSync(src.fd);
-      const size = Number(stat.size);
-      const buffer = new ArrayBuffer(size > 0 ? size : 1);
-      if (size > 0) {
-        fileIo.readSync(src.fd, buffer);
-      }
-      const dest = fileIo.openSync(
-        toPath, fileIo.OpenMode.READ_WRITE | fileIo.OpenMode.CREATE | fileIo.OpenMode.TRUNC);
-      try {
-        if (size > 0) {
-          fileIo.writeSync(dest.fd, buffer);
-        }
-      } finally {
-        fileIo.closeSync(dest.fd);
-      }
-    } finally {
-      fileIo.closeSync(src.fd);
-    }
+      const dest = await fileIo.open(toPath, fileIo.OpenMode.READ_WRITE | fileIo.OpenMode.CREATE | fileIo.OpenMode.TRUNC);
+      try { await fileIo.copyFile(src.fd, dest.fd); }
+      finally { await fileIo.close(dest); }
+    } finally { await fileIo.close(src); }
   }
 
   private displayNameFromUri(uri: string): string {

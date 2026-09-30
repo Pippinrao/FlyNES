@@ -1,0 +1,59 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+   │ textDirection: ltr
+   │
+   ├─SemanticsNode#19
+   │ │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+   │ │ sortKey: OrdinalSortKey#71b11(order: 0.0)
+   │ │
+   │ └─SemanticsNode#20
+   │   │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+   │   │ flags: scopesRoute
+   │   │
+   │   └─SemanticsNode#21
+   │     │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+   │     │ role: alertDialog
+   │     │
+   │     └─SemanticsNode#22
+   │       │ Rect.fromLTRB(105.0, 172.0, 855.0, 368.0)
+   │       │ flags: scopesRoute, namesRoute
+   │       │ label: "Alert"
+   │       │ textDirection: ltr
+   │       │
+   │       ├─SemanticsNode#23
+   │       │   Rect.fromLTRB(24.0, 24.0, 725.9, 56.0)
+   │       │   label: "Remove source"
+   │       │   textDirection: ltr
+   │       │
+   │       ├─SemanticsNode#24
+   │       │ │ Rect.fromLTRB(24.0, 72.0, 725.9, 92.0)
+   │       │ │
+   │       │ └─SemanticsNode#25
+   │       │     Rect.fromLTRB(0.0, 0.0, 701.9, 20.0)
+   │       │     label: "Remove this source and its library entries? Original
+   │       │       ROMs, saved progress and game preferences will be kept."
+   │       │     textDirection: ltr
+   │       │
+   │       ├─SemanticsNode#26
+   │       │   Rect.fromLTRB(551.9, 120.0, 619.1, 168.0)
+   │       │   actions: focus, tap
+   │       │   flags: isButton, hasEnabledState, isEnabled, isFocusable
+   │       │   label: "Cancel"
+   │       │   textDirection: ltr
+   │       │
+   │       └─SemanticsNode#27
+   │           Rect.fromLTRB(627.1, 116.0, 725.9, 172.0)
+   │           actions: focus, tap
+   │           flags: isButton, hasEnabledState, isEnabled, isFocusable
+   │           label: "Confirm"
+   │           textDirection: ltr
+   │
+   └─SemanticsNode#18
+       Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+       actions: dismiss, tap
+       label: "Dismiss"
+       textDirection: ltr
+       sortKey: OrdinalSortKey#79cbc(order: 1.0)

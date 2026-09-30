@@ -33,6 +33,7 @@ public final class LicensesActivity extends AppCompatActivity {
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
+        if(ProductRoutes.redirect(this,"licenses"))return;
         setContentView(R.layout.activity_licenses);
         ((MaterialToolbar) findViewById(R.id.licenses_toolbar)).setNavigationOnClickListener(view -> finish());
         View root = findViewById(R.id.licenses_root);

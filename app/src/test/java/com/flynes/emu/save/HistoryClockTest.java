@@ -3,6 +3,17 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 public class HistoryClockTest {
+    @Test public void capturedSaveMustNotConsumeProgressAdvancedDuringStorage(){
+        HistoryClock clock=new HistoryClock();
+        clock.advance(60000321);
+        long captured=clock.captureMicros();
+        clock.advance(25000);
+        clock.savedAt(captured);
+        assertTrue("Frames advanced during store must remain unsaved",clock.changed());
+        clock.advance(59975000);
+        assertTrue("AUTO deadline is relative to captured progress",clock.due(60000));
+        assertEquals("Capture preserves sub-millisecond time",60000321,captured);
+    }
     @Test
     public void onlyCoreProgressTriggersTimerAndPauseSaveDeduplicates() {
         HistoryClock clock = new HistoryClock();

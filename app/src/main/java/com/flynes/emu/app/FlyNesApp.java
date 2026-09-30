@@ -65,9 +65,8 @@ public final class FlyNesApp implements FlyCatalogCommands, NativeSettingsStore.
     }
 
     @Override public int scanCommit(int completeness) {
-        int result = nativeScanCommit(scan, completeness);
-        scan = 0L;
-        return result;
+        try { return nativeScanCommit(scan, completeness); }
+        finally { abortScan(); }
     }
 
     @Override public void scanAbort() {
@@ -231,6 +230,35 @@ public final class FlyNesApp implements FlyCatalogCommands, NativeSettingsStore.
             nativeCatalogRelease(snapshotOut[0]);
         }
     }
+
+    /** Immutable native snapshot lease; callers serialize capture/release with the catalog owner. */
+    public ProductSnapshot productSnapshot() {
+        long[] out = new long[1];
+        if (nativeCatalogCapture(app, out) != RESULT_OK || out[0] == 0) throw new IllegalStateException("snapshot unavailable");
+        return new ProductSnapshot(out[0]);
+    }
+
+    public final class ProductSnapshot implements AutoCloseable {
+        private long handle;
+        ProductSnapshot(long handle) { this.handle = handle; }
+        public ProductWindow window(int category, boolean multiplayerOnly, String query, String selected,
+                long offset, int limit, String[][] metadata, int[] eligibility, int profile) {
+            if (handle == 0) throw new IllegalStateException("snapshot expired");
+            byte[][] data = new byte[metadata.length * 3][];
+            for (int n=0;n<metadata.length;n++) for (int j=0;j<3;j++) data[n*3+j]=utf8(metadata[n][j]);
+            long[] raw = nativeProductWindow(handle, category, multiplayerOnly, utf8(query), utf8(selected),
+                    offset, limit, data, eligibility, profile);
+            if (raw == null) throw new IllegalArgumentException("projection unavailable");
+            ArrayList<String> ids = new ArrayList<>();
+            for (int n=4;n<raw.length;n++) ids.add(readEntry(handle,raw[n]).canonicalId());
+            String selectedId = raw[3] < 0 ? "" : readEntry(handle,raw[3]).canonicalId();
+            return new ProductWindow(raw[0],raw[1],raw[2],selectedId,ids);
+        }
+        @Override public void close() { if(handle!=0) {nativeCatalogRelease(handle);handle=0;} }
+    }
+    public record ProductWindow(long generation,long total,long offset,String selectedId,List<String> ids) { }
+    private static native long[] nativeProductWindow(long snapshot,int category,boolean multiplayerOnly,
+            byte[] query,byte[] selected,long offset,int limit,byte[][] metadata,int[] eligibility,int profile);
 
     public List<NativeSourceStatus> sourceStatuses() {
         long[] countOut = new long[1];

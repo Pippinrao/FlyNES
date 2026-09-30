@@ -194,7 +194,7 @@ function Invoke-CrossRound([int]$round, [int]$durationMinutes) {
         '-s', 'crossAppEndEpochMs', "$endEpoch")
     if ($ProductPlay) {
         $harmonyArgs = @('-t', $HarmonyTarget, 'shell', 'aa', 'test', '-b', 'com.flynes.emu', '-m', 'entry_test',
-            '-s', 'unittest', 'OpenHarmonyTestRunner', '-s', 'timeout', "$(($PlayHoldSeconds + 60) * 1000)",
+            '-s', 'unittest', 'OpenHarmonyTestRunner', '-s', 'timeout', "$(($PlayHoldSeconds + 110) * 1000)",
             '-s', 'nearbyProductPlayOnly', 'true', '-s', 'crossAppInvite', $rewrittenInvite,
             '-s', 'playHoldMs', "$($PlayHoldSeconds * 1000)")
         if ($LocalGameQuery) { $harmonyArgs += @('-s', 'localGameQuery', $LocalGameQuery) }

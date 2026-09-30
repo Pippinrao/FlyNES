@@ -11,7 +11,9 @@ import hidebug from '@ohos.hidebug';
 import nativeProduct from 'libentry.so';
 import { BuiltinGames } from '../../../main/ets/service/BuiltinGames';
 import { CatalogProductService, localizedGameTitle } from '../../../main/ets/service/CatalogProductService';
-import { performanceRoute } from './G1PerformanceObservations';
+import { performanceRoute, performanceBuildMode } from './G1PerformanceObservations';
+import { FlutterEngineCache } from '@ohos/flutter_ohos';
+import { ProductStartupObservation } from '../../../main/ets/service/ProductStartupObservation';
 
 let sampled = false;
 function now(): number { return systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, false); }
@@ -30,6 +32,9 @@ class StartupReport {
   startAbilityReturnedUptimeMs: number = 0;
   primaryInteractiveMs: number = -1;
   firstVisibleCardMs: number = -1;
+  nativeOwnerReadyMs: number = -1;
+  catalogReadyMs: number = -1;
+  engineCreated: boolean = false;
   nativeSnapshotCount: number = -1;
   projectedDirectoryCount: number = -1;
   pssKb: number = -1;
@@ -73,7 +78,7 @@ export default function g1StartupObservationTest() {
       const report = new StartupReport();
       report.route = route;
       report.debug = context.applicationInfo.debug;
-      report.buildMode = args['-s g1BuildMode'] ?? 'unspecified';
+      report.buildMode = performanceBuildMode(args['-s g1BuildMode'], report.debug);
       report.sample = args['-s g1Sample'] ?? 'unspecified';
       report.testContextFilesDir = testContext.filesDir;
       report.moduleContextFilesDir = context.filesDir;
@@ -83,6 +88,8 @@ export default function g1StartupObservationTest() {
       const owner = new PreferenceOwner();
       let hadFilter = false;
       let oldFilter: preferences.ValueType = false;
+      let hadCategory = false;
+      let oldCategory: preferences.ValueType = 'all';
       const monitor: abilityDelegatorRegistry.AbilityMonitor = {
         abilityName: 'EntryAbility',
         onAbilityCreate: (ability: UIAbility): void => {
@@ -91,6 +98,8 @@ export default function g1StartupObservationTest() {
           owner.store = store;
           hadFilter = store.hasSync('multiplayerOnly');
           oldFilter = store.getSync('multiplayerOnly', false);
+          hadCategory = store.hasSync('category'); oldCategory = store.getSync('category', 'all');
+          store.putSync('category', 'all');
           store.putSync('multiplayerOnly', false); store.flushSync();
           report.actualAbilityFilesDir = actual.filesDir;
           report.actualAbilityPreferencesDir = actual.preferencesDir;
@@ -104,9 +113,12 @@ export default function g1StartupObservationTest() {
         'system', i18n.System.getSystemLanguage());
       const driver = Driver.create();
       try {
+        expect(FlutterEngineCache.getInstance().contains('flynes-product')).assertFalse();
+        AppStorage.setOrCreate('ProductNativeBaseline', route === 'native');
         await delegator.addAbilityMonitor(monitor);
         const want: Want = { bundleName: 'com.flynes.emu', abilityName: 'EntryAbility' };
-        if (route === 'flutter') want.parameters = { 'flynes.test.page': 'flutter_foundation' };
+        // Candidate uses the ordinary application entry; native is selected
+        // in-process before the first WindowStage loadContent.
         report.abilityRequestUptimeMs = now();
         await delegator.startAbility(want);
         report.startAbilityReturnedUptimeMs = now();
@@ -161,6 +173,12 @@ export default function g1StartupObservationTest() {
         const snapshot = nativeProduct.catalogSnapshot();
         report.nativeSnapshotCount = snapshot.length;
         report.projectedDirectoryCount = new CatalogProductService().loadRowsFromSnapshot(games, snapshot).length;
+        report.nativeOwnerReadyMs = ProductStartupObservation.nativeOwnerReadyMs - report.abilityRequestUptimeMs;
+        report.catalogReadyMs = ProductStartupObservation.catalogReadyMs - report.abilityRequestUptimeMs;
+        expect(report.nativeOwnerReadyMs >= 0).assertTrue();
+        expect(report.catalogReadyMs >= report.nativeOwnerReadyMs).assertTrue();
+        report.engineCreated = FlutterEngineCache.getInstance().contains('flynes-product');
+        expect(report.engineCreated).assertEqual(route === 'flutter');
         report.pssKb = Number(hidebug.getPss());
         report.complete = true;
       } catch (error) {
@@ -172,9 +190,11 @@ export default function g1StartupObservationTest() {
         const store = owner.store;
         if (store !== undefined) {
           if (hadFilter) store.putSync('multiplayerOnly', oldFilter); else store.deleteSync('multiplayerOnly');
+          if (hadCategory) store.putSync('category', oldCategory); else store.deleteSync('category');
           await store.flush();
           report.preferencesRestored = store.hasSync('multiplayerOnly') === hadFilter &&
-            (!hadFilter || store.getSync('multiplayerOnly', false) === oldFilter);
+            (!hadFilter || store.getSync('multiplayerOnly', false) === oldFilter) &&
+            store.hasSync('category') === hadCategory && (!hadCategory || store.getSync('category', 'all') === oldCategory);
         }
         if (!report.preferencesRestored) {
           report.complete = false; report.failure += ' multiplayerOnly restore failed';

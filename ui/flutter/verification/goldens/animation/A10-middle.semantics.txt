@@ -1,0 +1,47 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 2880.0, 1620.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0) scaled by 3.0x
+   │ textDirection: ltr
+   │
+   ├─SemanticsNode#6
+   │ │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+   │ │ sortKey: OrdinalSortKey#1ba97(order: 0.0)
+   │ │
+   │ └─SemanticsNode#7
+   │   │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0) with transform
+   │   │ [[0.9950046539034695,0.0,0.0,2.397766126334659];
+   │   │ [0.0,0.9950046539034695,0.0,1.3487434460632244];
+   │   │ [0.0,0.0,1.0,0.0]; [0.0,0.0,0.0,1.0]]
+   │   │ flags: scopesRoute
+   │   │
+   │   └─SemanticsNode#8
+   │     │ Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+   │     │ role: alertDialog
+   │     │
+   │     └─SemanticsNode#9
+   │       │ Rect.fromLTRB(302.3, 212.0, 657.7, 328.0)
+   │       │ flags: scopesRoute, namesRoute
+   │       │ label: "Alert"
+   │       │ textDirection: ltr
+   │       │
+   │       ├─SemanticsNode#10
+   │       │   Rect.fromLTRB(24.0, 24.0, 331.3, 56.0)
+   │       │   label: "Remove source"
+   │       │   textDirection: ltr
+   │       │
+   │       └─SemanticsNode#11
+   │         │ Rect.fromLTRB(24.0, 72.0, 331.3, 92.0)
+   │         │
+   │         └─SemanticsNode#12
+   │             Rect.fromLTRB(0.0, 0.0, 307.3, 20.0)
+   │             label: "Original games and saved progress will be kept."
+   │             textDirection: ltr
+   │
+   └─SemanticsNode#5
+       Rect.fromLTRB(0.0, 0.0, 960.0, 540.0)
+       actions: dismiss, tap
+       label: "Dismiss"
+       textDirection: ltr
+       sortKey: OrdinalSortKey#ecf10(order: 1.0)

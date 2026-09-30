@@ -1,0 +1,251 @@
+{
+  "cover-decoded": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "203214fc27cf66e7cf8ecbb77b41bb89163b0a81712a3ceb04bed5e653b22647",
+    "geometrySha256": "a34f798a487fed23f60fc09d38c43b2109b182eee164698e041048b2073aead9",
+    "semanticsSha256": "3576490828ebdcc8fcbecb720ee2f2e829ae56702e286ae6aa393386db88a2a8"
+  },
+  "cover-failed": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "619482bc7e6c4108d8be1e24681da97fd21dd992637247331d17b36a9fd8e942",
+    "geometrySha256": "7104dc49f8b27220d0e61633b5cdc527bea4b0b086a4a4a1d15c7331c8941006",
+    "semanticsSha256": "a3f7635b1be80e2c60d25cbff75d91d2e3c6dc58584a7aefb9b8a69f07ce23ef"
+  },
+  "search-populated": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "9b32e46d826d7289600785a0fe1ac6b8291128dd8e25a779e31f575b5868218f",
+    "geometrySha256": "4a371dee364f42e6f5468c8e3f06bdb0435e9a0675cc6cb7b94bb72e518f82ef",
+    "semanticsSha256": "1984186ebd2fef1bdab40a710a5d89db62c8278e87d5317a3d3a16d6b5163b7c"
+  },
+  "search-cleared": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "ce60ef6acebc03b968533adba66d7769b0254384ba1fda610b31b35de88b1414",
+    "geometrySha256": "4a371dee364f42e6f5468c8e3f06bdb0435e9a0675cc6cb7b94bb72e518f82ef",
+    "semanticsSha256": "8f0226ea0ced037018e5c836c22c30bb954ab447c731a246a51b9320b7da03ba"
+  },
+  "search-closed": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "619482bc7e6c4108d8be1e24681da97fd21dd992637247331d17b36a9fd8e942",
+    "geometrySha256": "be7a28fe318756f493396d0aace33c335b3d90f6e7c6fbb49d0992110ff2d159",
+    "semanticsSha256": "f22ac08b2c5ae126e1cdd1949d41cdd800b36e4a8ac502d85d10b5f9dc1e08bd"
+  },
+  "source-builtin-cancelled": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "ec25b6d7b16a4d664b7382530a82e9c5eda103f89289d6452d864a105ca42c0a",
+    "geometrySha256": "4909e419dcdd46b36ec9647e8b2ebafaba880a30d0dbdf55bf67b319b9133dcc",
+    "semanticsSha256": "820c29c442339b5352360d2775559178660773e9b27cad90a904827ab8015659"
+  },
+  "source-reauthorize-failed": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "c5481e6f3c9aad247be1eaf3a808f0a832b792ed71c9a177189d385c9ee6f162",
+    "geometrySha256": "811e1e7d808abcc31eb7430c662d43b00c315eb9b28cb685af8ed807b03fe15b",
+    "semanticsSha256": "b1d76422a463cfbb2c93df840eaafa4e445177924f468ca67a76484dc61d9a00"
+  },
+  "source-reauthorize-restored": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "6238a47c2ace4be1cd17144b171a018382ce14a6e9cd3f55d71092c27b3f5106",
+    "geometrySha256": "41e7ce09b30a1a1965ac4931b71b6b2ede359ac1cf50ba9df0b931fcc418e251",
+    "semanticsSha256": "1a91b90dc0c7a5e3fa9eab9d510124311e1fc9ecefef300f8014fe5c75c5632c"
+  },
+  "source-remove-failed": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "8d1b64984b26b885f4600270f06555dba027b3aa219a635f25b0b0ff09430396",
+    "geometrySha256": "e689a887e30a209ff3d4c0383ca0e6799b7ab44941ffea9a20e89d49c9eaa22b",
+    "semanticsSha256": "b31979532a12686aad67775cc78541b4da951799200fa0fe513d149006aa1c35"
+  },
+  "source-remove-completed": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "6edecd2c93e2b05041547179622209639cb7c0ea89dbcb8ccd4e923cc4a319ad",
+    "geometrySha256": "9f79bdcd02b46525e4ed811596427be8c02ad0104dcccf2a00f82cf77c361d0c",
+    "semanticsSha256": "9eca2d77276e02667a76466d1f851911df77372a59eec1ba1c072e14eb705a20"
+  },
+  "source-add-completed": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "cee7637f28aac56bc4a2257874a08127b4ed0d88249ad81808e67e7f46ba901e",
+    "geometrySha256": "2a9b93a17da617047bcbb836d38743f53f90d934994e037ee1b8076f0a865a53",
+    "semanticsSha256": "17e803c0c29d945265f9985ab1499a29823973b4e21d94cef79ff29d2e08582b"
+  },
+  "source-read-failed": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "67c771257d679648086faaf5e59256c76336c2fdf848fcc61cd25c07ae732982",
+    "geometrySha256": "f68dd1da1805c55e78b53f3374e98140ecbd5f6186ec3c7cb956047b414209a3",
+    "semanticsSha256": "8e6459c22f2fe03196fe21e17bec84e8002a30aec0eb007a2f1c08411ef4a7c3"
+  },
+  "source-read-restored": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "f14ae06a7d01fbe4a4415d86545327da7cdb69975d073b68497ff2b1a5b1b9cf",
+    "geometrySha256": "8c3b47ff866ccf9d83a75ced61db8d78905f701c9f5cfef5bc23b67e4674843e",
+    "semanticsSha256": "d4c66055743e4a011ce1669b71fea486c3dfbb43bc1c31e796e4c19d940e20ba"
+  },
+  "chooser-customRefreshPolicy": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "b430fa8debfe11770e7bd35036661cb92af061330e51a65e696095e2558788b6",
+    "geometrySha256": "9a2635fea52ec166865e35f70304dd0d26dd11c22b21a6acd85f98a9c8e6e9ae",
+    "semanticsSha256": "004761c8226cf4cd4e7509de7cff3fb8e47b287ec3d8860323aadb6d6adb4070"
+  },
+  "chooser-customTemporalMode": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "d5771aca3f9fe71ab2ab106c9b4d40ff09d57cf7813083625c02cc2e4080c5a7",
+    "geometrySha256": "926e9be038d9508a44ff6c6027639e64bbe66008b762b66ced24a74bbe1b4542",
+    "semanticsSha256": "437c4c3208c188398d71b3e3f18b94e68612ccc56f8aa85a48ce5ddd4bee73eb"
+  },
+  "chooser-customSpatialMode": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "33f59fa83098418ea748e79b381d30c272e7afa26d21a9c522dac735b9ef3cae",
+    "geometrySha256": "fc8a9f370912f2988eac27553a74765611be39ebd4d4cb14093af3ef54091284",
+    "semanticsSha256": "bbe2b3ece3a877282482fccfc8ff5c450b8ccf1840f82ee8a384fcc6743d6768"
+  },
+  "chooser-customPostEffect": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "dccd4872fe9cfa28dcbc44dbe14c1a29f31eb867fe362556669cd537cf729aa6",
+    "geometrySha256": "1ce28022389c52c58e4c60817adac0164b25ffc4386dbd68e0eca30b45d6fb25",
+    "semanticsSha256": "32eff5924dfda3c322130c67de94eb53500cb38ea7c530b662122a532dadb8cc"
+  },
+  "chooser-aspectMode": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "6060772cfd3b5e4af23da51147c36cc1c96460506cbb0c7780ef76510e1260c0",
+    "geometrySha256": "f714eb0da2df43efeb4bbbb9a0b15ece044c3c75bc51bb9196a1c16974444f06",
+    "semanticsSha256": "f1523be30ed1afe2e3afb25ae60d753dbfbc59734d3da4f2d8a173f0157b9352"
+  },
+  "chooser-audio-focus": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "206860ceb87552fc2d2cc9c9a0cbdfcd93f0c3b1300dd34f312233d10cff0a6b",
+    "geometrySha256": "6a5be696c13e979cd82dde6673f811de6fb8c4b645623cd8e074c143676dcbfa",
+    "semanticsSha256": "447432adc58eea1e18adfab9a59f64f5a18ca524532ad3bc3b4bfddf92e81fef"
+  },
+  "language-applied-chinese": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "a79bb062018e9a649fe34e64281d018a2bf42db91ffaa46aada759f9a4b1b2a7",
+    "geometrySha256": "f226b2a350944cb76c3a411e0ed38252338c554892fe22546d094833bba38eb3",
+    "semanticsSha256": "a9876f50e8d8472ad78ed827879c7890cbaab80088e10f22ba85cff6704627fa"
+  },
+  "about-unconfigured": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "9396bc9a09ceb641af542ab05f5396527de2c8e06eb3135dfa327d107ec8dd52",
+    "geometrySha256": "382cd6356c9ef3938857322b5f43dfb40716c0f670bed82773aae45a942b0277",
+    "semanticsSha256": "5b0f16dc18e2bb51a39988c2dcc33cae634adc96a0018f64df451ade79bf5763"
+  },
+  "reset-narrow-confirm": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "9ee35a04a669ed7cf9888944a79d3dff512da17a281b2e82f2fd5d2857df8918",
+    "geometrySha256": "0f35f1c64c821b7e434ad1ab828ca7fcd5ffdf8826d70c24362015a53e3c3c0d",
+    "semanticsSha256": "517c11aaba338564a6c9268b3c0cfec26fc282c3587bed1d16c997487fed777c"
+  },
+  "reset-completed": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "c775cae44cb26cc7058033ac7c706f247597ca5e45e81c323dfeddb34d09f0d3",
+    "geometrySha256": "646a16c27e1d1db7df6afb9646b8c41f0925c95b831fbaba898e315492255944",
+    "semanticsSha256": "882a72f26f1f8410cec334b79d5642a82286fdeeae7ca3ee826b8d0e8bdac6ad"
+  },
+  "license-long-scrolled": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "icon-label-review.json",
+    "sha256": "11d5b57553899ab6647582e4d14c58a320ab0a6c6a4d1f407906d935ea60f8c9",
+    "geometrySha256": "1692f6180f4ad35ccc3aba63f944b7a6670db9402c2b697bf8d2f9ba641b10fa",
+    "semanticsSha256": "1c9917378f531e4beec374d32f7d70e2859e13f287360c71f8f0b0d1ce7e74c2",
+    "geometryReviewReference": "geometry-delta-independent-review.json"
+  },
+  "source-folder-unavailable-en": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "reviews/folder-capability-review.json",
+    "sha256": "7d3c79eacc4dd4125abf3bdffdba22203ffaaf839f3a8b637cd81bcb752b59d2",
+    "geometrySha256": "8c3b47ff866ccf9d83a75ced61db8d78905f701c9f5cfef5bc23b67e4674843e",
+    "semanticsSha256": "a5c37fdf33546cdd9a21f4d2d40ca4d5a1d260753caa2a8acca2d712699038e7"
+  },
+  "source-folder-unavailable-zh-Hans": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "reviews/folder-capability-review.json",
+    "sha256": "60e69bf576f5a329cc7bb230ab52a694bfbfe9b21898f8cc005035eda643d07b",
+    "geometrySha256": "92ee1e3938bc73129d4bbcdc78914399d572da7a422e016cfc8413efbb2d913f",
+    "semanticsSha256": "4bcd2aed137015682b2b1fd7a1efb5c86513728385ed57e7c0fe00fb2106309f"
+  },
+  "license-list-failed": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "remaining-state-independent-review-02.json",
+    "sha256": "7d47bbf803a9f97eb23774477705c7fad51dc96451d2903885f8fdf107c85417",
+    "geometrySha256": "563fb30b7d3a70663ba8c46827b31fc2b7ce5ae0bc4d6be73421c65570981ab1",
+    "semanticsSha256": "f8c6bd46c742ae8f97dcca9c4916a1da91bf342384ab7bcba10c5da4fa4c7ac6"
+  },
+  "license-list-recovered": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "remaining-state-independent-review-02.json",
+    "sha256": "12a1c3524733cb36d10abb4435b88cb95a6ce9c9d97feabf170574962c846b02",
+    "geometrySha256": "c6ad5fc0f62744f1265014599bfd005d4605a0f0ac442c7bffbd9561b72ec8a2",
+    "semanticsSha256": "b3eaec0b61b73bb6af4102c5b55293fd0f6897b2c1a84cdf8f2a5a732820fe80"
+  },
+  "reset-partial-authoritative": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "remaining-state-independent-review-02.json",
+    "sha256": "955c29fb5273491f1f7bcfe430b60d40b189d101c41718b82319476d44b3f852",
+    "geometrySha256": "cf2711793bd9ac42799b306263bbad922aad16f6ecae99688b50011d0f51d5a2",
+    "semanticsSha256": "869e7b4f04a4ad93cd5a02144b319a3d62825af57e4faf28fb799fe45b9d6e0d"
+  },
+  "reset-state-unreadable": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "remaining-state-independent-review-02.json",
+    "sha256": "38ece47b0b318741197dfc54c0bdf91758c0b642a5f8f36fb5ba2dc965b15f94",
+    "geometrySha256": "2454067237dc5100129dc1be01d54996756793822d340aba474e9d7e10befc50",
+    "semanticsSha256": "d87e509ddd28406e66b5d73489db2f5d59d1c8eb6b5de1b997fc6a23c28779b4"
+  },
+  "reset-state-recovered": {
+    "status": "reviewed",
+    "reviewer": "g2_client_spec_review",
+    "reviewReference": "remaining-state-independent-review-02.json",
+    "sha256": "13501cca27a239406a8574e70edb6efed6269de5e599e486aa645073e311b689",
+    "geometrySha256": "b0df14e93f9fb0319604ea2bcbfc6781c5445b34a38ff8e68deef3bdbd055f35",
+    "semanticsSha256": "ac0faa45ec95486ad0332f8e08c21fa5595ab789da91217f461694adfbc6a119"
+  }
+}

@@ -1,0 +1,80 @@
+SemanticsNode#0
+ │ Rect.fromLTRB(0.0, 0.0, 600.0, 540.0)
+ │
+ └─SemanticsNode#1
+   │ Rect.fromLTRB(0.0, 0.0, 600.0, 540.0)
+   │ textDirection: ltr
+   │
+   └─SemanticsNode#2
+     │ Rect.fromLTRB(0.0, 0.0, 600.0, 540.0)
+     │ sortKey: OrdinalSortKey#71b11(order: 0.0)
+     │
+     └─SemanticsNode#3
+       │ Rect.fromLTRB(0.0, 0.0, 600.0, 540.0)
+       │ flags: scopesRoute
+       │
+       ├─SemanticsNode#11
+       │ │ Rect.fromLTRB(0.0, 0.0, 600.0, 80.0)
+       │ │
+       │ ├─SemanticsNode#13
+       │ │ │ Rect.fromLTRB(24.0, 24.0, 80.0, 80.0)
+       │ │ │ traversalParentIdentifier: _OverlayPortalState#fdbfe
+       │ │ │
+       │ │ └─SemanticsNode#14
+       │ │     Rect.fromLTRB(0.0, 0.0, 56.0, 56.0)
+       │ │     actions: focus, tap
+       │ │     flags: isButton, hasEnabledState, isEnabled, isFocusable
+       │ │     label: "Back"
+       │ │     textDirection: ltr
+       │ │
+       │ └─SemanticsNode#12
+       │     Rect.fromLTRB(96.0, 38.0, 176.2, 66.0)
+       │     flags: isHeader, namesRoute
+       │     label: "Settings"
+       │     textDirection: ltr
+       │
+       └─SemanticsNode#15
+         │ Rect.fromLTRB(24.0, 80.0, 576.0, 524.0)
+         │
+         └─SemanticsNode#20
+           │ Rect.fromLTRB(0.0, 0.0, 552.0, 444.0)
+           │ flags: hasImplicitScrolling
+           │ scrollChildren: 2
+           │ scrollIndex: 0
+           │ scrollExtentMin: 0.0
+           │ scrollPosition: 0.0
+           │ scrollExtentMax: 0.0
+           │
+           ├─SemanticsNode#16
+           │ │ Rect.fromLTRB(16.0, 16.0, 536.0, 72.0)
+           │ │ tags: RenderViewport.twoPane
+           │ │ indexInParent: 0
+           │ │
+           │ └─SemanticsNode#17
+           │   │ merge boundary ⛔️
+           │   │ Rect.fromLTRB(0.0, 0.0, 520.0, 56.0)
+           │   │ actions: focus, tap
+           │   │ flags: isButton, hasEnabledState, isEnabled, isFocusable,
+           │   │   hasSelectedState
+           │   │ label: "Sound"
+           │   │ textDirection: ltr
+           │   │
+           │   └─SemanticsNode#18
+           │       merged up ⬆️
+           │       Rect.fromLTRB(428.0, 4.0, 496.0, 52.0)
+           │       actions: tap
+           │       flags: hasEnabledState, isEnabled, hasToggledState, isToggled
+           │       label: "Sound"
+           │       textDirection: ltr
+           │
+           └─SemanticsNode#19
+               Rect.fromLTRB(16.0, 72.0, 536.0, 144.0)
+               tags: RenderViewport.twoPane
+               actions: focus, tap
+               flags: isButton, hasEnabledState, isEnabled, isFocusable,
+                 hasSelectedState
+               label:
+                 "Audio focus
+                 Pause"
+               textDirection: ltr
+               indexInParent: 1
